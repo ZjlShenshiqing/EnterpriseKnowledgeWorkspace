@@ -1,0 +1,387 @@
+# Database 数据库设计
+
+## 1. ER 关系图
+
+```mermaid
+erDiagram
+    SYS_DEPARTMENT ||--o{ SYS_USER : contains
+    SYS_USER ||--o{ SYS_USER_ROLE : has
+    SYS_ROLE ||--o{ SYS_USER_ROLE : assigned
+    SYS_ROLE ||--o{ SYS_ROLE_PERMISSION : owns
+    SYS_PERMISSION ||--o{ SYS_ROLE_PERMISSION : included
+
+    KB_CATEGORY ||--o{ KB_DOCUMENT : contains
+    SYS_USER ||--o{ KB_DOCUMENT : uploads
+    KB_DOCUMENT ||--o{ KB_DOCUMENT_VERSION : has
+    KB_DOCUMENT ||--o{ KB_DOCUMENT_CHUNK : split_into
+    KB_DOCUMENT ||--o{ KB_DOCUMENT_PERMISSION : protected_by
+
+    MEETING_ROOM ||--o{ MEETING : booked_by
+    SYS_USER ||--o{ MEETING : creates
+    MEETING ||--o{ MEETING_ATTENDEE : includes
+    MEETING ||--o{ MEETING_MINUTES : has
+
+    SYS_USER ||--o{ TODO_ITEM : owns
+    SYS_USER ||--o{ TASK : creates
+    TASK ||--o{ TASK_MEMBER : includes
+    TASK ||--o{ TASK_COMMENT : has
+
+    SYS_USER ||--o{ NOTIFICATION : receives
+```
+
+## 2. 核心数据表
+
+### 2.1 sys_user 用户表
+
+用途：存储系统用户账号信息。
+
+字段：
+
+1. id：用户 ID。
+2. username：登录用户名。
+3. password_hash：加密后的密码。
+4. real_name：真实姓名。
+5. email：邮箱。
+6. phone：手机号。
+7. department_id：所属部门 ID。
+8. position_name：岗位名称。
+9. avatar_url：头像地址。
+10. status：账号状态。
+11. last_login_at：最近登录时间。
+12. created_at：创建时间。
+13. updated_at：更新时间。
+14. deleted：是否删除。
+
+### 2.2 sys_department 部门表
+
+用途：存储组织架构。
+
+字段：
+
+1. id：部门 ID。
+2. parent_id：上级部门 ID。
+3. department_name：部门名称。
+4. manager_id：部门负责人 ID。
+5. sort_order：排序。
+6. status：状态。
+7. created_at：创建时间。
+8. updated_at：更新时间。
+9. deleted：是否删除。
+
+### 2.3 sys_role 角色表
+
+用途：存储系统角色。
+
+字段：
+
+1. id：角色 ID。
+2. role_code：角色编码。
+3. role_name：角色名称。
+4. description：角色说明。
+5. status：状态。
+6. created_at：创建时间。
+7. updated_at：更新时间。
+
+### 2.4 sys_user_role 用户角色关联表
+
+用途：维护用户和角色的多对多关系。
+
+字段：
+
+1. id：主键 ID。
+2. user_id：用户 ID。
+3. role_id：角色 ID。
+4. created_at：创建时间。
+
+### 2.5 sys_permission 权限表
+
+用途：存储菜单、接口和操作权限。
+
+字段：
+
+1. id：权限 ID。
+2. permission_code：权限编码。
+3. permission_name：权限名称。
+4. permission_type：权限类型。
+5. parent_id：上级权限 ID。
+6. path：前端路由或接口路径。
+7. component：前端组件。
+8. sort_order：排序。
+9. status：状态。
+10. created_at：创建时间。
+11. updated_at：更新时间。
+
+### 2.6 sys_role_permission 角色权限关联表
+
+用途：维护角色和权限的多对多关系。
+
+字段：
+
+1. id：主键 ID。
+2. role_id：角色 ID。
+3. permission_id：权限 ID。
+4. created_at：创建时间。
+
+### 2.7 kb_category 知识分类表
+
+用途：存储知识库分类。
+
+字段：
+
+1. id：分类 ID。
+2. parent_id：上级分类 ID。
+3. category_name：分类名称。
+4. category_type：分类类型。
+5. department_id：所属部门 ID。
+6. sort_order：排序。
+7. status：状态。
+8. created_at：创建时间。
+9. updated_at：更新时间。
+10. deleted：是否删除。
+
+### 2.8 kb_document 知识文档表
+
+用途：存储知识文档元数据和解析文本。
+
+字段：
+
+1. id：文档 ID。
+2. title：文档标题。
+3. category_id：分类 ID。
+4. owner_id：上传人 ID。
+5. department_id：所属部门 ID。
+6. file_name：原始文件名。
+7. file_url：文件存储地址。
+8. file_type：文件类型。
+9. file_size：文件大小。
+10. summary：文档摘要。
+11. content_text：解析后的正文。
+12. tags：标签。
+13. permission_type：权限类型。
+14. status：文档状态。
+15. current_version：当前版本号。
+16. created_at：创建时间。
+17. updated_at：更新时间。
+18. deleted：是否删除。
+
+### 2.9 kb_document_version 文档版本表
+
+用途：存储文档历史版本。
+
+字段：
+
+1. id：版本 ID。
+2. document_id：文档 ID。
+3. version_no：版本号。
+4. file_name：文件名。
+5. file_url：文件地址。
+6. content_text：版本正文。
+7. change_note：变更说明。
+8. created_by：创建人。
+9. created_at：创建时间。
+
+### 2.10 kb_document_chunk 文档切片表
+
+用途：存储文档切片，用于检索和智能问答。
+
+字段：
+
+1. id：切片 ID。
+2. document_id：文档 ID。
+3. chunk_index：切片序号。
+4. chunk_text：切片文本。
+5. token_count：Token 数量。
+6. vector_id：向量库 ID。
+7. metadata_json：元数据。
+8. created_at：创建时间。
+9. updated_at：更新时间。
+
+### 2.11 kb_document_permission 文档权限表
+
+用途：存储文档访问权限规则。
+
+字段：
+
+1. id：权限记录 ID。
+2. document_id：文档 ID。
+3. permission_target_type：授权对象类型。
+4. permission_target_id：授权对象 ID。
+5. permission_level：权限级别。
+6. created_by：创建人。
+7. created_at：创建时间。
+
+### 2.12 meeting_room 会议室表
+
+用途：存储会议室资源。
+
+字段：
+
+1. id：会议室 ID。
+2. room_name：会议室名称。
+3. location：位置。
+4. capacity：容纳人数。
+5. equipment_json：设备信息。
+6. open_start_time：开放开始时间。
+7. open_end_time：开放结束时间。
+8. manager_id：管理员 ID。
+9. status：状态。
+10. created_at：创建时间。
+11. updated_at：更新时间。
+12. deleted：是否删除。
+
+### 2.13 meeting 会议表
+
+用途：存储会议信息。
+
+字段：
+
+1. id：会议 ID。
+2. title：会议标题。
+3. room_id：会议室 ID。
+4. creator_id：创建人 ID。
+5. start_time：开始时间。
+6. end_time：结束时间。
+7. description：会议说明。
+8. meeting_type：会议类型。
+9. online_url：线上会议链接。
+10. status：会议状态。
+11. need_minutes：是否需要纪要。
+12. created_at：创建时间。
+13. updated_at：更新时间。
+14. deleted：是否删除。
+
+### 2.14 meeting_attendee 会议参会人表
+
+用途：存储会议参会人。
+
+字段：
+
+1. id：主键 ID。
+2. meeting_id：会议 ID。
+3. user_id：参会人 ID。
+4. attendee_status：参会状态。
+5. created_at：创建时间。
+6. updated_at：更新时间。
+
+### 2.15 meeting_minutes 会议纪要表
+
+用途：存储会议纪要。
+
+字段：
+
+1. id：纪要 ID。
+2. meeting_id：会议 ID。
+3. content：纪要正文。
+4. action_items_json：行动项。
+5. document_id：关联知识文档 ID。
+6. created_by：创建人。
+7. created_at：创建时间。
+8. updated_at：更新时间。
+
+### 2.16 todo_item 待办事项表
+
+用途：存储个人待办。
+
+字段：
+
+1. id：待办 ID。
+2. title：标题。
+3. description：说明。
+4. owner_id：所属用户 ID。
+5. due_time：截止时间。
+6. reminder_time：提醒时间。
+7. priority：优先级。
+8. status：状态。
+9. related_type：关联业务类型。
+10. related_id：关联业务 ID。
+11. repeat_rule：重复规则。
+12. completed_at：完成时间。
+13. created_at：创建时间。
+14. updated_at：更新时间。
+15. deleted：是否删除。
+
+### 2.17 task 任务表
+
+用途：存储正式协同任务。
+
+字段：
+
+1. id：任务 ID。
+2. title：任务标题。
+3. description：任务说明。
+4. creator_id：创建人 ID。
+5. assignee_id：负责人 ID。
+6. department_id：所属部门 ID。
+7. project_id：项目 ID。
+8. due_time：截止时间。
+9. priority：优先级。
+10. status：状态。
+11. result_text：结果说明。
+12. related_type：关联业务类型。
+13. related_id：关联业务 ID。
+14. completed_at：完成时间。
+15. created_at：创建时间。
+16. updated_at：更新时间。
+17. deleted：是否删除。
+
+### 2.18 task_member 任务成员表
+
+用途：存储任务参与人。
+
+字段：
+
+1. id：主键 ID。
+2. task_id：任务 ID。
+3. user_id：用户 ID。
+4. member_role：成员角色。
+5. created_at：创建时间。
+
+### 2.19 task_comment 任务评论表
+
+用途：存储任务评论。
+
+字段：
+
+1. id：评论 ID。
+2. task_id：任务 ID。
+3. user_id：评论人 ID。
+4. content：评论内容。
+5. attachment_json：附件信息。
+6. created_at：创建时间。
+7. deleted：是否删除。
+
+### 2.20 notification 消息通知表
+
+用途：存储站内消息通知。
+
+字段：
+
+1. id：通知 ID。
+2. receiver_id：接收人 ID。
+3. title：通知标题。
+4. content：通知内容。
+5. notification_type：通知类型。
+6. related_type：关联业务类型。
+7. related_id：关联业务 ID。
+8. read_status：是否已读。
+9. read_at：阅读时间。
+10. created_at：创建时间。
+
+### 2.21 operation_log 操作日志表
+
+用途：存储系统关键操作审计日志。
+
+字段：
+
+1. id：日志 ID。
+2. operator_id：操作人 ID。
+3. operation_module：操作模块。
+4. operation_type：操作类型。
+5. operation_content：操作内容。
+6. request_uri：请求地址。
+7. request_method：请求方法。
+8. ip_address：IP 地址。
+9. user_agent：客户端信息。
+10. result_status：执行结果。
+11. error_message：错误信息。
+12. created_at：创建时间。
