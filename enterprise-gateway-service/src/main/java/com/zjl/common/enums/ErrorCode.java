@@ -3,7 +3,7 @@ package com.zjl.common.enums;
 import lombok.Getter;
 
 /**
- * 错误码枚举（参考常见阿里规范：5 位数字分段）。
+ * 错误码枚举（参考常见阿里规范：5 位数字分段）
  *
  * <p>约定示例：</p>
  * <ul>
@@ -11,7 +11,7 @@ import lombok.Getter;
  *   <li>50xxx：服务端/系统类错误</li>
  * </ul>
  *
- * <p>注意：接口成功码仍以项目约定的 200 为准；本枚举用于异常与失败响应。</p>
+ * <p>注意：接口成功码仍以项目约定的 200 为准；本枚举用于异常与失败响应</p>
  */
 @Getter
 public enum ErrorCode {
@@ -26,7 +26,7 @@ public enum ErrorCode {
      * 业务错误码（5 位数字分段）
      */
     private final int code;
-    /** 面向前端的错误消息。 */
+    /** 面向前端的错误消息 */
     private final String message;
 
     ErrorCode(int code, String message) {
