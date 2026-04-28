@@ -1,9 +1,8 @@
-package com.zjl.gateway;
+package com.zjl.filter;
 
-import com.zjl.common.api.ApiResponse;
+import com.zjl.common.response.ApiResponseWriter;
 import com.zjl.common.trace.TraceIdHolder;
 import com.zjl.config.AppGatewayProperties;
-import com.zjl.config.JsonResponseWriter;
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -52,8 +51,8 @@ public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
     /**
      * 统一 JSON 输出器
      */
-    private final JsonResponseWriter writer;
-    
+    private final ApiResponseWriter writer;
+
     /**
      * 内存计数器：key=ip
      */
@@ -65,7 +64,7 @@ public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
      * @param props 网关配置项
      * @param writer JSON 输出器
      */
-    public SimpleRateLimitGlobalFilter(AppGatewayProperties props, JsonResponseWriter writer) {
+    public SimpleRateLimitGlobalFilter(AppGatewayProperties props, ApiResponseWriter writer) {
         this.props = props;
         this.writer = writer;
     }
@@ -127,7 +126,7 @@ public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
          */
         if (next.count > limit) {
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-            return writer.writeJson(exchange, ApiResponse.failure(42900, "请求过于频繁，请稍后再试", traceId()));
+            return writer.writeFailure(exchange, 42900, "请求过于频繁，请稍后再试", traceId());
         }
 
         return chain.filter(exchange);

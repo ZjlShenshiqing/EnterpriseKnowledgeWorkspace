@@ -1,10 +1,9 @@
-package com.zjl.gateway;
+package com.zjl.filter;
 
-import com.zjl.common.api.ApiResponse;
+import com.zjl.common.response.ApiResponseWriter;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.trace.TraceIdHolder;
 import com.zjl.config.AppGatewayProperties;
-import com.zjl.config.JsonResponseWriter;
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -25,13 +24,13 @@ import java.util.List;
 public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
 
     /**
-     * 网关配置项。
+     * 网关配置项
      */
     private final AppGatewayProperties props;
     /**
      * 统一 JSON 输出器
      */
-    private final JsonResponseWriter writer;
+    private final ApiResponseWriter writer;
 
     /**
      * 构造器注入
@@ -39,7 +38,7 @@ public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
      * @param props 网关配置项
      * @param writer JSON 输出器
      */
-    public IpAccessGlobalFilter(AppGatewayProperties props, JsonResponseWriter writer) {
+    public IpAccessGlobalFilter(AppGatewayProperties props, ApiResponseWriter writer) {
         this.props = props;
         this.writer = writer;
     }
@@ -51,16 +50,16 @@ public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
         List<String> blacklist = props.getIp().getBlacklist();
 
         if (!CollectionUtils.isEmpty(whitelist) && (ip == null || !whitelist.contains(ip))) {
-            return writer.writeJson(exchange, ApiResponse.failure(ErrorCode.FORBIDDEN.getCode(), "IP 未在白名单内", traceId()));
+            return writer.writeFailure(exchange, ErrorCode.FORBIDDEN.getCode(), "IP 未在白名单内", traceId());
         }
         if (!CollectionUtils.isEmpty(blacklist) && ip != null && blacklist.contains(ip)) {
-            return writer.writeJson(exchange, ApiResponse.failure(ErrorCode.FORBIDDEN.getCode(), "IP 已被禁止访问", traceId()));
+            return writer.writeFailure(exchange, ErrorCode.FORBIDDEN.getCode(), "IP 已被禁止访问", traceId());
         }
         return chain.filter(exchange);
     }
 
     /**
-     * 过滤器顺序：优先于多数业务过滤器。
+     * 过滤器顺序：优先于多数业务过滤器
      *
      * @return order
      */
