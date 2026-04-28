@@ -12,11 +12,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * 请求链路追踪过滤器：透传或生成 traceId，并写入 MDC 供日志打印。
+ */
 @Component
 public class TraceIdFilter extends OncePerRequestFilter {
 
+    /**
+     * 请求头中的 traceId 键名
+     */
     public static final String TRACE_ID_HEADER = "X-Trace-Id";
 
+    /**
+     * 为每个请求补齐 traceId 并注入 MDC，便于全链路日志追踪。
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
