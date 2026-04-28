@@ -11,12 +11,12 @@ import java.util.Optional;
  */
 public interface TokenBlacklistRepository extends JpaRepository<TokenBlacklistEntry, Long> {
     /**
-     * 按 token 查询黑名单条目
+     * 按 token 哈希查询黑名单条目
      *
-     * @param token JWT 原文
+     * @param tokenHash token 哈希
      * @return 黑名单条目（可能为空）
      */
-    Optional<TokenBlacklistEntry> findByToken(String token);
+    Optional<TokenBlacklistEntry> findByTokenHash(String tokenHash);
 
     /**
      * 删除过期的黑名单条目
