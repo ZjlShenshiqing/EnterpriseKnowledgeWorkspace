@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * 全局异常处理器，负责将系统异常与业务异常统一映射为 ApiResponse。
+ * 全局异常处理器，将异常统一映射为 ApiResponse。
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理未捕获异常
+     * 处理未捕获异常。
      *
      * @param ex 未知异常
      * @return 标准失败响应

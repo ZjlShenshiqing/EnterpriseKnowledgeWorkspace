@@ -13,18 +13,18 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 请求链路追踪过滤器：透传或生成 traceId，并写入 MDC 供日志打印。
+ * 为每个请求注入 traceId 并写入 MDC。
  */
 @Component
 public class TraceIdFilter extends OncePerRequestFilter {
 
     /**
-     * 请求头中的 traceId 键名
+     * 请求头中的 traceId 名称
      */
     public static final String TRACE_ID_HEADER = "X-Trace-Id";
 
     /**
-     * 为每个请求补齐 traceId 并注入 MDC，便于全链路日志追踪。
+     * 过滤器主逻辑。
      */
     @Override
     protected void doFilterInternal(
@@ -32,8 +32,8 @@ public class TraceIdFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String incomingTraceId = request.getHeader(TRACE_ID_HEADER);
-        String traceId = StringUtils.hasText(incomingTraceId) ? incomingTraceId : UUID.randomUUID().toString();
+        String incoming = request.getHeader(TRACE_ID_HEADER);
+        String traceId = StringUtils.hasText(incoming) ? incoming : UUID.randomUUID().toString();
         MDC.put(TraceIdHolder.key(), traceId);
         response.setHeader(TRACE_ID_HEADER, traceId);
         try {

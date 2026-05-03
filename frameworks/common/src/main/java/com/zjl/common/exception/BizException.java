@@ -15,7 +15,7 @@ public class BizException extends RuntimeException {
     private final int code;
 
     /**
-     * 构造业务异常
+     * 使用原始错误码构造业务异常。
      *
      * @param code 业务错误码
      * @param message 业务错误消息
@@ -26,7 +26,7 @@ public class BizException extends RuntimeException {
     }
 
     /**
-     * 构造业务异常（使用统一错误码枚举）
+     * 使用错误码枚举构造业务异常。
      *
      * @param errorCode 错误码枚举
      */
@@ -36,10 +36,10 @@ public class BizException extends RuntimeException {
     }
 
     /**
-     * 构造业务异常（使用统一错误码枚举，并允许覆盖提示语）
+     * 使用错误码枚举与自定义消息构造业务异常。
      *
      * @param errorCode 错误码枚举
-     * @param message 覆盖错误消息
+     * @param message 覆盖消息
      */
     public BizException(ErrorCode errorCode, String message) {
         super(message);

@@ -37,8 +37,8 @@ public class ApiResponse<T> {
      *
      * @param data 业务数据
      * @param traceId 链路追踪标识
-     * @return 标准成功响应
      * @param <T> 业务数据类型
+     * @return 标准成功响应
      */
     public static <T> ApiResponse<T> success(T data, String traceId) {
         return ApiResponse.<T>builder()
