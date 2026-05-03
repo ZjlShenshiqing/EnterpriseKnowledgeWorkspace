@@ -4,7 +4,7 @@ import com.zjl.common.enums.ErrorCode;
 import lombok.Getter;
 
 /**
- * 业务异常，携带业务错误码并由全局异常处理器统一转换为标准响应。
+ * 业务异常，携带业务错误码并由全局异常处理器统一转换为标准响应
  */
 @Getter
 public class BizException extends RuntimeException {

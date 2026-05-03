@@ -1,0 +1,51 @@
+package com.zjl.domain;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.Instant;
+
+/**
+ * 部门实体
+ */
+@Getter
+@Setter
+@Entity
+@Table(name = "sys_dept", indexes = {
+        @Index(name = "idx_sys_dept_name", columnList = "name", unique = true)
+})
+public class SysDept {
+
+    /**
+     * 主键
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 部门名称（唯一）
+     */
+    @Column(nullable = false, length = 128)
+    private String name;
+
+    /**
+     * 父部门 id（根部门可为空）
+     */
+    @Column
+    private Long parentId;
+
+    /**
+     * 创建时间
+     */
+    @Column(nullable = false)
+    private Instant createdAt = Instant.now();
+
+    /**
+     * 更新时间
+     */
+    @Column(nullable = false)
+    private Instant updatedAt = Instant.now();
+}
+
