@@ -7,10 +7,10 @@ import lombok.Getter;
  * 业务异常，携带业务错误码并由全局异常处理器统一转换为标准响应
  */
 @Getter
-public class BizException extends RuntimeException {
+public class BizException extends AbstractException {
 
     /**
-     * 业务错误码
+     * 业务错误码（数值，与历史约定一致）
      */
     private final int code;
 
@@ -44,5 +44,10 @@ public class BizException extends RuntimeException {
     public BizException(ErrorCode errorCode, String message) {
         super(message);
         this.code = errorCode.getCode();
+    }
+
+    @Override
+    public String getErrorCode() {
+        return String.valueOf(code);
     }
 }
