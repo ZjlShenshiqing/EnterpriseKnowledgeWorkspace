@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- * enterprise-knowledge-ai-service 启动入口。
+ * enterprise-knowledge-ai-service 启动入口
  */
 @SpringBootApplication(scanBasePackages = {"com.zjl.knowledge", "com.zjl.common"})
 @ConfigurationPropertiesScan
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class KnowledgeAiApplication {
 
     /**
-     * 应用启动方法。
+     * 应用启动
      *
      * @param args 启动参数
      */

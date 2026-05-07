@@ -1,6 +1,5 @@
 package com.zjl.filter;
 
-import com.zjl.security.UserContext;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;

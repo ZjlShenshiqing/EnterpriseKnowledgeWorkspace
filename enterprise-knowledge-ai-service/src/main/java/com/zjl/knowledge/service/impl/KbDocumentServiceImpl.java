@@ -24,7 +24,6 @@ import com.zjl.knowledge.domain.SourceType;
 import com.zjl.knowledge.dto.KbDocumentChunkLogVO;
 import com.zjl.knowledge.dto.KbDocumentUpdateRequest;
 import com.zjl.knowledge.dto.KbDocumentUploadRequest;
-import com.zjl.knowledge.embedding.EmbeddingService;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.entity.KbDocumentChunkLog;
@@ -36,14 +35,13 @@ import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
 import com.zjl.knowledge.mapper.KbKnowledgeBaseMapper;
-import com.zjl.knowledge.milvus.ChunkVectorStore;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.DocumentVisibilityService;
 import com.zjl.knowledge.service.KbCategoryService;
 import com.zjl.knowledge.service.KbChunkService;
 import com.zjl.knowledge.service.KbDocumentService;
-import com.zjl.knowledge.service.KbMilvusRoutingService;
 import com.zjl.knowledge.service.TikaDocumentParser;
+import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.token.TokenCounterService;
 import com.zjl.knowledge.util.ContentHashUtil;
 import com.zjl.knowledge.web.UserContext;
@@ -84,9 +82,8 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final KbDocumentChunkMapper kbDocumentChunkMapper;
     private final KbDocumentChunkLogMapper kbDocumentChunkLogMapper;
     private final TikaDocumentParser tikaDocumentParser;
-    private final ChunkVectorStore chunkVectorStore;
+    private final VectorSyncService vectorSyncService;
     private final ChunkingStrategyFactory chunkingStrategyFactory;
-    private final EmbeddingService embeddingService;
     private final TokenCounterService tokenCounterService;
     private final KbStorageProperties kbStorageProperties;
     private final DocumentVisibilityService documentVisibilityService;
@@ -95,7 +92,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final ObjectMapper objectMapper;
     private final KbChunkService kbChunkService;
     private final KbKnowledgeBaseMapper kbKnowledgeBaseMapper;
-    private final KbMilvusRoutingService kbMilvusRoutingService;
 
     @Override
     public IPage<KbDocument> pageVisible(Page<KbDocument> page, UserContext user) {
@@ -321,13 +317,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             List<TextChunk> parts = strategy.chunk(text, options);
             chunkDuration = System.currentTimeMillis() - chunkStart;
 
-            boolean shouldEmbed = kbMilvusRoutingService.shouldEmbed(document);
+            boolean shouldEmbed = vectorSyncService.shouldEmbed(document);
             List<List<Float>> vectors = null;
-            
+
             if (shouldEmbed) {
                 long embedStart = System.currentTimeMillis();
                 List<String> texts = parts.stream().map(TextChunk::content).collect(Collectors.toList());
-                vectors = embedBatch(texts, document);
+                vectors = vectorSyncService.embedBatch(texts, document);
                 embedDuration = System.currentTimeMillis() - embedStart;
 
                 if (vectors.size() != parts.size()) {
@@ -344,14 +340,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                         .index(parts.get(i).index());
                 
                 if (shouldEmbed && vectors != null) {
-                    builder.embedding(toPrimitive(vectors.get(i)));
+                    builder.embedding(VectorSyncService.toArray(vectors.get(i)));
                 }
                 chunkResults.add(builder.build());
             }
 
             long persistStart = System.currentTimeMillis();
-            String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
-            int saved = persistChunksAndVectorsAtomically(docId, acting, chunkResults, text, milvusCollection, shouldEmbed);
+            int saved = persistChunksAndVectorsAtomically(document, acting, chunkResults, text, shouldEmbed);
             persistDuration = System.currentTimeMillis() - persistStart;
 
             long totalDuration = System.currentTimeMillis() - totalStart;
@@ -367,13 +362,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     private int persistChunksAndVectorsAtomically(
-            Long docId,
+            KbDocument document,
             Long actingUserId,
             List<VectorDocChunk> vectorChunks,
             String fullText,
-            String milvusCollection,
             boolean shouldEmbed
     ) {
+        final Long docId = document.getId();
         final int[] count = {0};
         transactionTemplate.executeWithoutResult(status -> {
             kbDocumentChunkMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, docId));
@@ -398,8 +393,8 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                 kbDocumentChunkMapper.insert(row);
             }
             if (shouldEmbed) {
-                chunkVectorStore.deleteDocumentVectors(milvusCollection, docId);
-                chunkVectorStore.indexDocumentChunks(milvusCollection, docId, vectorChunks);
+                vectorSyncService.deleteDocumentVectors(document);
+                vectorSyncService.indexDocumentChunks(document, vectorChunks);
             }
 
             baseMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
@@ -510,7 +505,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             return;
         }
 
-        boolean shouldEmbed = kbMilvusRoutingService.shouldEmbed(doc);
+        boolean shouldEmbed = vectorSyncService.shouldEmbed(doc);
         List<KbDocumentChunk> chunks = kbDocumentChunkMapper.selectList(
                 Wrappers.lambdaQuery(KbDocumentChunk.class)
                         .eq(KbDocumentChunk::getDocumentId, documentId)
@@ -529,15 +524,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                                 .build())
                         .collect(Collectors.toList());
                 List<String> texts = vectorChunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
-                List<List<Float>> vecs = embedBatch(texts, doc);
+                List<List<Float>> vecs = vectorSyncService.embedBatch(texts, doc);
                 for (int i = 0; i < vectorChunks.size(); i++) {
-                    vectorChunks.get(i).setEmbedding(toPrimitive(vecs.get(i)));
+                    vectorChunks.get(i).setEmbedding(VectorSyncService.toArray(vecs.get(i)));
                 }
             }
         }
 
         final List<VectorDocChunk> finalChunks = vectorChunks;
-        String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(doc);
         transactionTemplate.executeWithoutResult(status -> {
             doc.setEnabled(target);
             doc.setUpdatedAt(LocalDateTime.now());
@@ -545,9 +539,9 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             kbChunkService.updateEnabledByDocId(documentId, enabled, user.getUserId());
             if (shouldEmbed) {
                 if (!enabled) {
-                    chunkVectorStore.deleteDocumentVectors(milvusCollection, documentId);
+                    vectorSyncService.deleteDocumentVectors(doc);
                 } else if (finalChunks != null && !finalChunks.isEmpty()) {
-                    chunkVectorStore.indexDocumentChunks(milvusCollection, documentId, finalChunks);
+                    vectorSyncService.indexDocumentChunks(doc, finalChunks);
                 }
             }
         });
@@ -614,8 +608,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             throw new BizException(ErrorCode.PARAM_INVALID, "文档正在分块中，无法删除");
         }
         try {
-            String milvusCollection = kbMilvusRoutingService.collectionForVectorWriteOrDefault(doc);
-            chunkVectorStore.deleteDocumentVectors(milvusCollection, id);
+            vectorSyncService.deleteDocumentVectors(doc);
         } catch (BizException ex) {
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     "删除向量失败，文档未删除: " + ex.getMessage());
@@ -674,21 +667,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             log.warn("分块参数解析失败: {}", json, e);
             return Map.of();
         }
-    }
-
-    private List<List<Float>> embedBatch(List<String> texts, KbDocument document) {
-        String model = kbMilvusRoutingService.embeddingModelOrDefault(document);
-        return StringUtils.hasText(model)
-                ? embeddingService.embedBatch(texts, model)
-                : embeddingService.embedBatch(texts);
-    }
-
-    private static float[] toPrimitive(List<Float> list) {
-        float[] arr = new float[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            arr[i] = list.get(i);
-        }
-        return arr;
     }
 
     private void savePermissionRows(Long documentId, DocumentPermissionType type, KbDocumentUploadRequest meta, Long createdBy) {

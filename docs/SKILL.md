@@ -32,40 +32,47 @@
 3. plan.md
 4. AGENTS.md
 5. SKILL.md
+6. development-flow.md（当前开发进度与分步流程）
+7. step3-summary.md（知识库最小闭环实现总览）
 
 可选但建议阅读：
 
 1. sdd.md
 2. database.md
 3. api.md
-4. deployment.md
-5. test-plan.md
+4. knowledge-service-architecture.md（知识库微服务架构文档）
+5. deployment.md
+6. test-plan.md
 
 ## 4. 核心能力
 
 ### 4.1 知识库能力
 
-系统必须支持：
+系统必须支持（✅=Step3已完成，🔧=Step4规划）：
 
-1. 文档上传。
-2. 文档解析。
-3. 文档分类。
-4. 文档权限控制。
-5. 文档版本管理。
-6. 全文检索。
-7. 语义检索。
-8. 智能问答来源引用。
+1. ✅ 文档上传（multipart + meta）。
+2. ✅ 文档解析（Apache Tika：PDF/Word/Excel/PPT/HTML/Markdown/TXT）。
+3. ✅ 文档分类。
+4. ✅ 文档权限控制（ALL / DEPARTMENT / PROJECT / USER / ADMIN + kb_document_permission）。
+5. ✅ 逻辑知识库管理（`kb_knowledge_base` + Milvus 集合绑定 + 嵌入模型路由）。
+6. ✅ 文档切片（FIXED_SIZE / PARAGRAPH 策略 + 异步分块事件）。
+7. ✅ 向量写入（Milvus：默认集合 + 每知识库独立集合；可配置跳过）。
+8. ✅ 分块任务日志（`kb_document_chunk_log` 记录各阶段耗时）。
+9. 🔧 文档版本管理（`current_version` 字段已预留，版本流转逻辑规划中）。
+10. 🔧 全文检索（ES/OpenSearch，Step4 接入）。
+11. 🔧 语义检索（Milvus 相似度搜索，Step4 接入）。
+12. 🔧 智能问答来源引用（Step4 RAG 问答）。
 
-### 4.2 智能问答能力
+### 4.2 智能问答能力（Step4 规划）
 
-系统必须支持：
+系统将支持（当前全部为规划能力）：
 
-1. 自然语言提问。
-2. 基于权限过滤的检索。
-3. 基于来源的答案生成。
-4. 无答案兜底。
-5. 用户反馈收集。
-6. 多轮对话。
+1. 🔧 自然语言提问。
+2. 🔧 基于权限过滤的检索。
+3. 🔧 基于来源的答案生成。
+4. 🔧 无答案兜底（"未找到明确依据"）。
+5. 🔧 用户反馈收集。
+6. 🔧 多轮对话。
 
 ### 4.3 会议预约能力
 
@@ -139,46 +146,65 @@
 5. Markdown 预览组件。
 6. 图表组件。
 
-### 5.2 后端
+### 5.2 后端（一期已落地）
 
-1. Spring Boot 或同类型后端框架。
-2. RESTful API。
-3. JWT 或 Session 认证。
-4. RBAC 权限模型。
-5. 全局异常处理。
-6. 操作日志。
+1. Spring Boot 3（`KnowledgeAiApplication`）。
+2. MyBatis-Plus（BaseMapper + 分页插件 + 逻辑删除）。
+3. RESTful API + 统一 `Result` 响应（`frameworks-common`）。
+4. JWT 认证（`enterprise-gateway-service`）。
+5. RBAC 权限模型。
+6. Spring `@TransactionalEventListener` + `@Async` 替代消息队列（最小实现）。
+7. 全局异常处理（`BizException` + `ErrorCode` 枚举）。
+8. 操作日志。
 
-### 5.3 数据库与存储
+### 5.3 数据库与存储（一期已落地 + 规划）
 
-1. MySQL 或 PostgreSQL。
-2. Redis。
-3. MinIO 或对象存储。
-4. Elasticsearch / OpenSearch 用于全文检索。
-5. Milvus / pgvector 用于向量检索。
-6. RabbitMQ / Kafka / RocketMQ 用于异步任务。
+| 组件 | 状态 | 说明 |
+|------|------|------|
+| MySQL | ✅ 已落地 | `enterprise_knowledge_ai` 库，6 张表（见 `schema.sql`） |
+| Milvus | ✅ 已落地 | 向量存储：默认集合 + 每知识库独立集合 |
+| 本地磁盘 | ✅ 已落地 | 文件上传目录 `./data/kb-uploads/` |
+| Apache Tika | ✅ 已落地 | 文档解析（PDF/Word/Excel/PPT/HTML/TXT） |
+| Redis | 🔧 规划 | 缓存、分布式锁 |
+| MinIO / 对象存储 | 🔧 规划 | 替代本地磁盘 |
+| Elasticsearch / OpenSearch | 🔧 Step4 | 全文检索 |
+| RabbitMQ / Kafka | 🔧 规划 | 替代 Spring Event 异步
 
-## 6. 推荐模块结构
+## 6. 项目结构（一期已落地）
 
-### 后端结构
+### 后端微服务
 
 ```text
-backend
-  auth
-  user
-  department
-  role
-  permission
-  knowledge
-  aiqa
-  calendar
-  meeting
-  todo
-  task
-  notification
-  dashboard
-  system
-  common
-  infrastructure
+EnterpriseKnowledgeWorkspace/
+├── frameworks/                            # 公共基础框架
+│   └── common/
+│       └── common-spring-boot-starter/    # Result、ErrorCode、BizException
+│       └── web-spring-boot-starter/       # 全局异常、traceId（规划）
+├── enterprise-gateway-service/            # 网关 + 认证权限（:8080）
+│   └── src/main/java/com/zjl/
+│       ├── config/        # 网关/安全配置
+│       ├── domain/        # SysUser、SysRole、SysDept 等
+│       ├── filter/        # JWT、限流、TraceId 过滤器
+│       ├── repository/    # MyBatis-Plus Mapper
+│       ├── security/      # JWT 工具、RBAC、密码加密
+│       └── web/           # AuthController、SystemAdminController
+├── enterprise-knowledge-ai-service/       # 知识库 + AI（:8081）
+│   └── src/main/java/com/zjl/knowledge/
+│       ├── chunk/         # 分块策略（FIXED_SIZE / PARAGRAPH）
+│       ├── config/        # Milvus/Kb/MyBatis-Plus 配置
+│       ├── domain/        # DocumentStatus、PermissionType 等枚举
+│       ├── dto/           # 请求/响应 DTO
+│       ├── embedding/     # 向量化服务（PlaceholderEmbedding）
+│       ├── entity/        # KbDocument、KbKnowledgeBase 等 ORM 实体
+│       ├── event/         # DocumentChunkRequestedEvent + 异步监听器
+│       ├── mapper/        # MyBatis-Plus Mapper + XML SQL
+│       ├── milvus/        # MilvusVectorWriter、CollectionHelper 等
+│       ├── service/       # 服务接口 + impl
+│       ├── token/         # Token 计数
+│       ├── util/          # SHA-256 哈希工具
+│       └── web/           # Controller + UserContext 拦截器
+├── enterprise-workbench-service/          # 工作台聚合（骨架）
+└── enterprise-collaboration-service/      # 协同业务（骨架）
 ```
 
 ### 前端结构
@@ -214,33 +240,35 @@ frontend
 5. sys_permission
 6. sys_role_permission
 7. kb_category
-8. kb_document
-9. kb_document_version
-10. kb_document_chunk
-11. kb_document_permission
-12. meeting_room
-13. meeting
-14. meeting_attendee
-15. meeting_minutes
-16. todo_item
-17. task
-18. task_member
-19. task_comment
-20. notification
-21. operation_log
+8. kb_knowledge_base
+9. kb_document
+10. kb_document_version
+11. kb_document_chunk
+12. kb_document_chunk_log
+13. kb_document_permission
+14. meeting_room
+15. meeting
+16. meeting_attendee
+17. meeting_minutes
+18. todo_item
+19. task
+20. task_member
+21. task_comment
+22. notification
+23. operation_log
 
 ## 8. 重要业务流程
 
-### 8.1 文档上传流程
+### 8.1 文档上传与分块流程（与当前后端一致）
 
-1. 用户上传文档。
-2. 系统保存原始文件。
-3. 系统创建文档元数据。
-4. 系统解析文本内容。
-5. 系统将文档切分为多个 chunk。
-6. 系统写入全文索引和向量索引。
-7. 系统保存 chunk 与 vector_id 的映射关系。
-8. 文档处理成功后可被搜索和问答引用。
+1. 用户上传文档（`multipart`：`meta` + `file`），可选 `meta.kbId` 绑定知识库。
+2. 系统保存原始文件到本地目录，文档状态为 **PENDING**。
+3. 用户调用 **start-chunk**，状态变为 **RUNNING**，事务提交后异步执行分块。
+4. 系统使用 **Tika** 从磁盘解析正文，按策略分块并调用 **EmbeddingService** 生成向量。
+5. 系统在事务内删除旧切片、写入新 `kb_document_chunk`、更新文档 **SUCCESS** 与摘要等。
+6. 系统向 **Milvus** 写入向量（集合由 `kb_id` 路由，否则默认集合）；失败则文档 **FAILED** 并记录 **kb_document_chunk_log**。
+7. `vector_id` 与 Milvus 行主键 `id`（chunk 主键）对齐。
+8. 全文检索与 RAG 问答为后续步骤（见 `docs/step3-summary.md` / Step4）。
 
 ### 8.2 智能问答流程
 
@@ -290,11 +318,11 @@ frontend
 
 ### 9.3 知识库测试
 
-1. 文档上传正常。
-2. 文档解析正常。
-3. 文档搜索正常。
-4. 文档版本管理正常。
-5. 文档权限过滤正常。
+1. 文档上传正常（`PENDING`）。
+2. `start-chunk` / `execute-chunk` 与异步分块正常（`SUCCESS`/`FAILED`、chunk 日志）。
+3. 文档标题搜索与列表权限过滤正常。
+4. 逻辑知识库 CRUD、Milvus 多集合路由正常（见 `docs/step3-summary.md`）。
+5. 文档版本管理（若表已落地）与权限扩展用例。
 
 ### 9.4 AI 测试
 

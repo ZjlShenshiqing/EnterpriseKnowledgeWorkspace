@@ -9,7 +9,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 从请求头解析用户上下文。
+ * 从请求头解析用户上下文
  */
 @Component
 public class UserContextInterceptor implements HandlerInterceptor {

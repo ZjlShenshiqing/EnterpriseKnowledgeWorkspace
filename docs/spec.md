@@ -60,9 +60,11 @@
    - 项目成员可见
    - 指定人员可见
    - 管理员可见
-7. 支持文档版本管理。
-8. 支持文档审核流程。
-9. 支持收藏、评论、点赞等轻量互动。
+7. 🔧 支持文档版本管理（`current_version` 字段已预留，一期暂缓）。
+8. 🔧 支持文档审核流程（`REVIEWING`/`PUBLISHED`/`REJECTED` 状态枚举已预留，审核逻辑一期暂缓）。
+9. 🔧 支持收藏、评论、点赞等轻量互动（一期暂缓）。
+
+> 当前实现进度见 `docs/step3-summary.md` 和 `docs/knowledge-service-architecture.md`。
 
 ## 3.3 智能问答
 

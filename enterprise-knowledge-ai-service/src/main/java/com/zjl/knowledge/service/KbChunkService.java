@@ -11,7 +11,7 @@ import com.zjl.knowledge.web.UserContext;
 import java.util.List;
 
 /**
- * 知识文档 Chunk 服务（对齐「分块 + 向量同步」能力）。
+ * 知识文档 Chunk 服务（对齐「分块 + 向量同步」能力）
  */
 public interface KbChunkService {
 

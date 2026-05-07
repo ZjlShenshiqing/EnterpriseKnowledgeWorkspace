@@ -7,13 +7,19 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Milvus 向量存储实现（行为对齐参考 {@code MilvusVectorStoreService}，委托 {@link MilvusVectorWriter}）。
+ * {@link VectorStoreService} 的 Milvus 实现
+ *
+ * <p>纯委托层，将接口调用转发给 {@link MilvusVectorWriter}，
+ * 方法语义与底层写入器一一对应</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MilvusVectorStoreService implements VectorStoreService {
 
+    /**
+     * Milvus 底层写入器
+     */
     private final MilvusVectorWriter milvusVectorWriter;
 
     @Override

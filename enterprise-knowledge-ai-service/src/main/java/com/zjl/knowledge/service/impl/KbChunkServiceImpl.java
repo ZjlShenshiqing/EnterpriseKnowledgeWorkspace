@@ -13,18 +13,16 @@ import com.zjl.knowledge.dto.chunk.KbChunkCreateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkPageRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkUpdateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkVO;
-import com.zjl.knowledge.embedding.EmbeddingService;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.entity.KbDocumentPermission;
 import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
-import com.zjl.knowledge.milvus.ChunkVectorStore;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.DocumentVisibilityService;
 import com.zjl.knowledge.service.KbChunkService;
-import com.zjl.knowledge.service.KbMilvusRoutingService;
+import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.token.TokenCounterService;
 import com.zjl.knowledge.util.ContentHashUtil;
 import com.zjl.knowledge.web.UserContext;
@@ -52,13 +50,10 @@ public class KbChunkServiceImpl implements KbChunkService {
     private final KbDocumentChunkMapper chunkMapper;
     private final KbDocumentMapper documentMapper;
     private final KbDocumentPermissionMapper permissionMapper;
-    private final EmbeddingService embeddingService;
+    private final VectorSyncService vectorSyncService;
     private final TokenCounterService tokenCounterService;
-    private final ChunkVectorStore chunkVectorStore;
     private final TransactionTemplate transactionTemplate;
     private final DocumentVisibilityService documentVisibilityService;
-
-    private final KbMilvusRoutingService kbMilvusRoutingService;
 
     @Override
     public IPage<KbChunkVO> pageQuery(Long docId, KbChunkPageRequest requestParam, UserContext user) {
@@ -127,7 +122,7 @@ public class KbChunkServiceImpl implements KbChunkService {
                 .eq(KbDocument::getId, docId)
                 .setSql("chunk_count = chunk_count + 1"));
 
-        syncChunkToVector(document, chunk);
+        vectorSyncService.syncChunk(document, chunk);
         return toVo(chunk);
     }
 
@@ -203,7 +198,6 @@ public class KbChunkServiceImpl implements KbChunkService {
                 .setSql("chunk_count = chunk_count + " + chunkList.size()));
 
         if (writeVector) {
-            String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
             List<VectorDocChunk> vectorChunks = chunkList.stream()
                     .map(each -> VectorDocChunk.builder()
                             .chunkId(String.valueOf(each.getId()))
@@ -212,8 +206,12 @@ public class KbChunkServiceImpl implements KbChunkService {
                             .build())
                     .collect(Collectors.toList());
             if (!vectorChunks.isEmpty()) {
-                attachEmbeddings(vectorChunks, document);
-                chunkVectorStore.indexDocumentChunks(milvusCollection, docId, vectorChunks);
+                List<String> texts = vectorChunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
+                List<List<Float>> vecs = vectorSyncService.embedBatch(texts, document);
+                for (int i = 0; i < vectorChunks.size(); i++) {
+                    vectorChunks.get(i).setEmbedding(VectorSyncService.toArray(vecs.get(i)));
+                }
+                vectorSyncService.indexDocumentChunks(document, vectorChunks);
             }
         }
     }
@@ -251,18 +249,7 @@ public class KbChunkServiceImpl implements KbChunkService {
 
         log.info("更新 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
 
-        String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
-        float[] embedding = toArray(embedContent(newContent, kbMilvusRoutingService.embeddingModelOrDefault(document)));
-        chunkVectorStore.updateChunk(
-                milvusCollection,
-                docId,
-                VectorDocChunk.builder()
-                        .chunkId(String.valueOf(chunkId))
-                        .content(newContent)
-                        .index(chunk.getChunkIndex())
-                        .embedding(embedding)
-                        .build()
-        );
+        vectorSyncService.updateChunk(document, chunk);
     }
 
     @Override
@@ -287,8 +274,7 @@ public class KbChunkServiceImpl implements KbChunkService {
                 .setSql("chunk_count = CASE WHEN chunk_count > 0 THEN chunk_count - 1 ELSE 0 END"));
 
         log.info("删除 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
-        String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
-        chunkVectorStore.deleteChunkById(milvusCollection, String.valueOf(chunkId));
+        vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
     }
 
     @Override
@@ -320,10 +306,9 @@ public class KbChunkServiceImpl implements KbChunkService {
         log.info("{}Chunk 成功, docId={}, chunkId={}", enabled ? "启用" : "禁用", docId, chunkId);
 
         if (enabled) {
-            syncChunkToVector(document, chunk);
+            vectorSyncService.syncChunk(document, chunk);
         } else {
-            String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
-            chunkVectorStore.deleteChunkById(milvusCollection, String.valueOf(chunkId));
+            vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
         }
     }
 
@@ -373,7 +358,6 @@ public class KbChunkServiceImpl implements KbChunkService {
         }
 
         Long uid = user.getUserId();
-        String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
         if (enabled) {
             List<VectorDocChunk> vectorChunks = needUpdateChunks.stream()
                     .map(c -> VectorDocChunk.builder()
@@ -382,7 +366,11 @@ public class KbChunkServiceImpl implements KbChunkService {
                             .index(c.getChunkIndex())
                             .build())
                     .collect(Collectors.toList());
-            attachEmbeddings(vectorChunks, document);
+            List<String> texts = vectorChunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
+            List<List<Float>> vecs = vectorSyncService.embedBatch(texts, document);
+            for (int i = 0; i < vectorChunks.size(); i++) {
+                vectorChunks.get(i).setEmbedding(VectorSyncService.toArray(vecs.get(i)));
+            }
 
             transactionTemplate.executeWithoutResult(status -> {
                 chunkMapper.update(null,
@@ -392,7 +380,7 @@ public class KbChunkServiceImpl implements KbChunkService {
                                 .set(KbDocumentChunk::getUpdatedBy, uid)
                                 .set(KbDocumentChunk::getUpdatedAt, LocalDateTime.now())
                 );
-                chunkVectorStore.indexDocumentChunks(milvusCollection, docId, vectorChunks);
+                vectorSyncService.indexDocumentChunks(document, vectorChunks);
             });
         } else {
             List<String> idStrs = needUpdateIds.stream().map(String::valueOf).collect(Collectors.toList());
@@ -404,7 +392,7 @@ public class KbChunkServiceImpl implements KbChunkService {
                                 .set(KbDocumentChunk::getUpdatedBy, uid)
                                 .set(KbDocumentChunk::getUpdatedAt, LocalDateTime.now())
                 );
-                chunkVectorStore.deleteChunksByIds(milvusCollection, idStrs);
+                vectorSyncService.deleteChunkVectors(document, idStrs);
             });
         }
 
@@ -493,61 +481,11 @@ public class KbChunkServiceImpl implements KbChunkService {
         }
     }
 
-    private void syncChunkToVector(KbDocument document, KbDocumentChunk chunk) {
-        String embeddingModel = kbMilvusRoutingService.embeddingModelOrDefault(document);
-        List<Float> embedding = embedContent(chunk.getChunkText(), embeddingModel);
-        float[] vector = toArray(embedding);
-        VectorDocChunk vc = VectorDocChunk.builder()
-                .index(chunk.getChunkIndex())
-                .content(chunk.getChunkText())
-                .chunkId(String.valueOf(chunk.getId()))
-                .embedding(vector)
-                .build();
-        String milvusCollection = kbMilvusRoutingService.collectionForVectorWrite(document);
-        chunkVectorStore.indexDocumentChunks(milvusCollection, document.getId(), List.of(vc));
-        log.debug("同步 Chunk 到向量库成功, docId={}, chunkId={}", document.getId(), chunk.getId());
-    }
-
-    private void attachEmbeddings(List<VectorDocChunk> chunks, KbDocument document) {
-        if (chunks == null || chunks.isEmpty()) {
-            return;
-        }
-        String embeddingModel = kbMilvusRoutingService.embeddingModelOrDefault(document);
-        List<String> texts = chunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
-        List<List<Float>> vectors = embedBatch(texts, embeddingModel);
-        if (vectors == null || vectors.size() != chunks.size()) {
-            throw new BizException(ErrorCode.SYSTEM_ERROR, "向量结果数量不匹配");
-        }
-        for (int i = 0; i < chunks.size(); i++) {
-            chunks.get(i).setEmbedding(toArray(vectors.get(i)));
-        }
-    }
-
-    private List<Float> embedContent(String content, String embeddingModel) {
-        return StringUtils.hasText(embeddingModel)
-                ? embeddingService.embed(content, embeddingModel)
-                : embeddingService.embed(content);
-    }
-
-    private List<List<Float>> embedBatch(List<String> texts, String embeddingModel) {
-        return StringUtils.hasText(embeddingModel)
-                ? embeddingService.embedBatch(texts, embeddingModel)
-                : embeddingService.embedBatch(texts);
-    }
-
     private Integer resolveTokenCount(String content) {
         if (!StringUtils.hasText(content)) {
             return 0;
         }
         return tokenCounterService.countTokens(content);
-    }
-
-    private static float[] toArray(List<Float> list) {
-        float[] arr = new float[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            arr[i] = list.get(i);
-        }
-        return arr;
     }
 
     private KbChunkVO toVo(KbDocumentChunk e) {

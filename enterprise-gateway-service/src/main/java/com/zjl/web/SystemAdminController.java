@@ -1,8 +1,8 @@
 package com.zjl.web;
 
-import com.zjl.common.response.ApiResponse;
+import com.zjl.common.response.Result;
+import com.zjl.common.response.Results;
 import com.zjl.common.exception.BizException;
-import com.zjl.common.trace.TraceIdHolder;
 import com.zjl.domain.SysDept;
 import com.zjl.domain.SysPermission;
 import com.zjl.domain.SysRole;
@@ -16,7 +16,6 @@ import com.zjl.service.OpLogService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import org.slf4j.MDC;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.annotation.Validated;
@@ -111,10 +110,10 @@ public class SystemAdminController {
      * @return 用户列表
      */
     @GetMapping("/users")
-    public Mono<ApiResponse<List<SysUser>>> users() {
+    public Mono<Result<List<SysUser>>> users() {
         return Mono.fromCallable(userRepository::findAll)
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(list -> ApiResponse.success(list, traceId()));
+                .map(list -> Results.success(list));
     }
 
     /**
@@ -125,7 +124,7 @@ public class SystemAdminController {
      * @return 创建后的用户
      */
     @PostMapping("/users")
-    public Mono<ApiResponse<SysUser>> createUser(@Valid @RequestBody CreateUserRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
+    public Mono<Result<SysUser>> createUser(@Valid @RequestBody CreateUserRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
         return Mono.fromCallable(() -> {
                     if (userRepository.findByUsername(req.username()).isPresent()) {
                         throw new BizException(40000, "用户名已存在");
@@ -144,7 +143,7 @@ public class SystemAdminController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(saved -> opLogService
                         .log(UserContext.userId(), UserContext.username(), "CREATE_USER", request, saved.getUsername())
-                        .thenReturn(ApiResponse.success(saved, traceId())));
+                        .thenReturn(Results.success(saved)));
     }
 
     /**
@@ -156,7 +155,7 @@ public class SystemAdminController {
      * @return 更新后的用户
      */
     @PutMapping("/users/{id}/roles")
-    public Mono<ApiResponse<SysUser>> updateUserRoles(
+    public Mono<Result<SysUser>> updateUserRoles(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserRolesRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
@@ -172,7 +171,7 @@ public class SystemAdminController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(saved -> opLogService
                         .log(UserContext.userId(), UserContext.username(), "UPDATE_USER_ROLES", request, "userId=" + id)
-                        .thenReturn(ApiResponse.success(saved, traceId())));
+                        .thenReturn(Results.success(saved)));
     }
 
     /**
@@ -190,10 +189,10 @@ public class SystemAdminController {
      * @return 角色列表
      */
     @GetMapping("/roles")
-    public Mono<ApiResponse<List<SysRole>>> roles() {
+    public Mono<Result<List<SysRole>>> roles() {
         return Mono.fromCallable(roleRepository::findAll)
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(list -> ApiResponse.success(list, traceId()));
+                .map(list -> Results.success(list));
     }
 
     /**
@@ -204,7 +203,7 @@ public class SystemAdminController {
      * @return 创建后的角色
      */
     @PostMapping("/roles")
-    public Mono<ApiResponse<SysRole>> createRole(@Valid @RequestBody CreateRoleRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
+    public Mono<Result<SysRole>> createRole(@Valid @RequestBody CreateRoleRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
         return Mono.fromCallable(() -> {
                     if (roleRepository.findByCode(req.code()).isPresent()) {
                         throw new BizException(40000, "角色 code 已存在");
@@ -223,7 +222,7 @@ public class SystemAdminController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(saved -> opLogService
                         .log(UserContext.userId(), UserContext.username(), "CREATE_ROLE", request, saved.getCode())
-                        .thenReturn(ApiResponse.success(saved, traceId())));
+                        .thenReturn(Results.success(saved)));
     }
 
     /**
@@ -240,10 +239,10 @@ public class SystemAdminController {
      * @return 权限列表
      */
     @GetMapping("/permissions")
-    public Mono<ApiResponse<List<SysPermission>>> permissions() {
+    public Mono<Result<List<SysPermission>>> permissions() {
         return Mono.fromCallable(permissionRepository::findAll)
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(list -> ApiResponse.success(list, traceId()));
+                .map(list -> Results.success(list));
     }
 
     /**
@@ -254,7 +253,7 @@ public class SystemAdminController {
      * @return 创建后的权限
      */
     @PostMapping("/permissions")
-    public Mono<ApiResponse<SysPermission>> createPermission(@Valid @RequestBody CreatePermissionRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
+    public Mono<Result<SysPermission>> createPermission(@Valid @RequestBody CreatePermissionRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
         return Mono.fromCallable(() -> {
                     if (permissionRepository.findByCode(req.code()).isPresent()) {
                         throw new BizException(40000, "权限 code 已存在");
@@ -267,7 +266,7 @@ public class SystemAdminController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(saved -> opLogService
                         .log(UserContext.userId(), UserContext.username(), "CREATE_PERMISSION", request, saved.getCode())
-                        .thenReturn(ApiResponse.success(saved, traceId())));
+                        .thenReturn(Results.success(saved)));
     }
 
     /**
@@ -284,10 +283,10 @@ public class SystemAdminController {
      * @return 部门列表
      */
     @GetMapping("/depts")
-    public Mono<ApiResponse<List<SysDept>>> depts() {
+    public Mono<Result<List<SysDept>>> depts() {
         return Mono.fromCallable(deptRepository::findAll)
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(list -> ApiResponse.success(list, traceId()));
+                .map(list -> Results.success(list));
     }
 
     /**
@@ -298,7 +297,7 @@ public class SystemAdminController {
      * @return 创建后的部门
      */
     @PostMapping("/depts")
-    public Mono<ApiResponse<SysDept>> createDept(@Valid @RequestBody CreateDeptRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
+    public Mono<Result<SysDept>> createDept(@Valid @RequestBody CreateDeptRequest req, org.springframework.http.server.reactive.ServerHttpRequest request) {
         return Mono.fromCallable(() -> {
                     if (deptRepository.findByName(req.name()).isPresent()) {
                         throw new BizException(40000, "部门名称已存在");
@@ -311,16 +310,7 @@ public class SystemAdminController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(saved -> opLogService
                         .log(UserContext.userId(), UserContext.username(), "CREATE_DEPT", request, saved.getName())
-                        .thenReturn(ApiResponse.success(saved, traceId())));
-    }
-
-    /**
-     * 从 MDC 获取 traceId。
-     *
-     * @return traceId
-     */
-    private String traceId() {
-        return MDC.get(TraceIdHolder.key());
+                        .thenReturn(Results.success(saved)));
     }
 }
 

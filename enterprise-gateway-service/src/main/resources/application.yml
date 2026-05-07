@@ -50,7 +50,7 @@ spring:
 
 server:
   # 网关端口
-  port: 8085
+  port: 8086
 
 management:
   # Actuator 端点暴露配置

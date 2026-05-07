@@ -11,10 +11,13 @@ erDiagram
     SYS_PERMISSION ||--o{ SYS_ROLE_PERMISSION : included
 
     KB_CATEGORY ||--o{ KB_DOCUMENT : contains
+    KB_KNOWLEDGE_BASE ||--o{ KB_DOCUMENT : optional_kb
     SYS_USER ||--o{ KB_DOCUMENT : uploads
-    KB_DOCUMENT ||--o{ KB_DOCUMENT_VERSION : has
+    SYS_USER ||--o{ KB_KNOWLEDGE_BASE : owns
     KB_DOCUMENT ||--o{ KB_DOCUMENT_CHUNK : split_into
+    KB_DOCUMENT ||--o{ KB_DOCUMENT_CHUNK_LOG : chunk_runs
     KB_DOCUMENT ||--o{ KB_DOCUMENT_PERMISSION : protected_by
+    KB_DOCUMENT_VERSION ||--o{ KB_DOCUMENT : "规划中"
 
     MEETING_ROOM ||--o{ MEETING : booked_by
     SYS_USER ||--o{ MEETING : creates
@@ -139,32 +142,57 @@ erDiagram
 9. updated_at：更新时间。
 10. deleted：是否删除。
 
+### 2.7.1 kb_knowledge_base 逻辑知识库表
+
+用途：描述一个知识库及其对应的 **Milvus 集合名**、可选嵌入模型标识；文档可通过 `kb_id` 关联。
+
+字段（与 `schema.sql` 一致，可按迁移脚本扩展）：
+
+1. id：主键。
+2. name：展示名称（唯一性由业务校验）。
+3. embedding_model：可选；为空时使用全局嵌入配置。
+4. collection_name：Milvus 集合名（创建库时服务端建集并加载）。
+5. owner_id：拥有者用户 ID。
+6. created_at / updated_at：时间戳。
+7. deleted：逻辑删除。
+
 ### 2.8 kb_document 知识文档表
 
-用途：存储知识文档元数据和解析文本。
+用途：存储知识文档元数据、解析文本、分块与摄取状态。
 
-字段：
+字段（与 `schema.sql` 和 `KbDocument` 实体完全对齐）：
 
-1. id：文档 ID。
+1. id：文档 ID（雪花 ID）。
 2. title：文档标题。
 3. category_id：分类 ID。
-4. owner_id：上传人 ID。
-5. department_id：所属部门 ID。
-6. file_name：原始文件名。
-7. file_url：文件存储地址。
-8. file_type：文件类型。
-9. file_size：文件大小。
-10. summary：文档摘要。
-11. content_text：解析后的正文。
-12. tags：标签。
-13. permission_type：权限类型。
-14. status：文档状态。
-15. current_version：当前版本号。
-16. created_at：创建时间。
-17. updated_at：更新时间。
-18. deleted：是否删除。
+4. kb_id：可选；绑定 `kb_knowledge_base.id`，用于路由 Milvus 集合与嵌入模型。
+5. owner_id：上传人 ID。
+6. department_id：所属部门 ID。
+7. file_name：原始文件名。
+8. file_url：文件存储路径（本地落盘路径）。
+9. file_type：MIME/探测类型。
+10. file_size：文件大小（字节）。
+11. summary：摘要（分块成功后由正文前 200 字生成）。
+12. content_text：解析后的正文全量。
+13. tags：标签。
+14. permission_type：权限类型（ALL / DEPARTMENT / PROJECT / USER / ADMIN）。
+15. status：文档状态（摄取主路径：**PENDING → RUNNING → SUCCESS / FAILED**；扩展：DRAFT / PARSING / REVIEWING / PUBLISHED / REJECTED / OFFLINE）。
+16. current_version：当前版本号（预留，暂未落地版本流转）。
+17. chunk_count：切片数量。
+18. enabled：是否启用（0=禁用 / 1=启用）。
+19. process_mode：处理模式（CHUNK / PIPELINE，当前仅 CHUNK 可用）。
+20. chunk_strategy：分块策略（FIXED_SIZE / PARAGRAPH）。
+21. chunk_config：分块参数 JSON。
+22. pipeline_id：Pipeline 定义 ID（PIPELINE 模式时使用，预留）。
+23. source_type：来源类型（FILE / URL）。
+24. source_location：URL 来源地址等。
+25. schedule_enabled：是否启用定时拉取（0/1，仅 URL 来源可用）。
+26. schedule_cron：定时 Cron 表达式。
+27. created_at / updated_at / deleted：时间戳与逻辑删除。
 
-### 2.9 kb_document_version 文档版本表
+### 2.9 kb_document_version 文档版本表（规划中）
+
+> ⚠️ **规划表**：`schema.sql` 中尚未包含此表，`kb_document.current_version` 字段已预留但版本流转逻辑未实现。以下字段为设计草案，实际落地时可能调整。
 
 用途：存储文档历史版本。
 
@@ -182,19 +210,30 @@ erDiagram
 
 ### 2.10 kb_document_chunk 文档切片表
 
-用途：存储文档切片，用于检索和智能问答。
+用途：存储文档切片文本与统计信息；`id`（字符串化）与 Milvus 主键 `id` 对齐。
 
-字段：
+字段（与当前 `schema.sql` 完全对齐）：
 
-1. id：切片 ID。
+1. id：切片主键（雪花 ID）。
 2. document_id：文档 ID。
 3. chunk_index：切片序号。
 4. chunk_text：切片文本。
-5. token_count：Token 数量。
-6. vector_id：向量库 ID。
-7. metadata_json：元数据。
-8. created_at：创建时间。
-9. updated_at：更新时间。
+5. content_hash：SHA-256 内容哈希。
+6. char_count：字符数。
+7. token_count：Token 数（估算）。
+8. vector_id：Milvus 主键引用（字符串，通常同 chunk.id）。
+9. enabled：是否启用（0/1）。
+10. metadata_json：扩展元数据 JSON。
+11. created_by：创建人 ID。
+12. updated_by：更新人 ID。
+13. created_at：创建时间。
+14. updated_at：更新时间。
+
+### 2.10.1 kb_document_chunk_log 分块任务日志表
+
+用途：每次文档分块/摄取任务一条记录，保存状态与各阶段耗时、错误信息，供接口分页查询。
+
+主要字段：document_id、status、process_mode、chunk_strategy、pipeline_id、chunk_count、各 duration 字段、error_message、started_at、ended_at 等（见 `schema.sql`）。
 
 ### 2.11 kb_document_permission 文档权限表
 

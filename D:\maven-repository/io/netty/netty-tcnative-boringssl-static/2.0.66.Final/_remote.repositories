@@ -1,0 +1,9 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu May 07 12:53:39 CST 2026
+netty-tcnative-boringssl-static-2.0.66.Final-windows-x86_64.jar>alimaven=
+netty-tcnative-boringssl-static-2.0.66.Final.jar>alimaven=
+netty-tcnative-boringssl-static-2.0.66.Final-linux-aarch_64.jar>alimaven=
+netty-tcnative-boringssl-static-2.0.66.Final-osx-aarch_64.jar>alimaven=
+netty-tcnative-boringssl-static-2.0.66.Final.pom>alimaven=
+netty-tcnative-boringssl-static-2.0.66.Final-osx-x86_64.jar>alimaven=
+netty-tcnative-boringssl-static-2.0.66.Final-linux-x86_64.jar>alimaven=

@@ -1,9 +1,9 @@
 package com.zjl.web;
 
-import com.zjl.common.response.ApiResponse;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
-import com.zjl.common.trace.TraceIdHolder;
+import com.zjl.common.response.Result;
+import com.zjl.common.response.Results;
 import com.zjl.domain.SysRole;
 import com.zjl.domain.SysUser;
 import com.zjl.repository.SysUserRepository;
@@ -11,7 +11,6 @@ import com.zjl.security.JwtUtil;
 import com.zjl.security.TokenBlacklistService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
@@ -92,7 +91,7 @@ public class AuthController {
      * @return token
      */
     @PostMapping("/login")
-    public Mono<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest req) {
+    public Mono<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest req) {
         return Mono.fromCallable(() -> userRepository.findByUsername(req.username()).orElse(null))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(user -> {
@@ -105,7 +104,7 @@ public class AuthController {
                     Map<String, Object> claims = new HashMap<>();
                     claims.put("authorities", authoritiesOf(user));
                     String token = jwt.issueToken(user.getId(), user.getUsername(), claims);
-                    return Mono.just(ApiResponse.success(new LoginResponse(token), traceId()));
+                    return Mono.just(Results.success(new LoginResponse(token)));
                 });
     }
 
@@ -116,13 +115,13 @@ public class AuthController {
      * @return 成功响应
      */
     @PostMapping("/logout")
-    public Mono<ApiResponse<Void>> logout(@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+    public Mono<Result<Void>> logout(@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
         String token = extractBearerToken(authorization);
         if (!StringUtils.hasText(token)) {
-            return Mono.just(ApiResponse.success(traceId()));
+            return Mono.just(Results.success());
         }
         return tokenBlacklistService.blacklist(token)
-                .thenReturn(ApiResponse.success(traceId()));
+                .thenReturn(Results.success());
     }
 
     /**
@@ -153,13 +152,5 @@ public class AuthController {
         return result;
     }
 
-    /**
-     * 从 MDC 获取 traceId。
-     *
-     * @return traceId
-     */
-    private String traceId() {
-        return MDC.get(TraceIdHolder.key());
-    }
 }
 

@@ -24,31 +24,70 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Milvus 向量写入/删除，字段与删除表达式对齐参考 {@code MilvusVectorStoreService}。
+ * Milvus 向量底层写入器
+ *
+ * <p>直接操作 {@link MilvusClientV2}，负责 Insert / Upsert / Delete 的
+ * 请求构建与执行，包含向量维度校验和 content 超长截断</p>
+ *
+ * <p>删除操作使用标量过滤表达式：
+ * 按文档删 {@code metadata["doc_id"] == "..."}；
+ * 按切片删 {@code id == "..."} 或 {@code id in [...]}</p>
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class MilvusVectorWriter {
 
+    /**
+     * Gson 实例，用于构建 metadata 和 embedding 的 JSON 结构
+     */
     private static final Gson GSON = new Gson();
 
+    /**
+     * Milvus VarChar 字段最大长度，超出的 content 会被截断
+     */
     private static final int CONTENT_MAX_LEN = 65535;
 
+    /**
+     * Milvus gRPC 客户端
+     */
     private final MilvusClientV2 milvusClient;
 
+    /**
+     * Milvus 配置属性
+     */
     private final MilvusProperties milvusProperties;
 
+    /**
+     * 解析集合名：传入空则回退到默认集合 {@code app.milvus.collection}
+     *
+     * @param collectionName 传入的集合名（可为空）
+     * @return 实际使用的集合名
+     */
     private String resolveCollection(String collectionName) {
         return StringUtils.hasText(collectionName) ? collectionName : milvusProperties.getCollection();
     }
 
+    /**
+     * 获取写入 metadata 时记录的集合名标识
+     *
+     * @param collectionName 传入的集合名
+     * @return 实际集合名
+     */
     private String resolvedCollectionNameForMetadata(String collectionName) {
         return resolveCollection(collectionName);
     }
 
     /**
-     * 批量写入文档切片向量（单请求插入多行）。
+     * 批量写入文档切片向量
+     *
+     * <p>单次 Insert 请求包含多行，每行含 id / content / metadata(JSON) / embedding 四个字段。
+     * content 超 {@value #CONTENT_MAX_LEN} 字符时自动截断</p>
+     *
+     * @param collectionName Milvus 集合名
+     * @param docId          文档 ID 字符串
+     * @param chunks         待写入的切片列表
+     * @throws BizException 向量为空、维度不匹配或 Milvus 操作失败时抛出
      */
     public void indexDocumentChunks(String collectionName, String docId, List<VectorDocChunk> chunks) {
         if (chunks == null || chunks.isEmpty()) {
@@ -91,7 +130,15 @@ public class MilvusVectorWriter {
     }
 
     /**
-     * 更新单条切片（Upsert，与参考一致）。
+     * 更新单条切片向量（Upsert）
+     *
+     * <p>同一主键的行会被覆盖，实现单条切片的向量更新。
+     * content 超长时同样会截断</p>
+     *
+     * @param collectionName Milvus 集合名
+     * @param docId          文档 ID 字符串
+     * @param chunk          待更新的切片
+     * @throws BizException 切片为空、主键缺失、向量校验失败或 Milvus 操作失败时抛出
      */
     public void upsertChunk(String collectionName, String docId, VectorDocChunk chunk) {
         if (chunk == null) {
@@ -133,7 +180,14 @@ public class MilvusVectorWriter {
     }
 
     /**
-     * 按文档删除全部向量：{@code metadata["doc_id"] == "..."}。
+     * 按文档 ID 删除该文档所有向量
+     *
+     * <p>使用标量过滤表达式 {@code metadata["doc_id"] == "docId"}，
+     * 删除前会转义双引号和反斜杠防止注入</p>
+     *
+     * @param collectionName Milvus 集合名
+     * @param docId          文档 ID 字符串
+     * @throws BizException Milvus 操作失败时抛出
      */
     public void deleteByDocumentId(String collectionName, String docId) {
         try {
@@ -152,7 +206,12 @@ public class MilvusVectorWriter {
     }
 
     /**
-     * 按主键 {@code id} 删除单条。
+     * 按切片主键删除单条向量
+     *
+     * <p>使用表达式 {@code id == "chunkId"}</p>
+     *
+     * @param collectionName Milvus 集合名
+     * @param chunkId        切片主键字符串
      */
     public void deleteByChunkId(String collectionName, String chunkId) {
         try {
@@ -171,7 +230,13 @@ public class MilvusVectorWriter {
     }
 
     /**
-     * 批量按主键 {@code id in [...]} 删除。
+     * 按切片主键列表批量删除向量
+     *
+     * <p>使用表达式 {@code id in ["chunkId1", "chunkId2", ...]}，
+     * 空列表直接返回不执行操作</p>
+     *
+     * @param collectionName Milvus 集合名
+     * @param chunkIds       切片主键字符串列表
      */
     public void deleteByChunkIds(String collectionName, List<String> chunkIds) {
         if (chunkIds == null || chunkIds.isEmpty()) {
@@ -195,6 +260,12 @@ public class MilvusVectorWriter {
         }
     }
 
+    /**
+     * 转义过滤表达式中的特殊字符，防止注入
+     *
+     * @param s 原始字符串
+     * @return 转义后的字符串
+     */
     private static String escapeFilterString(String s) {
         if (s == null) {
             return "";
@@ -202,6 +273,14 @@ public class MilvusVectorWriter {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
+    /**
+     * 校验向量非空且维度匹配
+     *
+     * @param chunk       切片载荷
+     * @param expectedDim 期望维度
+     * @return 校验通过的向量
+     * @throws BizException 向量为空或维度不匹配时抛出
+     */
     private static float[] requireVector(VectorDocChunk chunk, int expectedDim) {
         float[] vector = chunk.getEmbedding();
         if (vector == null || vector.length == 0) {
@@ -214,6 +293,12 @@ public class MilvusVectorWriter {
         return vector;
     }
 
+    /**
+     * 将 float 数组转为 Gson JsonArray
+     *
+     * @param v 向量数组
+     * @return JsonArray
+     */
     private static JsonArray toJsonArray(float[] v) {
         JsonArray arr = new JsonArray(v.length);
         for (float x : v) {
@@ -222,6 +307,17 @@ public class MilvusVectorWriter {
         return arr;
     }
 
+    /**
+     * 构建 Milvus metadata JSON 对象
+     *
+     * <p>固定包含 {@code collection_name}、{@code doc_id}、{@code chunk_index}，
+     * 同时合并 {@link VectorDocChunk#getMetadata()} 中的业务扩展字段</p>
+     *
+     * @param collectionNameForMeta 集合名
+     * @param docId                 文档 ID 字符串
+     * @param chunk                 切片载荷
+     * @return metadata JSON 对象
+     */
     private JsonObject buildMetadata(String collectionNameForMeta, String docId, VectorDocChunk chunk) {
         JsonObject metadata = new JsonObject();
         Map<String, Object> extra = chunk.getMetadata();

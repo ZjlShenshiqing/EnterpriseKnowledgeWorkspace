@@ -16,28 +16,44 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * 按集合名创建并加载 Milvus 集合。
+ * Milvus 集合创建与管理工具
  *
- * <p>Schema 对齐参考 {@code MilvusVectorStoreService}：主键 {@code id}（chunkId）、{@code content}、
- * {@code metadata}（JSON，含 doc_id / chunk_index / collection_name）、{@code embedding}。</p>
+ * <p>负责按 Schema 创建集合、建立 AUTOINDEX 索引并加载到内存。
+ * Schema 包含四个字段：{@code id}(VarChar PK)、{@code content}(VarChar)、
+ * {@code metadata}(JSON)、{@code embedding}(FloatVector + COSINE)</p>
  *
- * <p><b>注意</b>：若环境中已有旧版集合（仅 chunk_id / document_id / embedding），需删除旧集后由本类重建，
- * 否则字段不匹配会导致写入失败。</p>
+ * <p>若环境中已有旧版集合（仅 chunk_id / document_id / embedding），
+ * 需手动 drop 后由本类重建，否则字段不匹配会导致写入失败</p>
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class MilvusCollectionHelper {
 
+    /**
+     * content 字段最大字符数，与 Milvus VarChar 上限对齐
+     */
     private static final int CONTENT_MAX_LEN = 65535;
 
+    /**
+     * Milvus gRPC 客户端
+     */
     private final MilvusClientV2 milvusClient;
+
+    /**
+     * Milvus 配置属性
+     */
     private final MilvusProperties milvusProperties;
 
     /**
-     * 若集合不存在则创建并建立索引，然后加载到内存。
+     * 确保集合存在并已加载到内存
+     *
+     * <p>步骤：检查集合是否存在 → 不存在则创建（Schema + Index）→
+     * 同步 load 到内存。创建时使用 COSINE 度量 + AUTOINDEX 索引类型</p>
      *
      * @param collectionName 集合名，不可为空
+     * @throws IllegalArgumentException 集合名为空时抛出
+     * @throws BizException             集合操作失败时抛出，错误码 {@code VECTOR_WRITE_FAILED}
      */
     public void ensureCollectionLoaded(String collectionName) {
         if (!StringUtils.hasText(collectionName)) {

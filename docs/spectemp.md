@@ -11,6 +11,8 @@
 3. 数据库建模与接口开发依据。
 4. 后续测试用例、部署方案、验收标准的编写基础。
 
+**知识库与摄取**：下文若出现旧版文档状态（如仅 `DRAFT`/`PUBLISHED`）或简化表结构，以实现仓库为准；请对照 **`enterprise-knowledge-ai-service/src/main/resources/schema.sql`** 与 **`docs/step3-summary.md`**。
+
 ---
 
 # 文档 1：SDD 总体设计说明书

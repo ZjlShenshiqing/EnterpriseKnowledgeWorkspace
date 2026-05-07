@@ -33,6 +33,7 @@ flowchart TB
 |---|---|
 | frontend-web | PC Web 前端 |
 | backend-api | 后端主服务 |
+| enterprise-knowledge-ai-service | 知识库与摄取服务（默认 **8081**）；依赖 **MySQL**、**Milvus**、本地 **`app.kb.upload-dir`**；详见 `docs/step3-summary.md` |
 | mysql/postgresql | 关系型数据库 |
 | redis | 缓存 |
 | minio/oss | 文件存储 |
@@ -80,8 +81,8 @@ flowchart TB
 
 生产上线前应检查：
 
-1. 数据库迁移脚本已评审。
-2. 环境配置已核对。
+1. 数据库迁移脚本已评审（含 `enterprise-knowledge-ai-service/src/main/resources/db/*.sql` 与 `schema.sql` 差异；**Milvus 集合 Schema 变更**时需评估是否 drop 重建集合）。
+2. 环境配置已核对（`app.milvus.*`、`app.kb.upload-dir`、MySQL 库名等）。
 3. 密钥和密码已安全存储。
 4. 日志已开启。
 5. 监控已开启。

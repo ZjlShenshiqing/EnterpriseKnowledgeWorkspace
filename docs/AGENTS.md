@@ -28,33 +28,12 @@
 3. **enterprise-workbench-service**：工作台数据聚合服务。
 4. **enterprise-collaboration-service**：时间管理、会议预约、待办事项、任务协同、消息通知、数据看板等业务模块。
 
-```mermaid
-flowchart TB
-    User[企业内部用户] --> Frontend[PC Web 前端]
-    Frontend --> Gateway[网关与认证权限服务 enterprise-gateway-service]
+5、**frameworks** 为基础设施父工程（多模块），与常见 `*-spring-boot-starter` 拆分方式一致。当前已落地子模块：
 
-    Gateway --> KnowledgeAI[知识库智能问答服务 enterprise-knowledge-ai-service]
-    Gateway --> Workbench[工作台服务 enterprise-workbench-service]
-    Gateway --> Collaboration[协同业务服务 enterprise-collaboration-service]
+1. **frameworks-common-spring-boot-starter**：`ApiResponse`、`ErrorCode`、`BizException` 等无 Web 依赖的通用能力。
+2. **frameworks-web-spring-boot-starter**：全局异常、`traceId` 过滤器等 Web 能力（依赖 common starter）。
 
-    KnowledgeAI --> KnowledgeDB[(知识库数据库)]
-    KnowledgeAI --> FileStorage[文件存储 MinIO/OSS]
-    KnowledgeAI --> SearchEngine[全文检索 Elasticsearch/OpenSearch]
-    KnowledgeAI --> VectorDB[向量数据库 Milvus/pgvector]
-    KnowledgeAI --> LLM[大模型服务]
-
-    Collaboration --> BizDB[(协同业务数据库)]
-    Collaboration --> Redis[(Redis)]
-    Collaboration --> MQ[消息队列]
-
-    Workbench --> Auth
-    Workbench --> KnowledgeAI
-    Workbench --> Collaboration
-```
-
-
-
-
+业务服务只需依赖 **frameworks-web-spring-boot-starter**（会传递 common），**禁止**在多个服务中复制粘贴相同公共代码。后续可按需增加 `database`、`cache`、`log` 等子模块（与参考工程目录对齐）。
 
 ## 3. 架构规则
 
@@ -65,7 +44,7 @@ flowchart TB
 1. Controller 层：负责请求接收、参数校验、统一响应。
 2. Service 层：负责业务逻辑。
 3. Domain / Model 层：负责领域对象和业务模型。
-4. Repository / Mapper 层：负责数据库访问。
+4. Repository 层：负责数据库访问。
 5. Infrastructure 层：负责文件存储、检索引擎、向量库、消息队列、第三方接口等基础设施能力。
 
 ### 3.2 前端结构
@@ -153,9 +132,9 @@ flowchart TB
 }
 ```
 
-### 7.3 接口命名
+### 7接口命名
 
-接口尽量采用 RESTful 风格：
+接口采用 RESTful 风格：
 
 1. GET /api/kb/documents
 2. POST /api/kb/documents/upload
@@ -178,15 +157,25 @@ flowchart TB
 
 ## 9. 核心状态值
 
-### 文档状态
+### 文档状态（`DocumentStatus`，与 `kb_document.status` 字符串一致）
 
-1. DRAFT：草稿。
-2. PARSING：解析中。
-3. REVIEWING：审核中。
-4. PUBLISHED：已发布。
-5. REJECTED：审核拒绝。
-6. OFFLINE：已下架。
-7. FAILED：解析失败。
+**摄取与分块主路径（Step3 已落地）**：
+
+1. **PENDING**：已上传，等待 `start-chunk`。
+2. **RUNNING**：分块/向量任务执行中（勿并发改 Chunk）。
+3. **SUCCESS**：分块与向量写入成功。
+4. **FAILED**：解析、向量或持久化失败。
+
+**扩展 / 后续业务预留（枚举已定义，按需落库）**：
+
+5. DRAFT：草稿。
+6. PARSING：解析中。
+7. REVIEWING：审核中。
+8. PUBLISHED：已发布。
+9. REJECTED：审核拒绝。
+10. OFFLINE：已下架。
+
+> 流程与接口见 **`docs/step3-summary.md`**。
 
 ### 会议状态
 
@@ -214,15 +203,18 @@ flowchart TB
 
 ## 10. 开发优先级
 
-### P0
+### P0（Step3 已完成）
 
-1. 登录认证。
-2. 用户和权限管理。
-3. 知识库。
-4. 会议预约和冲突检测。
-5. 待办事项。
-6. 任务协同。
-7. 消息通知。
+1. ✅ 登录认证。
+2. ✅ 用户和权限管理。
+3. ✅ 知识库文档上传、分块（`PENDING` → `RUNNING` → `SUCCESS`/`FAILED`）。
+4. ✅ 逻辑知识库管理（`kb_knowledge_base` + Milvus 集合绑定 + 嵌入模型路由）。
+5. ✅ 文档权限控制（ALL / DEPARTMENT / PROJECT / USER / ADMIN + `kb_document_permission`）。
+6. ✅ 切片 CRUD + 启用/禁用 + 向量同步（Milvus Insert / Upsert / Delete）。
+7. 会议预约和冲突检测。
+8. 待办事项。
+9. 任务协同。
+10. 消息通知。
 
 ### P1
 

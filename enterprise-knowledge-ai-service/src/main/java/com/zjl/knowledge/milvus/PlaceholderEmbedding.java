@@ -6,8 +6,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 /**
- * 一期占位向量：由文本哈希展开为固定维度，保证可重复、可入库。
- * Step4 接入真实 embedding 后替换实现，不改变 Milvus 维度即可平滑切换。
+ * 一期占位向量生成工具
+ *
+ * <p>将文本 SHA-256 哈希展开为固定维度浮点数组并做 L2 归一化，
+ * 保证同一文本始终生成相同向量，可用于入库和检索。
+ * Step4 接入真实 embedding 模型后替换实现即可平滑切换</p>
  */
 public final class PlaceholderEmbedding {
 
@@ -15,11 +18,14 @@ public final class PlaceholderEmbedding {
     }
 
     /**
-     * 根据文本生成占位向量并做 L2 归一化。
+     * 根据文本生成占位向量并做 L2 归一化
      *
-     * @param text 输入文本
-     * @param dimension 向量维度
-     * @return 向量
+     * <p>算法：SHA-256(text) → 取每个字节值映射到 [-1, 1) 区间 →
+     * 循环填充至目标维度 → L2 归一化</p>
+     *
+     * @param text      输入文本
+     * @param dimension 目标向量维度
+     * @return 归一化后的向量
      */
     public static float[] fromText(String text, int dimension) {
         try {
@@ -38,9 +44,11 @@ public final class PlaceholderEmbedding {
     }
 
     /**
-     * L2 归一化。
+     * L2 归一化：使向量模长为 1
      *
-     * @param v 向量
+     * <p>零向量退化处理：置为 (1,0,0,...)</p>
+     *
+     * @param v 待归一化的向量，原地修改
      */
     private static void normalizeL2(float[] v) {
         double sum = 0;

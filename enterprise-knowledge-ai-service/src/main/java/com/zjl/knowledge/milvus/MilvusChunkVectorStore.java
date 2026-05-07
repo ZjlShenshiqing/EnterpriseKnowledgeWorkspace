@@ -6,12 +6,18 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Milvus 版 {@link ChunkVectorStore}，内部委托 {@link VectorStoreService}（与参考实现一致）。
+ * {@link ChunkVectorStore} 的 Milvus 实现
+ *
+ * <p>将 {@code Long} 类型的 documentId 转为 String 后委托
+ * {@link VectorStoreService}，适配业务层与底层向量存储之间的类型差异</p>
  */
 @Component
 @RequiredArgsConstructor
 public class MilvusChunkVectorStore implements ChunkVectorStore {
 
+    /**
+     * 底层向量存储服务
+     */
     private final VectorStoreService vectorStoreService;
 
     @Override
