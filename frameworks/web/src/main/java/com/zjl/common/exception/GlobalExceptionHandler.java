@@ -1,10 +1,9 @@
 package com.zjl.common.exception;
 
-import com.zjl.common.api.ApiResponse;
 import com.zjl.common.enums.ErrorCode;
-import com.zjl.common.trace.TraceIdHolder;
+import com.zjl.common.response.Result;
+import com.zjl.common.response.Results;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.MDC;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,7 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * 全局异常处理器，将异常统一映射为 ApiResponse。
+ * 全局异常处理器，将异常统一映射为 {@link Result}。
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,8 +23,8 @@ public class GlobalExceptionHandler {
      * @return 标准失败响应
      */
     @ExceptionHandler(BizException.class)
-    public ApiResponse<Void> handleBizException(BizException ex) {
-        return ApiResponse.failure(ex.getCode(), ex.getMessage(), traceId());
+    public Result<Void> handleBizException(BizException ex) {
+        return Results.failure(ex);
     }
 
     /**
@@ -40,8 +39,8 @@ public class GlobalExceptionHandler {
             ConstraintViolationException.class,
             HttpMessageNotReadableException.class
     })
-    public ApiResponse<Void> handleValidationException(Exception ex) {
-        return ApiResponse.failure(ErrorCode.PARAM_INVALID.getCode(), ErrorCode.PARAM_INVALID.getMessage(), traceId());
+    public Result<Void> handleValidationException(Exception ex) {
+        return Results.failure(String.valueOf(ErrorCode.PARAM_INVALID.getCode()), ErrorCode.PARAM_INVALID.getMessage());
     }
 
     /**
@@ -51,16 +50,7 @@ public class GlobalExceptionHandler {
      * @return 标准失败响应
      */
     @ExceptionHandler(Exception.class)
-    public ApiResponse<Void> handleUnknownException(Exception ex) {
-        return ApiResponse.failure(ErrorCode.SYSTEM_ERROR.getCode(), ErrorCode.SYSTEM_ERROR.getMessage(), traceId());
-    }
-
-    /**
-     * 从 MDC 中读取 traceId。
-     *
-     * @return 当前请求 traceId
-     */
-    private String traceId() {
-        return MDC.get(TraceIdHolder.key());
+    public Result<Void> handleUnknownException(Exception ex) {
+        return Results.failure(String.valueOf(ErrorCode.SYSTEM_ERROR.getCode()), ErrorCode.SYSTEM_ERROR.getMessage());
     }
 }

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjl.knowledge.mapper.KbDocumentMapper">
+
+    <select id="selectPageVisible" resultType="com.zjl.knowledge.entity.KbDocument">
+        SELECT d.id,
+               d.title,
+               d.category_id,
+               d.owner_id,
+               d.department_id,
+               d.file_name,
+               d.file_url,
+               d.file_type,
+               d.file_size,
+               d.summary,
+               d.tags,
+               d.permission_type,
+               d.status,
+               d.current_version,
+               d.created_at,
+               d.updated_at,
+               d.deleted
+        FROM kb_document d
+        WHERE d.deleted = 0
+          AND (
+            d.owner_id = #{userId}
+                OR d.permission_type = 'ALL'
+                OR (d.permission_type = 'DEPARTMENT'
+                AND #{deptId} IS NOT NULL
+                AND d.department_id IS NOT NULL
+                AND d.department_id = #{deptId})
+                OR (d.permission_type = 'ADMIN' AND #{admin} = 1)
+                OR EXISTS (SELECT 1
+                           FROM kb_document_permission p
+                           WHERE p.document_id = d.id
+                             AND d.permission_type = 'PROJECT'
+                             AND #{projectId} IS NOT NULL
+                             AND p.permission_target_type = 'PROJECT'
+                             AND p.permission_target_id = #{projectId})
+                OR EXISTS (SELECT 1
+                           FROM kb_document_permission p2
+                           WHERE p2.document_id = d.id
+                             AND d.permission_type = 'USER'
+                             AND p2.permission_target_type = 'USER'
+                             AND p2.permission_target_id = #{userId})
+            )
+        ORDER BY d.updated_at DESC
+    </select>
+</mapper>

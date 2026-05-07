@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: enterprise-knowledge-ai-service
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
+  datasource:
+    # 本地 MySQL：请先创建库 enterprise_knowledge_ai（见 schema.sql 顶部注释）
+    url: jdbc:mysql://127.0.0.1:3306/enterprise_knowledge_ai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+server:
+  port: 8081
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+app:
+  kb:
+    upload-dir: ./data/kb-uploads
+  knowledge:
+    embedding-model: ""           # 为空时不执行向量化（跳过 Milvus 写入）
+    vector-write-enabled: true    # 全局向量写入开关
+  milvus:
+    uri: http://localhost:19530
+    collection: kb_chunk_embedding
+    vector-dimension: 128
+    # 为 true 时：启动必须完成 Milvus 建表与 load。当 embedding-model 为空且仅使用文档分块功能时，可设为 false 允许无 Milvus 启动
+    fail-on-init: false
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
