@@ -50,4 +50,9 @@ public interface KbDocumentService extends IService<KbDocument> {
     IPage<KbDocumentChunkLogVO> pageChunkLogs(Long documentId, long current, long size, UserContext user);
 
     List<KbDocument> searchDocuments(UserContext user, String keyword, int limit);
+
+    /**
+     * 刷新文档的 chunk_count（从 kb_document_chunk 表查询计数）。
+     */
+    void refreshChunkCount(Long documentId);
 }

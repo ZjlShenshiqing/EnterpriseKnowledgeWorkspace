@@ -120,7 +120,8 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .eq(KbDocument::getId, docId)
-                .setSql("chunk_count = chunk_count + 1"));
+                .set(KbDocument::getChunkCount, countChunksByDoc(docId) + 1)
+                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
 
         vectorSyncService.syncChunk(document, chunk);
         return toVo(chunk);
@@ -195,7 +196,8 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .eq(KbDocument::getId, docId)
-                .setSql("chunk_count = chunk_count + " + chunkList.size()));
+                .set(KbDocument::getChunkCount, countChunksByDoc(docId) + chunkList.size())
+                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
 
         if (writeVector) {
             List<VectorDocChunk> vectorChunks = chunkList.stream()
@@ -271,7 +273,8 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .eq(KbDocument::getId, docId)
-                .setSql("chunk_count = CASE WHEN chunk_count > 0 THEN chunk_count - 1 ELSE 0 END"));
+                .set(KbDocument::getChunkCount, Math.max(0, countChunksByDoc(docId) - 1))
+                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
 
         log.info("删除 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
         vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
@@ -479,6 +482,12 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         if (document.getEnabled() != null && document.getEnabled() == 0) {
             throw new BizException(ErrorCode.PARAM_INVALID, "文档未启用，无法启用Chunk，请先启用文档");
         }
+    }
+
+    private int countChunksByDoc(Long docId) {
+        Long count = baseMapper.selectCount(
+                Wrappers.lambdaQuery(KbDocumentChunk.class).eq(KbDocumentChunk::getDocumentId, docId));
+        return count != null ? count.intValue() : 0;
     }
 
     private Integer resolveTokenCount(String content) {

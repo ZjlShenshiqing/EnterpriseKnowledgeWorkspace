@@ -261,6 +261,16 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return vo;
     }
 
+    @Override
+    public void refreshChunkCount(Long documentId) {
+        Long count = kbDocumentChunkMapper.selectCount(
+                Wrappers.lambdaQuery(KbDocumentChunk.class).eq(KbDocumentChunk::getDocumentId, documentId));
+        baseMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
+                .eq(KbDocument::getId, documentId)
+                .set(KbDocument::getChunkCount, count != null ? count.intValue() : 0)
+                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
+    }
+
     private void assertWritable(Long documentId, UserContext user) {
         KbDocument doc = getById(documentId);
         if (doc == null) {
