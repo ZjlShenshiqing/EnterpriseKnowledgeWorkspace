@@ -1,6 +1,8 @@
 package com.zjl.knowledge.web;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
@@ -9,10 +11,13 @@ import com.zjl.knowledge.dto.KbDocumentChunkLogVO;
 import com.zjl.knowledge.dto.KbDocumentUpdateRequest;
 import com.zjl.knowledge.dto.KbDocumentUploadRequest;
 import com.zjl.knowledge.entity.KbDocument;
+import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.service.KbDocumentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -26,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -40,6 +46,11 @@ public class KbDocumentController {
      * 文档服务
      */
     private final KbDocumentService kbDocumentService;
+
+    /**
+     * 文件存储服务
+     */
+    private final FileStorageService fileStorageService;
 
     /**
      * 分页查询文档列表。
@@ -135,6 +146,30 @@ public class KbDocumentController {
             @RequestParam(defaultValue = "10") int limit
     ) {
         return Results.success(kbDocumentService.searchDocuments(UserContextHolder.get(), keyword, limit));
+    }
+
+    /**
+     * 下载文档原始文件。
+     *
+     * @param id 文档 ID
+     * @return 文件流
+     */
+    @GetMapping("/documents/{id}/download")
+    public ResponseEntity<org.springframework.core.io.Resource> download(@PathVariable("id") Long id) {
+        UserContext user = UserContextHolder.get();
+        KbDocument doc = kbDocumentService.getVisible(id, user);
+        try {
+            InputStream is = fileStorageService.read(doc.getId());
+            org.springframework.core.io.InputStreamResource resource =
+                    new org.springframework.core.io.InputStreamResource(is);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + java.net.URLEncoder.encode(doc.getFileName(), "UTF-8") + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+        } catch (Exception e) {
+            throw new BizException(ErrorCode.NOT_FOUND, "文件读取失败: " + e.getMessage());
+        }
     }
 
     /**

@@ -18,6 +18,7 @@ import com.zjl.knowledge.entity.KbKnowledgeBase;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
 import com.zjl.knowledge.mapper.KbKnowledgeBaseMapper;
+import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.service.KbCategoryService;
 import com.zjl.knowledge.service.TikaDocumentParser;
 import com.zjl.knowledge.web.UserContext;
@@ -50,7 +51,7 @@ public class DocumentUploadService {
     private final KbDocumentPermissionMapper kbDocumentPermissionMapper;
     private final KbKnowledgeBaseMapper kbKnowledgeBaseMapper;
     private final TikaDocumentParser tikaDocumentParser;
-    private final KbStorageProperties kbStorageProperties;
+    private final FileStorageService fileStorageService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -121,28 +122,20 @@ public class DocumentUploadService {
         doc.setUpdatedAt(LocalDateTime.now());
         kbDocumentMapper.insert(doc);
 
-        Path baseDir = Paths.get(kbStorageProperties.getUploadDir()).toAbsolutePath().normalize();
-        Path dir = baseDir.resolve(doc.getId().toString());
-        try {
-            Files.createDirectories(dir);
-            String safeName = StringUtils.cleanPath(Objects.requireNonNullElse(file.getOriginalFilename(), "upload.bin"));
-            if (safeName.contains("..")) {
-                throw new BizException(ErrorCode.PARAM_INVALID, "非法文件名");
-            }
-            Path target = dir.resolve(safeName);
-            try (InputStream in = file.getInputStream()) {
-                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-            doc.setFileUrl(target.toString());
-            byte[] probe = new byte[8192];
-            int probeLen;
-            try (InputStream probeIn = Files.newInputStream(target)) {
-                probeLen = probeIn.read(probe);
-            }
-            if (probeLen > 0) {
-                String detected = tikaDocumentParser.detectMime(java.util.Arrays.copyOf(probe, probeLen), safeName);
-                if (StringUtils.hasText(detected)) {
-                    doc.setFileType(detected);
+        try (InputStream in = file.getInputStream()) {
+            String storedPath = fileStorageService.store(doc.getId(),
+                    Objects.requireNonNullElse(file.getOriginalFilename(), "upload.bin"), in);
+            doc.setFileUrl(storedPath);
+
+            try (InputStream probeIn = fileStorageService.read(doc.getId())) {
+                byte[] probe = new byte[8192];
+                int probeLen = probeIn.read(probe);
+                if (probeLen > 0) {
+                    String detected = tikaDocumentParser.detectMime(
+                            java.util.Arrays.copyOf(probe, probeLen), file.getOriginalFilename());
+                    if (StringUtils.hasText(detected)) {
+                        doc.setFileType(detected);
+                    }
                 }
             }
             doc.setUpdatedAt(LocalDateTime.now());
