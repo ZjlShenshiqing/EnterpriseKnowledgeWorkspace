@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.knowledge.domain.DocumentStatus;
@@ -45,9 +46,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class KbChunkServiceImpl implements KbChunkService {
+public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDocumentChunk> implements KbChunkService {
 
-    private final KbDocumentChunkMapper chunkMapper;
     private final KbDocumentMapper documentMapper;
     private final KbDocumentPermissionMapper permissionMapper;
     private final VectorSyncService vectorSyncService;
@@ -66,7 +66,7 @@ public class KbChunkServiceImpl implements KbChunkService {
                 .orderByAsc(KbDocumentChunk::getChunkIndex);
 
         Page<KbDocumentChunk> page = new Page<>(requestParam.getCurrent(), requestParam.getSize());
-        IPage<KbDocumentChunk> result = chunkMapper.selectPage(page, queryWrapper);
+        IPage<KbDocumentChunk> result = baseMapper.selectPage(page, queryWrapper);
         return result.convert(this::toVo);
     }
 
@@ -83,7 +83,7 @@ public class KbChunkServiceImpl implements KbChunkService {
             throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 内容不能为空");
         }
 
-        KbDocumentChunk latest = chunkMapper.selectOne(
+        KbDocumentChunk latest = baseMapper.selectOne(
                 Wrappers.lambdaQuery(KbDocumentChunk.class)
                         .eq(KbDocumentChunk::getDocumentId, docId)
                         .orderByDesc(KbDocumentChunk::getChunkIndex)
@@ -115,7 +115,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         chunk.setCreatedAt(LocalDateTime.now());
         chunk.setUpdatedAt(LocalDateTime.now());
 
-        chunkMapper.insert(chunk);
+        baseMapper.insert(chunk);
         log.info("新增 Chunk 成功, docId={}, chunkId={}, chunkIndex={}", docId, chunk.getId(), chunkIndex);
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
@@ -147,7 +147,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         boolean needAutoIndex = requestParams.stream().anyMatch(r -> r.getIndex() == null);
         int nextIndex = 0;
         if (needAutoIndex) {
-            KbDocumentChunk latest = chunkMapper.selectOne(
+            KbDocumentChunk latest = baseMapper.selectOne(
                     new LambdaQueryWrapper<KbDocumentChunk>()
                             .eq(KbDocumentChunk::getDocumentId, docId)
                             .orderByDesc(KbDocumentChunk::getChunkIndex)
@@ -190,7 +190,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         }
 
         for (KbDocumentChunk c : chunkList) {
-            chunkMapper.insert(c);
+            baseMapper.insert(c);
         }
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
@@ -223,7 +223,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         assertWritable(document, user);
         assertDocNotBusy(document);
 
-        KbDocumentChunk chunk = chunkMapper.selectById(chunkId);
+        KbDocumentChunk chunk = baseMapper.selectById(chunkId);
         if (chunk == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "Chunk 不存在");
         }
@@ -245,7 +245,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         chunk.setTokenCount(resolveTokenCount(newContent));
         chunk.setUpdatedBy(user.getUserId());
         chunk.setUpdatedAt(LocalDateTime.now());
-        chunkMapper.updateById(chunk);
+        baseMapper.updateById(chunk);
 
         log.info("更新 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
 
@@ -259,7 +259,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         assertWritable(document, user);
         assertDocNotBusy(document);
 
-        KbDocumentChunk chunk = chunkMapper.selectById(chunkId);
+        KbDocumentChunk chunk = baseMapper.selectById(chunkId);
         if (chunk == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "Chunk 不存在");
         }
@@ -267,7 +267,7 @@ public class KbChunkServiceImpl implements KbChunkService {
             throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 不属于该文档");
         }
 
-        chunkMapper.deleteById(chunkId);
+        baseMapper.deleteById(chunkId);
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .eq(KbDocument::getId, docId)
@@ -285,7 +285,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         assertDocNotBusy(document);
         validateDocumentEnabledForChunkEnable(document, enabled);
 
-        KbDocumentChunk chunk = chunkMapper.selectById(chunkId);
+        KbDocumentChunk chunk = baseMapper.selectById(chunkId);
         if (chunk == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "Chunk 不存在");
         }
@@ -301,7 +301,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         chunk.setEnabled(enabledValue);
         chunk.setUpdatedBy(user.getUserId());
         chunk.setUpdatedAt(LocalDateTime.now());
-        chunkMapper.updateById(chunk);
+        baseMapper.updateById(chunk);
 
         log.info("{}Chunk 成功, docId={}, chunkId={}", enabled ? "启用" : "禁用", docId, chunkId);
 
@@ -327,7 +327,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         assertDocNotBusy(document);
         validateDocumentEnabledForChunkEnable(document, enabled);
 
-        List<KbDocumentChunk> found = chunkMapper.selectList(
+        List<KbDocumentChunk> found = baseMapper.selectList(
                 new LambdaQueryWrapper<KbDocumentChunk>().in(KbDocumentChunk::getId, requestedIds)
         );
         if (found.size() != requestedIds.size()) {
@@ -345,7 +345,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         }
 
         int enabledValue = enabled ? 1 : 0;
-        List<KbDocumentChunk> needUpdateChunks = chunkMapper.selectList(
+        List<KbDocumentChunk> needUpdateChunks = baseMapper.selectList(
                 new LambdaQueryWrapper<KbDocumentChunk>()
                         .in(KbDocumentChunk::getId, targetIds)
                         .ne(KbDocumentChunk::getEnabled, enabledValue)
@@ -373,7 +373,7 @@ public class KbChunkServiceImpl implements KbChunkService {
             }
 
             transactionTemplate.executeWithoutResult(status -> {
-                chunkMapper.update(null,
+                baseMapper.update(null,
                         Wrappers.lambdaUpdate(KbDocumentChunk.class)
                                 .in(KbDocumentChunk::getId, needUpdateIds)
                                 .set(KbDocumentChunk::getEnabled, 1)
@@ -385,7 +385,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         } else {
             List<String> idStrs = needUpdateIds.stream().map(String::valueOf).collect(Collectors.toList());
             transactionTemplate.executeWithoutResult(status -> {
-                chunkMapper.update(null,
+                baseMapper.update(null,
                         Wrappers.lambdaUpdate(KbDocumentChunk.class)
                                 .in(KbDocumentChunk::getId, needUpdateIds)
                                 .set(KbDocumentChunk::getEnabled, 0)
@@ -403,7 +403,7 @@ public class KbChunkServiceImpl implements KbChunkService {
     @Transactional(rollbackFor = Exception.class)
     public void updateEnabledByDocId(Long docId, boolean enabled, Long updatedBy) {
         int enabledValue = enabled ? 1 : 0;
-        chunkMapper.update(null,
+        baseMapper.update(null,
                 Wrappers.lambdaUpdate(KbDocumentChunk.class)
                         .eq(KbDocumentChunk::getDocumentId, docId)
                         .set(KbDocumentChunk::getEnabled, enabledValue)
@@ -418,7 +418,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         KbDocument document = loadDocOrThrow(docId);
         assertReadable(document, user);
 
-        List<KbDocumentChunk> list = chunkMapper.selectList(
+        List<KbDocumentChunk> list = baseMapper.selectList(
                 Wrappers.lambdaQuery(KbDocumentChunk.class)
                         .eq(KbDocumentChunk::getDocumentId, docId)
                         .orderByAsc(KbDocumentChunk::getChunkIndex)
@@ -432,7 +432,7 @@ public class KbChunkServiceImpl implements KbChunkService {
         if (docId == null) {
             return;
         }
-        chunkMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, docId));
+        baseMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, docId));
     }
 
     private KbDocument loadDocOrThrow(Long docId) {
