@@ -94,7 +94,61 @@
 | PATCH | /api/kb/documents/{docId}/chunks/{chunkId}/enabled | Query：`on`；启用/禁用切片 |
 | POST | /api/kb/documents/{docId}/chunks/batch-enabled | Query：`on`；批量启用/禁用 |
 
-## 4. 智能问答接口
+## 4. Agent 智能检索接口（`enterprise-knowledge-ai-service`）
+
+> 详细设计见 `docs/superpowers/specs/2026-05-10-agent-mcp-design.md`
+
+### 4.1 对话接口
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | /api/kb/agent/chat | 发起对话（SSE 流式响应） |
+
+**请求**：
+
+```json
+{
+  "sessionId": null,
+  "message": "帮我找关于微服务架构的文档"
+}
+```
+
+**响应（SSE 流）**：
+
+```
+event: message     → {"delta": "找到 3 篇相关文档...", "type": "text"}
+event: tool_call   → {"tool": "search_documents", "args": {"keyword": "微服务架构"}}
+event: tool_result → {"tool": "search_documents", "result": [...]}
+event: error       → {"message": "错误信息"}
+event: done        → {"sessionId": 123, "tokenUsage": {"input": 500, "output": 200}}
+```
+
+### 4.2 会话管理
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /api/kb/agent/sessions | 我的会话列表 |
+| GET | /api/kb/agent/sessions/{id} | 会话历史消息 |
+| DELETE | /api/kb/agent/sessions/{id} | 归档会话 |
+
+### 4.3 MCP Server 端点
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /mcp/sse | 建立 MCP SSE 连接，返回 sessionId |
+| POST | /mcp/tools/list | 返回所有注册的 Tool 定义（JSON Schema） |
+| POST | /mcp/messages?sessionId=xx | 接收 tool call 请求，返回 tool result |
+
+**MCP Tool 清单**：
+
+| Tool | 映射 | 关键参数 | 适用场景 |
+|------|------|----------|----------|
+| `search_documents` | `searchDocuments` | `keyword`, `limit` | 搜索文档 |
+| `list_documents` | `pageVisible` | `current`, `size` | 文档列表 |
+| `get_document_detail` | `getVisible` | `documentId` | 文档详情 |
+| `list_knowledge_bases` | `pageQuery` | — | 知识库列表 |
+
+## 5. 智能问答接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -126,7 +180,7 @@
 }
 ```
 
-## 5. 会议接口
+## 6. 会议接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -141,7 +195,7 @@
 | POST | /api/meetings/{id}/cancel | 取消会议 |
 | POST | /api/meetings/check-conflict | 检查会议冲突 |
 
-## 6. 待办接口
+## 7. 待办接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -152,7 +206,7 @@
 | POST | /api/todos/{id}/complete | 完成待办 |
 | DELETE | /api/todos/{id} | 删除待办 |
 
-## 7. 任务接口
+## 8. 任务接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -164,7 +218,7 @@
 | POST | /api/tasks/{id}/comments | 新增任务评论 |
 | GET | /api/tasks/board | 查看任务看板 |
 
-## 8. 消息通知接口
+## 9. 消息通知接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -173,7 +227,7 @@
 | POST | /api/notifications/{id}/read | 标记单条已读 |
 | POST | /api/notifications/read-all | 全部标记已读 |
 
-## 9. 数据看板接口
+## 10. 数据看板接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -182,7 +236,7 @@
 | GET | /api/dashboard/task | 获取任务指标 |
 | GET | /api/dashboard/personal | 获取个人指标 |
 
-## 10. 系统管理接口
+## 11. 系统管理接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|

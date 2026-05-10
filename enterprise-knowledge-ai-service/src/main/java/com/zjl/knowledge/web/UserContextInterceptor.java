@@ -4,6 +4,7 @@ import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.ToString;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 /**
  * 从请求头解析用户上下文
  */
+@ToString
 @Component
 public class UserContextInterceptor implements HandlerInterceptor {
 

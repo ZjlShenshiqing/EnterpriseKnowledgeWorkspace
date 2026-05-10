@@ -12,6 +12,7 @@ flowchart TB
     Gateway --> Auth[认证与权限模块]
     Gateway --> Workbench[工作台模块]
     Gateway --> Knowledge[知识库模块]
+    Gateway --> Agent[Agent 智能检索模块]
     Gateway --> AIQA[智能问答模块]
     Gateway --> Calendar[日历与时间管理模块]
     Gateway --> Meeting[会议预约模块]
@@ -20,13 +21,17 @@ flowchart TB
     Gateway --> Notify[消息通知模块]
     Gateway --> Dashboard[数据看板模块]
     Gateway --> System[系统管理模块]
+    Gateway --> Admin[管理员后台模块]
 
     Knowledge --> FileStorage[文件存储]
     Knowledge --> Search[全文检索]
     Knowledge --> VectorDB[向量数据库]
+    Agent --> LLM[大模型服务]
+    Agent --> Knowledge
+    Agent --> MCP[MCP Server<br/>工具发现与分发]
     AIQA --> Search
     AIQA --> VectorDB
-    AIQA --> LLM[大模型服务]
+    AIQA --> LLM
 
     Meeting --> Notify
     Todo --> Notify
@@ -80,7 +85,22 @@ flowchart LR
 
 > 接口与表结构见 **`docs/api.md`**、**`docs/database.md`**；实现总览见 **`docs/step3-summary.md`**。
 
-### 3.3 智能问答模块
+### 3.3 Agent 智能检索模块（新增）
+
+职责：
+
+1. 接收用户自然语言对话。
+2. 通过 LLM Agent 解析意图，识别 tool call。
+3. 通过 MCP Server 暴露工具发现接口（`/mcp/sse`、`/mcp/tools/list`、`/mcp/messages`）。
+4. 执行检索 Tool（搜索文档、列表文档、文档详情、知识库列表）。
+5. 流式返回回复（SSE）。
+6. 持久化会话与消息历史。
+7. Tool 执行前做权限校验，只返回当前用户可见的文档级别信息。
+
+> 定位：**纯检索助手**。不暴露管理操作（上传、分块、删除等）。
+> 详细设计见 `docs/superpowers/specs/2026-05-10-agent-mcp-design.md`
+
+### 3.4 智能问答模块
 
 职责：
 
@@ -90,7 +110,7 @@ flowchart LR
 4. 返回答案和引用来源。
 5. 收集用户反馈。
 
-### 3.4 会议预约模块
+### 3.5 会议预约模块
 
 职责：
 
@@ -102,7 +122,7 @@ flowchart LR
 6. 会议取消。
 7. 会议纪要。
 
-### 3.5 待办事项模块
+### 3.6 待办事项模块
 
 职责：
 
@@ -112,7 +132,7 @@ flowchart LR
 4. 优先级管理。
 5. 完成状态管理。
 
-### 3.6 任务协同模块
+### 3.7 任务协同模块
 
 职责：
 
@@ -123,7 +143,7 @@ flowchart LR
 5. 结果提交。
 6. 完成确认。
 
-### 3.7 消息通知模块
+### 3.8 消息通知模块
 
 职责：
 
@@ -134,7 +154,30 @@ flowchart LR
 
 ## 4. 关键流程图
 
-### 4.1 智能问答流程
+### 4.1 Agent 智能检索流程
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant A as Agent 模块
+    participant L as 大模型服务
+    participant T as Tool Registry
+    participant K as 知识库模块
+
+    U->>A: 自然语言提问
+    A->>A: 加载/创建会话
+    A->>L: 发送 messages + tools
+    L-->>A: tool_call: search_documents(...)
+    A->>T: 路由到 SearchDocumentsTool
+    T->>K: kbDocumentService.searchDocuments()
+    K-->>T: 当前用户可见的文档列表
+    T-->>A: ToolResult (过滤后)
+    A->>L: 回填 tool_result
+    L-->>A: text: "找到 3 篇相关文档..."
+    A-->>U: SSE 流式回复
+```
+
+### 4.2 智能问答流程
 
 ```mermaid
 sequenceDiagram
@@ -192,10 +235,12 @@ sequenceDiagram
 2. 采用 RBAC 权限模型。
 3. 支持数据权限过滤。
 4. 支持文档权限过滤。
-5. 智能问答检索必须进行权限过滤。
-6. 关键操作必须记录审计日志。
-7. 密码不能明文存储。
-8. 不允许泄露无权限文档来源。
+5. Agent Tool 执行前必须进行权限校验，返回结果必须按用户权限过滤。
+6. 智能问答检索必须进行权限过滤。
+7. 关键操作必须记录审计日志。
+8. 密码不能明文存储。
+9. 不允许泄露无权限文档来源。
+10. Agent 返回结果不暴露 `content_text`、`file_url`、`chunk` 等内部字段。
 
 ## 8. 部署设计
 

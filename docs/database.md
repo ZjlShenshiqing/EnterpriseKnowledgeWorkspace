@@ -10,6 +10,9 @@ erDiagram
     SYS_ROLE ||--o{ SYS_ROLE_PERMISSION : owns
     SYS_PERMISSION ||--o{ SYS_ROLE_PERMISSION : included
 
+    SYS_USER ||--o{ KB_AGENT_SESSION : chats
+    KB_AGENT_SESSION ||--o{ KB_AGENT_MESSAGE : contains
+
     KB_CATEGORY ||--o{ KB_DOCUMENT : contains
     KB_KNOWLEDGE_BASE ||--o{ KB_DOCUMENT : optional_kb
     SYS_USER ||--o{ KB_DOCUMENT : uploads
@@ -248,6 +251,35 @@ erDiagram
 5. permission_level：权限级别。
 6. created_by：创建人。
 7. created_at：创建时间。
+
+### 2.11.1 kb_agent_session Agent 会话表
+
+用途：存储 Agent 对话会话。
+
+字段：
+
+1. id：会话 ID。
+2. user_id：用户 ID。
+3. title：会话标题（自动生成或由首条消息截取）。
+4. status：状态（ACTIVE / ARCHIVED）。
+5. created_at：创建时间。
+6. updated_at：更新时间。
+
+### 2.11.2 kb_agent_message Agent 消息表
+
+用途：存储 Agent 对话中的每条消息（含用户消息、助手回复、工具调用记录）。
+
+字段：
+
+1. id：消息 ID。
+2. session_id：会话 ID。
+3. role：消息角色（user / assistant / tool）。
+4. content：文本内容（user 或 assistant 消息）。
+5. tool_name：工具名（role=tool 时）。
+6. tool_input：工具入参 JSON（role=tool 时）。
+7. tool_output：工具返回结果 JSON（role=tool 时）。
+8. token_count：Token 用量。
+9. created_at：创建时间。
 
 ### 2.12 meeting_room 会议室表
 

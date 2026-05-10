@@ -153,8 +153,8 @@ CREATE TABLE kb_agent_message (
     role VARCHAR(16) NOT NULL COMMENT '消息角色 user/assistant/tool',
     content LONGTEXT NULL COMMENT '文本内容（user或assistant消息）',
     tool_name VARCHAR(128) NULL COMMENT '工具名（role=tool时）',
-    tool_input JSON NULL COMMENT '工具入参JSON（role=tool时）',
-    tool_output JSON NULL COMMENT '工具返回结果JSON（role=tool时）',
+    tool_input LONGTEXT NULL COMMENT '工具入参JSON（role=tool时）',
+    tool_output LONGTEXT NULL COMMENT '工具返回结果JSON（role=tool时）',
     token_count INT NULL COMMENT 'Token用量',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     KEY idx_agent_message_session (session_id, created_at)
