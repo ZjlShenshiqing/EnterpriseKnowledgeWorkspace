@@ -92,13 +92,13 @@ public class AgentLoop {
                 public void onTextDelta(String delta) {
                     turnText.append(delta);
                     emitter.send("message",
-                            Map.of("delta", delta, "type", "text")));
+                            Map.of("delta", delta, "type", "text"));
                 }
 
                 @Override
                 public void onToolCall(ToolCall call) {
                     emitter.send("tool_call",
-                            Map.of("tool", call.getName(), "args", call.getArguments())));
+                            Map.of("tool", call.getName(), "args", call.getArguments()));
                 }
 
                 @Override
@@ -108,7 +108,7 @@ public class AgentLoop {
                             Map.of("sessionId", session.getId(),
                                     "tokenUsage", Map.of(
                                             "input", usage.getInputTokens(),
-                                            "output", usage.getOutputTokens()))));
+                                            "output", usage.getOutputTokens())));
                 }
 
                 @Override
@@ -122,7 +122,7 @@ public class AgentLoop {
             if (currentTurn >= MAX_TURNS) {
                 emitter.send("message",
                         Map.of("delta", "\n\n已达到最大对话轮次，请重新提问。",
-                                "type", "text")));
+                                "type", "text"));
             }
             break; // 占位实现只执行一轮
         }
