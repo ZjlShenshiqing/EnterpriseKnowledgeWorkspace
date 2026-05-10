@@ -13,6 +13,7 @@ import io.milvus.v2.service.collection.request.LoadCollectionReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import java.util.List;
 import org.springframework.util.StringUtils;
 
 /**
@@ -89,11 +90,11 @@ public class MilvusCollectionHelper {
                 CreateCollectionReq req = CreateCollectionReq.builder()
                         .collectionName(collectionName)
                         .collectionSchema(schema)
-                        .indexParam(IndexParam.builder()
+                        .indexParams(List.of(IndexParam.builder()
                                 .fieldName("embedding")
                                 .indexType(IndexParam.IndexType.AUTOINDEX)
                                 .metricType(IndexParam.MetricType.COSINE)
-                                .build())
+                                .build()))
                         .build();
                 milvusClient.createCollection(req);
                 log.info("Milvus collection created: {}", collectionName);
