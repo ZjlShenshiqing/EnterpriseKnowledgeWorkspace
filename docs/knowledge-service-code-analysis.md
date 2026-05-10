@@ -2501,21 +2501,23 @@ public KbChunkVO create(Long docId, KbChunkCreateRequest requestParam, UserConte
     chunk.setCreatedAt(LocalDateTime.now());
     chunk.setUpdatedAt(LocalDateTime.now());
 
-    // ⑥ INSERT
+    // ⑥ 先写 Milvus（embed + insert），失败则抛异常不回滚 DB
+    vectorSyncService.syncChunk(document, chunk);
+
+    // ⑦ INSERT chunk（Milvus 已成功）
     baseMapper.insert(chunk);
 
-    // ⑦ 更新文档 chunk_count
+    // ⑧ 更新文档 chunk_count（查询 COUNT，避免并发偏差）
     documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
             .eq(KbDocument::getId, docId)
-            .set(KbDocument::getChunkCount, countChunksByDoc(docId) + 1)
+            .set(KbDocument::getChunkCount, countChunksByDoc(docId))
             .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
-
-    // ⑧ 同步向量（embed + Milvus insert）
-    vectorSyncService.syncChunk(document, chunk);
 
     return toVo(chunk);
 }
 ```
+
+> **⚠️ 事务边界修复（2026-05-11）**：所有 Chunk 写操作（create/update/delete/enableChunk/batchCreate）已统一调整为 **先操作 Milvus，再写 DB** 的顺序。Milvus 失败时直接抛异常，DB 不会被修改，避免两方状态不一致。`chunk_count` 改为查询 COUNT 而不是 +1/-1。
 
 #### `batchToggleEnabled` 方法详解（最复杂的 Chunk 方法）
 
@@ -4719,7 +4721,7 @@ enterprise-knowledge-ai-service/
 
 ---
 
-**文档版本**：v5.0（含 Agent 模块）  
-**最后更新**：2026-05-10  
+**文档版本**：v5.1（含 Agent 模块 + 事务边界修复）  
+**最后更新**：2026-05-11  
 **覆盖范围**：107 个 Java 源文件（83 原有 + 24 Agent 新增）+ 3 个资源文件  
 **图表数量**：24 个 Mermaid 图表（架构图 × 4、时序图 × 6、流程图 × 4、ER 图 × 1、类图 × 5、状态图 × 1、依赖图 × 1、数据流图 × 2）
