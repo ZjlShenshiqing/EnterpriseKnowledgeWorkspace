@@ -37,7 +37,7 @@ public class AgentController {
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(@RequestBody ChatRequest request) {
         UserContext user = UserContextHolder.get();
-        com.zjl.knowledge.agent.SseEmitter emitter = new com.zjl.knowledge.agent.SseEmitter();
+        AgentSseEmitter emitter = new AgentSseEmitter();
 
         // 异步执行 Agent 循环
         new Thread(() -> {

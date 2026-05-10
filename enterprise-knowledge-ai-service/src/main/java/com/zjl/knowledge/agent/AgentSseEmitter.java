@@ -10,11 +10,11 @@ import java.util.Map;
  * SSE 事件发射器，封装 Spring SseEmitter 的 SSE 输出。
  */
 @Slf4j
-public class SseEmitter {
+public class AgentSseEmitter {
 
     private final org.springframework.web.servlet.mvc.method.annotation.SseEmitter delegate;
 
-    public SseEmitter() {
+    public AgentSseEmitter() {
         this.delegate = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(300_000L);
         this.delegate.onCompletion(() -> log.debug("SSE 连接完成"));
         this.delegate.onTimeout(() -> log.debug("SSE 连接超时"));

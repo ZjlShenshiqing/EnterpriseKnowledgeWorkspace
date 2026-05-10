@@ -56,7 +56,7 @@ public class AgentLoop {
      * @param user      当前用户
      * @param emitter   SSE 事件发射器
      */
-    public void run(KbAgentSession session, UserContext user, SseEmitter emitter) {
+    public void run(KbAgentSession session, UserContext user, AgentAgentSseEmitter emitter) {
         try {
             agentLoop(session, user, emitter);
         } catch (Exception e) {
@@ -65,7 +65,7 @@ public class AgentLoop {
         }
     }
 
-    private void agentLoop(KbAgentSession session, UserContext user, SseEmitter emitter) {
+    private void agentLoop(KbAgentSession session, UserContext user, AgentAgentSseEmitter emitter) {
         // ① 构建消息列表
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(ChatMessage.builder().role("system").content(SYSTEM_PROMPT).build());
@@ -91,20 +91,20 @@ public class AgentLoop {
                 @Override
                 public void onTextDelta(String delta) {
                     turnText.append(delta);
-                    emitter.send(SseEmitter.event("message",
+                    emitter.send(AgentSseEmitter.event("message",
                             Map.of("delta", delta, "type", "text")));
                 }
 
                 @Override
                 public void onToolCall(ToolCall call) {
-                    emitter.send(SseEmitter.event("tool_call",
+                    emitter.send(AgentSseEmitter.event("tool_call",
                             Map.of("tool", call.getName(), "args", call.getArguments())));
                 }
 
                 @Override
                 public void onDone(ChatUsage usage) {
                     fullResponse.append(turnText);
-                    emitter.send(SseEmitter.event("done",
+                    emitter.send(AgentSseEmitter.event("done",
                             Map.of("sessionId", session.getId(),
                                     "tokenUsage", Map.of(
                                             "input", usage.getInputTokens(),
@@ -120,7 +120,7 @@ public class AgentLoop {
             // 如果有 tool call，需要手动处理
             // （当前占位实现不返回 tool call，真实实现需解析 LLM 响应）
             if (currentTurn >= MAX_TURNS) {
-                emitter.send(SseEmitter.event("message",
+                emitter.send(AgentSseEmitter.event("message",
                         Map.of("delta", "\n\n已达到最大对话轮次，请重新提问。",
                                 "type", "text")));
             }
