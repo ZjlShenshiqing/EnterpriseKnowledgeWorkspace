@@ -120,6 +120,29 @@ CREATE TABLE kb_document_chunk_log (
     KEY idx_chunk_log_document (document_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE kb_agent_session (
+    id BIGINT NOT NULL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(256) NULL,
+    status VARCHAR(32) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_agent_session_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE kb_agent_message (
+    id BIGINT NOT NULL PRIMARY KEY,
+    session_id BIGINT NOT NULL,
+    role VARCHAR(16) NOT NULL,
+    content LONGTEXT NULL,
+    tool_name VARCHAR(128) NULL,
+    tool_input JSON NULL,
+    tool_output JSON NULL,
+    token_count INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_agent_message_session (session_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO kb_category (id, parent_id, category_name, category_type, sort_order, status, created_at, updated_at, deleted)
 SELECT 1001, NULL, '默认分类', 'COMMON', 0, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
 WHERE NOT EXISTS (SELECT 1 FROM kb_category WHERE id = 1001);

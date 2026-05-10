@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @SpringBootApplication(scanBasePackages = {"com.zjl.knowledge", "com.zjl.common"})
 @ConfigurationPropertiesScan
-@MapperScan("com.zjl.knowledge.mapper")
+@MapperScan({"com.zjl.knowledge.mapper", "com.zjl.knowledge.agent.mapper"})
 @EnableAsync
 @EnableTransactionManagement
 public class KnowledgeAiApplication {
