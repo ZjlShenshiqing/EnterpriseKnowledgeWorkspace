@@ -41,6 +41,16 @@ app:
     vector-dimension: 128
     # 为 true 时：启动必须完成 Milvus 建表与 load。当 embedding-model 为空且仅使用文档分块功能时，可设为 false 允许无 Milvus 启动
     fail-on-init: false
+  agent:
+    llm:
+      provider: anthropic
+      api-key: ${ANTHROPIC_API_KEY:}
+      model: claude-sonnet-4-6
+      max-tokens: 4096
+      temperature: 0.3
+    session:
+      max-history: 50
+      archive-after-days: 30
 
 logging:
   pattern:
