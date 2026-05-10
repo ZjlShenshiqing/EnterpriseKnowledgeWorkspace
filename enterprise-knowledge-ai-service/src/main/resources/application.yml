@@ -14,7 +14,7 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:schema.sql
+      schema-locations: classpath:db/tables/*.sql, classpath:db/schema.sql
 
 server:
   port: 8081
