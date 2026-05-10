@@ -91,20 +91,20 @@ public class AgentLoop {
                 @Override
                 public void onTextDelta(String delta) {
                     turnText.append(delta);
-                    emitter.send(AgentSseEmitter.event("message",
+                    emitter.send("message",
                             Map.of("delta", delta, "type", "text")));
                 }
 
                 @Override
                 public void onToolCall(ToolCall call) {
-                    emitter.send(AgentSseEmitter.event("tool_call",
+                    emitter.send("tool_call",
                             Map.of("tool", call.getName(), "args", call.getArguments())));
                 }
 
                 @Override
                 public void onDone(ChatUsage usage) {
                     fullResponse.append(turnText);
-                    emitter.send(AgentSseEmitter.event("done",
+                    emitter.send("done",
                             Map.of("sessionId", session.getId(),
                                     "tokenUsage", Map.of(
                                             "input", usage.getInputTokens(),
@@ -120,7 +120,7 @@ public class AgentLoop {
             // 如果有 tool call，需要手动处理
             // （当前占位实现不返回 tool call，真实实现需解析 LLM 响应）
             if (currentTurn >= MAX_TURNS) {
-                emitter.send(AgentSseEmitter.event("message",
+                emitter.send("message",
                         Map.of("delta", "\n\n已达到最大对话轮次，请重新提问。",
                                 "type", "text")));
             }
