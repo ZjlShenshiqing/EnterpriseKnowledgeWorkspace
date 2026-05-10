@@ -56,7 +56,7 @@ public class AgentLoop {
      * @param user      当前用户
      * @param emitter   SSE 事件发射器
      */
-    public void run(KbAgentSession session, UserContext user, AgentAgentSseEmitter emitter) {
+    public void run(KbAgentSession session, UserContext user, AgentSseEmitter emitter) {
         try {
             agentLoop(session, user, emitter);
         } catch (Exception e) {
@@ -65,7 +65,7 @@ public class AgentLoop {
         }
     }
 
-    private void agentLoop(KbAgentSession session, UserContext user, AgentAgentSseEmitter emitter) {
+    private void agentLoop(KbAgentSession session, UserContext user, AgentSseEmitter emitter) {
         // ① 构建消息列表
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(ChatMessage.builder().role("system").content(SYSTEM_PROMPT).build());
