@@ -115,15 +115,16 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         chunk.setCreatedAt(LocalDateTime.now());
         chunk.setUpdatedAt(LocalDateTime.now());
 
+        vectorSyncService.syncChunk(document, chunk);
+
         baseMapper.insert(chunk);
         log.info("新增 Chunk 成功, docId={}, chunkId={}, chunkIndex={}", docId, chunk.getId(), chunkIndex);
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .eq(KbDocument::getId, docId)
-                .set(KbDocument::getChunkCount, countChunksByDoc(docId) + 1)
+                .set(KbDocument::getChunkCount, countChunksByDoc(docId))
                 .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
 
-        vectorSyncService.syncChunk(document, chunk);
         return toVo(chunk);
     }
 
@@ -190,15 +191,6 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
             chunkList.add(chunk);
         }
 
-        for (KbDocumentChunk c : chunkList) {
-            baseMapper.insert(c);
-        }
-
-        documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
-                .eq(KbDocument::getId, docId)
-                .set(KbDocument::getChunkCount, countChunksByDoc(docId) + chunkList.size())
-                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
-
         if (writeVector) {
             List<VectorDocChunk> vectorChunks = chunkList.stream()
                     .map(each -> VectorDocChunk.builder()
@@ -216,6 +208,15 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
                 vectorSyncService.indexDocumentChunks(document, vectorChunks);
             }
         }
+
+        for (KbDocumentChunk c : chunkList) {
+            baseMapper.insert(c);
+        }
+
+        documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
+                .eq(KbDocument::getId, docId)
+                .set(KbDocument::getChunkCount, countChunksByDoc(docId))
+                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
     }
 
     @Override
@@ -247,11 +248,11 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         chunk.setTokenCount(resolveTokenCount(newContent));
         chunk.setUpdatedBy(user.getUserId());
         chunk.setUpdatedAt(LocalDateTime.now());
-        baseMapper.updateById(chunk);
-
-        log.info("更新 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
 
         vectorSyncService.updateChunk(document, chunk);
+
+        baseMapper.updateById(chunk);
+        log.info("更新 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
     }
 
     @Override
@@ -269,15 +270,16 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
             throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 不属于该文档");
         }
 
+        vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
+
         baseMapper.deleteById(chunkId);
 
         documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .eq(KbDocument::getId, docId)
-                .set(KbDocument::getChunkCount, Math.max(0, countChunksByDoc(docId) - 1))
+                .set(KbDocument::getChunkCount, Math.max(0, countChunksByDoc(docId)))
                 .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
 
         log.info("删除 Chunk 成功, docId={}, chunkId={}", docId, chunkId);
-        vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
     }
 
     @Override
@@ -301,18 +303,18 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
             return;
         }
 
+        if (enabled) {
+            vectorSyncService.syncChunk(document, chunk);
+        } else {
+            vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
+        }
+
         chunk.setEnabled(enabledValue);
         chunk.setUpdatedBy(user.getUserId());
         chunk.setUpdatedAt(LocalDateTime.now());
         baseMapper.updateById(chunk);
 
         log.info("{}Chunk 成功, docId={}, chunkId={}", enabled ? "启用" : "禁用", docId, chunkId);
-
-        if (enabled) {
-            vectorSyncService.syncChunk(document, chunk);
-        } else {
-            vectorSyncService.deleteChunkVector(document, String.valueOf(chunkId));
-        }
     }
 
     @Override
