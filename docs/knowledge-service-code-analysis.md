@@ -3461,16 +3461,16 @@ sequenceDiagram
     participant WRITER as MilvusVectorWriter
     participant MIL as Milvus
 
-    RAG->>VEC: searchSimilar(question, topK, doc)
-    VEC->>EMB: embed(question)
-    EMB-->>VEC: float[]
-    VEC->>STORE: search(collection, vector, topK, filter)
-    STORE->>WRITER: search(collection, vector, topK, filter)
+    RAG->>VEC: searchSimilar
+    VEC->>EMB: embed
+    EMB-->>VEC: float array
+    VEC->>STORE: search
+    STORE->>WRITER: search
     WRITER->>MIL: gRPC SearchReq
-    MIL-->>WRITER: SearchResp { chunkId, metadata.doc_id, score }
-    WRITER-->>STORE: List&lt;SearchResult&gt;
-    STORE-->>VEC: List&lt;SearchResult&gt;
-    VEC-->>RAG: List&lt;SearchResult&gt;
+    MIL-->>WRITER: SearchResp chunkId docId score
+    WRITER-->>STORE: SearchResult list
+    STORE-->>VEC: SearchResult list
+    VEC-->>RAG: SearchResult list
 ```
 
 **VectorSyncService.searchSimilar()**：
@@ -3573,14 +3573,14 @@ public class DeepSeekEmbeddingService implements EmbeddingService {
 sequenceDiagram
     participant SVC as VectorSyncService
     participant EMB as DeepSeekEmbeddingService
-    participant API as DeepSeek API<br/>/v1/embeddings
+    participant API as DeepSeek API
 
     SVC->>EMB: embedBatch(texts, model)
-    EMB->>EMB: 构建请求体<br/>{model, input}
+    EMB->>EMB: 构建请求体 model+input
     EMB->>API: POST with Bearer token
-    API-->>EMB: { data: [{ embedding: [float,...] }] }
-    EMB->>EMB: Double→Float 转换
-    EMB-->>SVC: List&lt;List&lt;Float&gt;&gt;
+    API-->>EMB: data array with embeddings
+    EMB->>EMB: Double to Float 转换
+    EMB-->>SVC: List of Float vectors
 ```
 
 **启用条件**：`app.knowledge.embedding-model` 非空 → `shouldEmbed()` 返回 true。为空时直接跳过向量化，不调用 Embedding 服务。
@@ -3749,30 +3749,25 @@ sequenceDiagram
     participant TOOL as McpTool
     participant SVC as KbDocumentService
 
-    U->>GW: POST /api/kb/agent/chat<br/>"帮我找关于微服务架构的文档"
-    GW->>CTL: + X-User-Id 等请求头
-    CTL->>CTL: 保存用户消息到 kb_agent_message
-    CTL->>LOOP: run(session, user, emitter)
+    U->>GW: POST 帮我找文档
+    GW->>CTL: X-User-Id 请求头
+    CTL->>LOOP: start agent loop
 
-    loop Agent 循环
-        LOOP->>LOOP: 构建 messages (system + history)
-        LOOP->>REG: getAllDefinitions()
-        REG-->>LOOP: List of ToolDefinition
-        LOOP->>LLM: chatStream(messages, tools)
-        LLM-->>LOOP: tool_call: search_documents(keyword="微服务架构")
-        LOOP->>REG: execute("search_documents", args, user)
-        REG->>TOOL: execute(args, user)
-        TOOL->>SVC: searchDocuments(user, keyword, limit)
-        SVC-->>TOOL: List of KbDocument
-        TOOL-->>REG: ToolResult.success(docs)
-        REG-->>LOOP: ToolResult
-        LOOP->>LLM: 回填 tool_result + 继续
-        LLM-->>LOOP: text: "找到 3 篇相关文档..."
-    end
+    LOOP->>REG: get all tool definitions
+    REG-->>LOOP: return tool list
+    LOOP->>LLM: send chat request
+    LLM-->>LOOP: return tool call
+    LOOP->>REG: execute tool
+    REG->>TOOL: forward to tool
+    TOOL->>SVC: search documents
+    SVC-->>TOOL: return document list
+    TOOL-->>REG: return tool result
+    REG-->>LOOP: return tool result
+    LOOP->>LLM: 回填 tool_result
+    LLM-->>LOOP: text 回复
 
     LOOP-->>CTL: SSE 流式输出
-    CTL-->>U: event: message / tool_call / done
-    LOOP->>LOOP: 保存助手消息到 kb_agent_message
+    CTL-->>U: event done
 ```
 
 ---
@@ -4128,15 +4123,14 @@ sequenceDiagram
     participant MIL as Milvus
     participant DB as MySQL
 
-    LLM->>REG: tool_call: rag_qa(question, topK)
-    REG->>RAG: execute(args, user)
-    RAG->>VEC: searchSimilar(question, topK*3, doc)
-    VEC->>MIL: embed(question) → SearchReq
-    MIL-->>VEC: top-K SearchResult {chunkId, docId, score}
-    VEC-->>RAG: List of SearchResult
-    RAG->>DB: selectBatchIds(docIds)
-    RAG->>RAG: 权限过滤 → 按文档聚合 matchedChunks
-    RAG-->>REG: ToolResult { documents: [...] }
+    LLM->>REG: tool_call rag_qa
+    REG->>RAG: execute
+    RAG->>VEC: searchSimilar
+    VEC->>MIL: embed + SearchReq
+    MIL-->>VEC: top-K SearchResult
+    VEC-->>RAG: SearchResult list
+    RAG->>DB: selectBatchIds
+    RAG-->>REG: ToolResult documents
 ```
 
 **返回格式**：每个文档包含 `documentId, title, summary, fileType, fileName, fileSize, createdAt, metadata(Tika自动提取), filterTags, matchedChunks[{chunkIndex, text, score}]`
@@ -4180,24 +4174,22 @@ public interface LlmClient {
 sequenceDiagram
     participant LOOP as AgentLoop
     participant DS as DeepSeekLlmClient
-    participant API as DeepSeek API<br/>/v1/chat/completions
+    participant API as DeepSeekAPI
 
-    LOOP->>DS: chatStream(messages, tools, listener)
-    DS->>DS: 构建请求体<br/>{model, messages, tools, stream:true}
-    DS->>API: POST with Bearer token
-    API-->>DS: SSE stream: data: {...}\n\ndata: {...}\n\n...
+    LOOP->>DS: chatStream
+    DS->>API: POST 请求体
+    API-->>DS: SSE 流式响应
 
-    loop 逐行解析 SSE
-        DS->>DS: line.startsWith("data: ")
-        alt choices[0].delta.content 存在
-            DS->>LOOP: listener.onTextDelta(delta)
-        else choices[0].delta.tool_calls 存在
-            DS->>DS: 合并 tool_call 增量片段
-            DS->>LOOP: listener.onToolCall(call)
+    loop 逐行解析
+        DS->>DS: 读取 SSE 行
+        alt 文本内容
+            DS->>LOOP: onTextDelta
+        else 工具调用
+            DS->>LOOP: onToolCall
         end
     end
 
-    DS->>LOOP: listener.onDone(usage)
+    DS->>LOOP: onDone
 ```
 
 **Tool 格式转换**：将 `ToolDefinition`（内部格式）转为 OpenAI function calling 格式：
