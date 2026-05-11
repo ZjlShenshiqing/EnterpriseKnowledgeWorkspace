@@ -362,7 +362,6 @@ public class MilvusProperties {
 2. `MilvusVectorWriter`：读取 `vectorDimension` 校验向量，读取 `collection` 作为默认集合
 3. `MilvusCollectionHelper`：读取 `vectorDimension` 创建 Schema
 4. `MilvusCollectionBootstrap`：读取 `collection` 和 `failOnInit` 控制启动行为
-5. `PlaceholderEmbeddingService`：读取 `vectorDimension` 生成占位向量
 
 #### 3.2.2 KnowledgeAiProperties
 
@@ -3481,51 +3480,53 @@ public interface EmbeddingService {
 }
 ```
 
-### 13.2 PlaceholderEmbeddingService
+### 13.2 DeepSeekEmbeddingService
 
-**文件路径**：`embedding/PlaceholderEmbeddingService.java`  
-**行数**：51 行
+**文件路径**：`embedding/DeepSeekEmbeddingService.java`  
+**行数**：108 行  
+**依赖注入**：`AgentProperties`（构造器注入，读取 api-key / base-url）
+
+调用 DeepSeek `/v1/embeddings`（OpenAI 兼容格式），将文本转为浮点向量列表。
 
 ```java
 @Service
-@RequiredArgsConstructor
-public class PlaceholderEmbeddingService implements EmbeddingService {
+public class DeepSeekEmbeddingService implements EmbeddingService {
 
-    private final MilvusProperties milvusProperties;
+    private final AgentProperties agentProperties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public List<Float> embed(String content) {
-        // ★ 占位实现：基于文本哈希生成确定性的"伪向量"，仅供开发测试
-        return toList(PlaceholderEmbedding.fromText(content,
-                milvusProperties.getVectorDimension()));
-    }
-
-    @Override
-    public List<Float> embed(String content, String model) {
-        return embed(content);  // model 参数忽略（占位实现）
+        return embedBatch(List.of(content)).get(0);
     }
 
     @Override
     public List<List<Float>> embedBatch(List<String> texts) {
-        List<List<Float>> out = new ArrayList<>(texts.size());
-        for (String t : texts) {
-            out.add(embed(t));  // 循环单条调用
-        }
-        return out;
-    }
-
-    @Override
-    public List<List<Float>> embedBatch(List<String> texts, String model) {
-        return embedBatch(texts);  // model 忽略
-    }
-
-    private static List<Float> toList(float[] arr) {
-        List<Float> list = new ArrayList<>(arr.length);
-        for (float v : arr) list.add(v);
-        return list;
+        // POST https://api.deepseek.com/v1/embeddings
+        // Body: { "model": "deepseek-chat", "input": ["text1","text2"] }
+        // Response: { "data": [{ "embedding": [0.1, 0.2, ...] }] }
+        ...
     }
 }
 ```
+
+**API 调用流程**：
+
+```mermaid
+sequenceDiagram
+    participant SVC as VectorSyncService
+    participant EMB as DeepSeekEmbeddingService
+    participant API as DeepSeek API<br/>/v1/embeddings
+
+    SVC->>EMB: embedBatch(texts, model)
+    EMB->>EMB: 构建请求体<br/>{model, input}
+    EMB->>API: POST with Bearer token
+    API-->>EMB: { data: [{ embedding: [float,...] }] }
+    EMB->>EMB: Double→Float 转换
+    EMB-->>SVC: List&lt;List&lt;Float&gt;&gt;
+```
+
+**启用条件**：`app.knowledge.embedding-model` 非空 → `shouldEmbed()` 返回 true。为空时直接跳过向量化，不调用 Embedding 服务。
 
 ### 13.3 SimpleTokenCounterService
 
@@ -3804,7 +3805,7 @@ graph TB
 | `agent/entity/` | 2 | KbAgentSession, KbAgentMessage |
 | `agent/mapper/` | 2 | KbAgentSessionMapper, KbAgentMessageMapper |
 | `agent/model/` | 3 | ChatMessage, ToolCall, ChatUsage |
-| `agent/llm/` | 3 | LlmClient, StreamListener, AnthropicLlmClient |
+| `agent/llm/` | 4 | LlmClient, StreamListener, DeepSeekLlmClient, AnthropicLlmClient |
 | `agent/mcp/` | 4 | McpTool, ToolRegistry, ToolDefinition, ToolResult, McpServerController |
 | `agent/tool/` | 4 | SearchDocumentsTool, ListDocumentsTool, GetDocumentDetailTool, ListKnowledgeBasesTool |
 
@@ -4073,12 +4074,55 @@ public interface LlmClient {
 | `onDone(ChatUsage usage)` | 流式响应完成 |
 | `onError(Throwable error)` | 发生错误 |
 
-#### 15.11.3 AnthropicLlmClient
+#### 15.11.3 DeepSeekLlmClient
+
+**文件路径**：`agent/llm/DeepSeekLlmClient.java`  
+**行数**：245 行  
+**启用条件**：`@ConditionalOnProperty(value="app.agent.llm.provider", havingValue="deepseek")`
+
+使用 DeepSeek 的 OpenAI 兼容 API（`/v1/chat/completions`），支持 SSE 流式响应和 function calling。不使用任何第三方 SDK，仅依赖 JDK `HttpURLConnection` + Jackson。
+
+**SSE 流式解析流程**：
+
+```mermaid
+sequenceDiagram
+    participant LOOP as AgentLoop
+    participant DS as DeepSeekLlmClient
+    participant API as DeepSeek API<br/>/v1/chat/completions
+
+    LOOP->>DS: chatStream(messages, tools, listener)
+    DS->>DS: 构建请求体<br/>{model, messages, tools, stream:true}
+    DS->>API: POST with Bearer token
+    API-->>DS: SSE stream: data: {...}\n\ndata: {...}\n\n...
+
+    loop 逐行解析 SSE
+        DS->>DS: line.startsWith("data: ")
+        alt choices[0].delta.content 存在
+            DS->>LOOP: listener.onTextDelta(delta)
+        else choices[0].delta.tool_calls 存在
+            DS->>DS: 合并 tool_call 增量片段
+            DS->>LOOP: listener.onToolCall(call)
+        end
+    end
+
+    DS->>LOOP: listener.onDone(usage)
+```
+
+**Tool 格式转换**：将 `ToolDefinition`（内部格式）转为 OpenAI function calling 格式：
+
+```
+ToolDefinition { name, description, inputSchema }
+  → { type: "function", function: { name, description, parameters: {...} } }
+```
+
+**Tool call 增量合并**：DeepSeek 流式返回 tool_calls 时，`arguments` 字段分多个 SSE 片段到达（如 `"{\"key"` → `"word\":\"微服务\"}"`），客户端需要按 `index` 累积合并成完整 JSON。
+
+#### 15.11.4 AnthropicLlmClient（备选）
 
 **文件路径**：`agent/llm/AnthropicLlmClient.java`  
-**启用条件**：`@ConditionalOnProperty(value="app.agent.llm.provider", havingValue="anthropic", matchIfMissing=true)`
+**启用条件**：`@ConditionalOnProperty(value="app.agent.llm.provider", havingValue="anthropic")`
 
-当前为占位实现，待接入 Anthropic Java SDK。配置 `app.agent.llm.api-key` 后即可替换为真实 API 调用。
+当 `provider=anthropic` 时启用，当前为占位实现。
 
 ### 15.12 数据模型
 
@@ -4611,7 +4655,7 @@ enterprise-knowledge-ai-service/
     │   │
     │   ├── embedding/                                # 向量化（2个文件）
     │   │   ├── EmbeddingService.java                 # [17行] 接口 4个方法
-    │   │   └── PlaceholderEmbeddingService.java      # [51行] 占位实现
+    │   │   └── DeepSeekEmbeddingService.java          # [108行] DeepSeek /v1/embeddings
     │   │
     │   ├── entity/                                   # ORM 实体（6个文件）
     │   │   ├── KbKnowledgeBase.java                  # [41行] 8字段 @TableLogic
@@ -4639,8 +4683,7 @@ enterprise-knowledge-ai-service/
     │   │   ├── MilvusVectorWriter.java               # [332行] gRPC 核心（最长文件）
     │   │   ├── MilvusCollectionHelper.java           # [114行] Schema + Index + Load
     │   │   ├── MilvusCollectionBootstrap.java        # [51行] @PostConstruct 启动初始化
-    │   │   ├── VectorDocChunk.java                   # [42行] 向量切片 POJO
-    │   │   └── PlaceholderEmbedding.java             # 占位嵌入工具
+    │   │   └── VectorDocChunk.java                   # [42行] 向量切片 POJO
     │   │
     │   ├── agent/                                     # Agent 模块（新增，24个文件）
     │   │   ├── AgentController.java                   # POST /api/kb/agent/chat + sessions
@@ -4721,7 +4764,7 @@ enterprise-knowledge-ai-service/
 
 ---
 
-**文档版本**：v5.1（含 Agent 模块 + 事务边界修复）  
+**文档版本**：v5.2（DeepSeek LLM + Embedding + 事务修复 + 去占位）  
 **最后更新**：2026-05-11  
 **覆盖范围**：107 个 Java 源文件（83 原有 + 24 Agent 新增）+ 3 个资源文件  
 **图表数量**：24 个 Mermaid 图表（架构图 × 4、时序图 × 6、流程图 × 4、ER 图 × 1、类图 × 5、状态图 × 1、依赖图 × 1、数据流图 × 2）
