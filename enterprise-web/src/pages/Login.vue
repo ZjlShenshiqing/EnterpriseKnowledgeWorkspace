@@ -2,8 +2,8 @@
   <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5f7fa 0%,#e4e7ed 100%)">
     <div style="width:400px;background:#fff;border-radius:16px;padding:48px 40px;box-shadow:0 8px 40px rgba(0,0,0,0.08)">
       <div style="text-align:center;margin-bottom:36px">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin-bottom:12px"><rect width="48" height="48" rx="12" fill="#10a37f"/><path d="M24 12c-2.5 0-4.5 1-6 2.5l-2-2c2-2.5 4.5-4 8-4 6 0 10.5 4.5 10.5 10.5S30 29.5 24 29.5c-1.5 0-3-.3-4.5-.8l-3 3c1.5.8 3.5 1.3 5.5 1.3 7 0 12.5-5.5 12.5-12.5S31 12 24 12z" fill="#fff"/><circle cx="17" cy="24" r="2" fill="#fff"/><circle cx="24" cy="24" r="2" fill="#fff"/><circle cx="31" cy="24" r="2" fill="#fff"/></svg>
-        <div style="font-size:24px;font-weight:700;color:#1a1a2e">企业智能工作平台</div>
+        <div style="width:48px;height:48px;border-radius:12px;background:var(--brand-500);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff">E</div>
+        <div style="font-size:24px;font-weight:700;color:var(--text-primary)">企业智能工作平台</div>
         <div style="font-size:14px;color:#909399;margin-top:6px">Enterprise Work Platform</div>
       </div>
       <el-form :model="form" :rules="rules" ref="formRef">
