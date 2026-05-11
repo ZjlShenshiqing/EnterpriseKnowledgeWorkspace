@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Agent + LLM 配置属性。
+ * Agent + LLM 配置属性
  */
 @Data
 @ConfigurationProperties(prefix = "app.agent")

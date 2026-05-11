@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Agent 会话与消息持久化服务。
+ * Agent 会话与消息持久化服务
  */
 @Service
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class AgentSessionService {
     private final KbAgentMessageMapper messageMapper;
 
     /**
-     * 创建或加载会话。
+     * 创建或加载会话
      *
      * @param sessionId 会话 ID（null 则创建新会话）
      * @param userId    用户 ID
@@ -56,7 +56,7 @@ public class AgentSessionService {
     }
 
     /**
-     * 保存用户消息。
+     * 保存用户消息
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveUserMessage(Long sessionId, String content) {
@@ -69,7 +69,7 @@ public class AgentSessionService {
     }
 
     /**
-     * 保存助手消息。
+     * 保存助手消息
      */
     @Transactional(rollbackFor = Exception.class)
     public Long saveAssistantMessage(Long sessionId, String content, Integer tokenCount) {
@@ -84,7 +84,7 @@ public class AgentSessionService {
     }
 
     /**
-     * 保存 tool 调用消息。
+     * 保存 tool 调用消息
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveToolMessage(Long sessionId, String toolName,
@@ -100,7 +100,7 @@ public class AgentSessionService {
     }
 
     /**
-     * 加载会话历史消息，转为 ChatMessage 列表。
+     * 加载会话历史消息，转为 ChatMessage 列表
      */
     public List<ChatMessage> loadHistory(Long sessionId, int maxMessages) {
         List<KbAgentMessage> messages = messageMapper.selectList(
@@ -122,7 +122,7 @@ public class AgentSessionService {
     }
 
     /**
-     * 查询用户的会话列表（按更新时间倒序）。
+     * 查询用户的会话列表（按更新时间倒序）
      */
     public List<KbAgentSession> listUserSessions(Long userId) {
         return sessionMapper.selectList(
@@ -134,7 +134,7 @@ public class AgentSessionService {
     }
 
     /**
-     * 归档会话。
+     * 归档会话
      */
     @Transactional(rollbackFor = Exception.class)
     public void archiveSession(Long sessionId, Long userId) {

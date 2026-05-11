@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Tool 执行结果。
+ * Tool 执行结果
  */
 @Data
 @Builder
@@ -24,7 +24,7 @@ public class ToolResult {
     private String error;
 
     /**
-     * 创建成功结果。
+     * 创建成功结果
      *
      * @param data 结果数据
      * @return ToolResult
@@ -34,7 +34,7 @@ public class ToolResult {
     }
 
     /**
-     * 创建失败结果。
+     * 创建失败结果
      *
      * @param error 错误信息
      * @return ToolResult

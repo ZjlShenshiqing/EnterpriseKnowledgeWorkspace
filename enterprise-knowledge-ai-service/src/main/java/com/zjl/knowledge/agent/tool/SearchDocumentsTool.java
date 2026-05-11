@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 搜索文档 Tool。
+ * 搜索文档 Tool
  */
 @Component
 @RequiredArgsConstructor

@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 文档上传服务：元数据校验 → 落盘 → 权限行写入。
+ * 文档上传服务：元数据校验 → 落盘 → 权限行写入
  */
 @Slf4j
 @Service
@@ -55,7 +55,7 @@ public class DocumentUploadService {
     private final ObjectMapper objectMapper;
 
     /**
-     * 上传文档：校验 → INSERT kb_document (PENDING) → 落盘 → Tika 探测 MIME → 权限行。
+     * 上传文档：校验 → INSERT kb_document (PENDING) → 落盘 → Tika 探测 MIME → 权限行
      */
     @Transactional(rollbackFor = Exception.class)
     public Long upload(UserContext user, KbDocumentUploadRequest meta, MultipartFile file) {

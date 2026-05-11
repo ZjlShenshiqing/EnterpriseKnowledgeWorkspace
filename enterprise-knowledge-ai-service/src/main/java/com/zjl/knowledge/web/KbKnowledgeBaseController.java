@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 知识库（多 Milvus 集合）管理接口。
+ * 知识库（多 Milvus 集合）管理接口
  */
 @RestController
 @RequestMapping("/api/kb/bases")

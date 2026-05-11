@@ -37,7 +37,7 @@ public class UserContextInterceptor implements HandlerInterceptor {
     public static final String HEADER_ADMIN = "X-Is-Admin";
 
     /**
-     * 请求进入 Controller 前解析用户。
+     * 请求进入 Controller 前解析用户
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -67,7 +67,7 @@ public class UserContextInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 请求结束后清理 ThreadLocal。
+     * 请求结束后清理 ThreadLocal
      */
     @Override
     public void afterCompletion(
@@ -80,7 +80,7 @@ public class UserContextInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 解析可选 Long 头。
+     * 解析可选 Long 头
      *
      * @param request 请求
      * @param name 头名称

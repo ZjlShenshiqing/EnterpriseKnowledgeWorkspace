@@ -22,12 +22,12 @@ import java.util.Map;
 public class ChunkingStrategyFactory {
 
     /**
-     * 策略注册表，key 为分块模式枚举，value 为对应策略实现。
+     * 策略注册表，key 为分块模式枚举，value 为对应策略实现
      */
     private final Map<ChunkingMode, ChunkingStrategy> strategies = new EnumMap<>(ChunkingMode.class);
 
     /**
-     * 通过构造器注入自动收集所有 {@link ChunkingStrategy} 实现。
+     * 通过构造器注入自动收集所有 {@link ChunkingStrategy} 实现
      *
      * @param list Spring 容器中所有分块策略 Bean
      */
@@ -38,7 +38,7 @@ public class ChunkingStrategyFactory {
     }
 
     /**
-     * 根据分块模式获取对应的策略实现，不存在则抛出 {@link BizException}。
+     * 根据分块模式获取对应的策略实现，不存在则抛出 {@link BizException}
      *
      * @param mode 分块模式
      * @return 对应的策略实现

@@ -5,7 +5,7 @@ import com.zjl.common.exception.BizException;
 import org.springframework.util.StringUtils;
 
 /**
- * 文档来源类型。
+ * 文档来源类型
  */
 public enum SourceType {
 

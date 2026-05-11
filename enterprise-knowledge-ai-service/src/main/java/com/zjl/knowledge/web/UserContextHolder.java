@@ -1,7 +1,7 @@
 package com.zjl.knowledge.web;
 
 /**
- * 当前线程用户上下文持有器。
+ * 当前线程用户上下文持有器
  */
 public final class UserContextHolder {
 
@@ -14,7 +14,7 @@ public final class UserContextHolder {
     }
 
     /**
-     * 设置上下文。
+     * 设置上下文
      *
      * @param ctx 用户上下文
      */
@@ -23,7 +23,7 @@ public final class UserContextHolder {
     }
 
     /**
-     * 获取上下文。
+     * 获取上下文
      *
      * @return 用户上下文
      */
@@ -32,7 +32,7 @@ public final class UserContextHolder {
     }
 
     /**
-     * 清理上下文。
+     * 清理上下文
      */
     public static void clear() {
         CTX.remove();

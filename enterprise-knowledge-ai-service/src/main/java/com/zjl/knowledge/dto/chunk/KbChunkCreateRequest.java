@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * 创建 Chunk 请求。
+ * 创建 Chunk 请求
  */
 @Data
 public class KbChunkCreateRequest {

@@ -19,7 +19,7 @@ import org.springframework.util.StringUtils;
 /**
  * Milvus 集合创建与管理工具
  *
- * <p>负责按 Schema 创建集合、建立 AUTOINDEX 索引并加载到内存。
+ * <p>负责按 Schema 创建集合、建立 AUTOINDEX 索引并加载到内存
  * Schema 包含四个字段：{@code id}(VarChar PK)、{@code content}(VarChar)、
  * {@code metadata}(JSON)、{@code embedding}(FloatVector + COSINE)</p>
  *

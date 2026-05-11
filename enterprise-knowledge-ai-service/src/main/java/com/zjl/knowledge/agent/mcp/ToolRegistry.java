@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Tool 注册表：收集所有 {@link McpTool} 实现，按名称索引。
+ * Tool 注册表：收集所有 {@link McpTool} 实现，按名称索引
  */
 @Component
 public class ToolRegistry {
@@ -18,7 +18,7 @@ public class ToolRegistry {
     private final Map<String, McpTool> tools = new LinkedHashMap<>();
 
     /**
-     * 构造器注入所有 McpTool Bean。
+     * 构造器注入所有 McpTool Bean
      *
      * @param toolList Spring 容器中所有 McpTool 实现
      */
@@ -29,7 +29,7 @@ public class ToolRegistry {
     }
 
     /**
-     * 获取所有 Tool 定义（供 LLM 和 MCP /tools/list 使用）。
+     * 获取所有 Tool 定义（供 LLM 和 MCP /tools/list 使用）
      *
      * @return ToolDefinition 列表
      */
@@ -40,7 +40,7 @@ public class ToolRegistry {
     }
 
     /**
-     * 按名称获取 Tool。
+     * 按名称获取 Tool
      *
      * @param name 工具名
      * @return McpTool
@@ -55,7 +55,7 @@ public class ToolRegistry {
     }
 
     /**
-     * 执行指定 Tool。
+     * 执行指定 Tool
      *
      * @param name 工具名
      * @param args 入参

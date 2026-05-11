@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 判断当前用户是否可查看文档。
+ * 判断当前用户是否可查看文档
  */
 @Component
 public class DocumentVisibilityService {
 
     /**
-     * 是否可查看。
+     * 是否可查看
      *
      * @param doc 文档
      * @param user 用户上下文

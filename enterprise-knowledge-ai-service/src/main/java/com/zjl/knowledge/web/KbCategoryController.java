@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 知识分类接口。
+ * 知识分类接口
  */
 @RestController
 @RequestMapping("/api/kb/categories")
@@ -34,7 +34,7 @@ public class KbCategoryController {
     private final KbCategoryService kbCategoryService;
 
     /**
-     * 查询全部分类。
+     * 查询全部分类
      *
      * @return 分类列表
      */
@@ -45,7 +45,7 @@ public class KbCategoryController {
     }
 
     /**
-     * 新增分类。
+     * 新增分类
      *
      * @param req 请求体
      * @return 分类 ID
@@ -64,7 +64,7 @@ public class KbCategoryController {
     }
 
     /**
-     * 修改分类。
+     * 修改分类
      *
      * @param id 分类 ID
      * @param req 请求体
@@ -88,7 +88,7 @@ public class KbCategoryController {
     }
 
     /**
-     * 删除分类。
+     * 删除分类
      *
      * @param id 分类 ID
      * @return 空数据

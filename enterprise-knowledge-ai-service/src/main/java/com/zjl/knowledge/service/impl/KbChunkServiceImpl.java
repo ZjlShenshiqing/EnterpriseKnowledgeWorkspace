@@ -41,7 +41,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 知识库 Chunk 服务实现（行为对齐参考：分页、增删改、批量、启用/禁用与向量同步）。
+ * 知识库 Chunk 服务实现（行为对齐参考：分页、增删改、批量、启用/禁用与向量同步）
  */
 @Slf4j
 @Service

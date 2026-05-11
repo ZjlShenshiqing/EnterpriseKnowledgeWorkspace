@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * Agent 对话消息。
+ * Agent 对话消息
  */
 @Data
 @Builder

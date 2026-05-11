@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MCP Tool 定义，描述 Tool 的名称、描述和输入 Schema。
+ * MCP Tool 定义，描述 Tool 的名称、描述和输入 Schema
  */
 @Data
 @Builder
@@ -27,7 +27,7 @@ public class ToolDefinition {
     private JsonSchema inputSchema;
 
     /**
-     * 简化的 JSON Schema 定义。
+     * 简化的 JSON Schema 定义
      */
     @Data
     @Builder
@@ -47,7 +47,7 @@ public class ToolDefinition {
     }
 
     /**
-     * 单个属性的 Schema 定义。
+     * 单个属性的 Schema 定义
      */
     @Data
     @Builder

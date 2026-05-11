@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 向量同步服务：统一管理嵌入生成与 Milvus 读写，供所有业务服务复用。
+ * 向量同步服务：统一管理嵌入生成与 Milvus 读写，供所有业务服务复用
  */
 @Slf4j
 @Component

@@ -49,7 +49,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 文档分块服务：异步分块任务（Tika 解析 → 策略分块 → 向量化 → Milvus 写入 → DB 持久化）。
+ * 文档分块服务：异步分块任务（Tika 解析 → 策略分块 → 向量化 → Milvus 写入 → DB 持久化）
  */
 @Slf4j
 @Service
@@ -68,7 +68,7 @@ public class DocumentChunkingService {
     private final ObjectMapper objectMapper;
 
     /**
-     * 提交异步分块：CAS 更新 status→RUNNING，事务提交后由监听器异步执行。
+     * 提交异步分块：CAS 更新 status→RUNNING，事务提交后由监听器异步执行
      */
     @Transactional(rollbackFor = Exception.class)
     public void startChunk(Long documentId, UserContext user) {
@@ -96,7 +96,7 @@ public class DocumentChunkingService {
     }
 
     /**
-     * 同步执行分块（补偿用）。
+     * 同步执行分块（补偿用）
      */
     public void executeChunk(Long documentId, Long operatorUserId) {
         KbDocument document = kbDocumentMapper.selectById(documentId);
@@ -108,7 +108,7 @@ public class DocumentChunkingService {
     }
 
     /**
-     * 校验写权限后执行分块。
+     * 校验写权限后执行分块
      */
     public void executeChunkAsUser(Long documentId, UserContext user) {
         KbDocument doc = kbDocumentMapper.selectById(documentId);

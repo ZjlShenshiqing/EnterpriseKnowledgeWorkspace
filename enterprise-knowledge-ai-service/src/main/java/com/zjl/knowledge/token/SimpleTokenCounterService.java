@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 /**
- * 按字符长度估算 token（与上传流程原逻辑一致）。
+ * 按字符长度估算 token（与上传流程原逻辑一致）
  */
 @Service
 public class SimpleTokenCounterService implements TokenCounterService {

@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 文档删除服务：先删 Milvus 向量，再清 DB 关联数据。
+ * 文档删除服务：先删 Milvus 向量，再清 DB 关联数据
  */
 @Slf4j
 @Service
@@ -36,7 +36,7 @@ public class DocumentDeleteService {
     private final VectorSyncService vectorSyncService;
 
     /**
-     * 删除文档：校验权限与状态 → 删 Milvus 向量 → 删 chunk/log/permission → 逻辑删文档。
+     * 删除文档：校验权限与状态 → 删 Milvus 向量 → 删 chunk/log/permission → 逻辑删文档
      */
     @Transactional(rollbackFor = Exception.class)
     public void deleteVisible(Long id, UserContext user) {

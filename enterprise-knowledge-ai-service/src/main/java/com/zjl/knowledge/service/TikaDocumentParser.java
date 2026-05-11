@@ -16,13 +16,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * 使用 Apache Tika 从常见办公/版式文档中提取纯文本（PDF、Office、HTML、纯文本等）。
+ * 使用 Apache Tika 从常见办公/版式文档中提取纯文本（PDF、Office、HTML、纯文本等）
  */
 @Component
 public class TikaDocumentParser {
 
     /**
-     * 单次解析写入 handler 的最大字符数，防止畸形文件撑爆内存。
+     * 单次解析写入 handler 的最大字符数，防止畸形文件撑爆内存
      */
     private static final int MAX_BODY_CHARS = 32 * 1024 * 1024;
 
@@ -30,7 +30,7 @@ public class TikaDocumentParser {
     private final Tika detector = new Tika();
 
     /**
-     * 从流中解析正文（调用方负责关闭 {@code input}）。
+     * 从流中解析正文（调用方负责关闭 {@code input}）
      *
      * @param input 文件字节流
      * @param resourceName 原始文件名（供类型探测）
@@ -53,7 +53,7 @@ public class TikaDocumentParser {
     }
 
     /**
-     * 根据文件名/魔数猜测 MIME（用于落库展示）。
+     * 根据文件名/魔数猜测 MIME（用于落库展示）
      */
     public String detectMime(byte[] prefix, String resourceName) {
         try {
@@ -64,7 +64,7 @@ public class TikaDocumentParser {
     }
 
     /**
-     * 生成短摘要（非模型，仅截断）。
+     * 生成短摘要（非模型，仅截断）
      */
     public String summarize(String text, int maxLen) {
         if (!StringUtils.hasText(text)) {

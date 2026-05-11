@@ -35,7 +35,7 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * 知识文档接口。
+ * 知识文档接口
  */
 @RestController
 @RequestMapping("/api/kb")
@@ -53,7 +53,7 @@ public class KbDocumentController {
     private final FileStorageService fileStorageService;
 
     /**
-     * 分页查询文档列表。
+     * 分页查询文档列表
      *
      * @param current 页码
      * @param size 每页条数
@@ -71,7 +71,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 文档详情。
+     * 文档详情
      *
      * @param id 文档 ID
      * @return 文档
@@ -83,7 +83,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 上传文档：落库为 PENDING，需再调用 {@code POST .../documents/{id}/start-chunk} 触发异步分块。
+     * 上传文档：落库为 PENDING，需再调用 {@code POST .../documents/{id}/start-chunk} 触发异步分块
      */
     @PostMapping(value = "/documents/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Result<Long> upload(
@@ -96,7 +96,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 提交异步分块任务（事务提交后由监听器执行解析、分块、向量写入）。
+     * 提交异步分块任务（事务提交后由监听器执行解析、分块、向量写入）
      */
     @PostMapping("/documents/{id}/start-chunk")
     public Result<Void> startChunk(@PathVariable("id") Long id) {
@@ -105,7 +105,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 立即执行分块（运维补偿；需对文档有写权限）。
+     * 立即执行分块（运维补偿；需对文档有写权限）
      */
     @PostMapping("/documents/{id}/execute-chunk")
     public Result<Void> executeChunk(@PathVariable("id") Long id) {
@@ -149,7 +149,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 下载文档原始文件。
+     * 下载文档原始文件
      *
      * @param id 文档 ID
      * @return 文件流
@@ -173,7 +173,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 删除文档。
+     * 删除文档
      *
      * @param id 文档 ID
      * @return 空数据

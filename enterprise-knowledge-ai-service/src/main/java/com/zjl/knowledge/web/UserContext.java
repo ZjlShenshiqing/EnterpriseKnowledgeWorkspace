@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 当前请求用户上下文（由网关透传请求头模拟，一期本地联调使用）。
+ * 当前请求用户上下文（由网关透传请求头模拟，一期本地联调使用）
  */
 @Getter
 @Builder

@@ -18,7 +18,7 @@ public record ChunkingOptions(
 ) {
 
     /**
-     * 返回默认分块参数：最大 2000 字符，无重叠。
+     * 返回默认分块参数：最大 2000 字符，无重叠
      *
      * @return 默认配置实例
      */
@@ -29,7 +29,7 @@ public record ChunkingOptions(
     /**
      * 从键值对 Map 中解析分块参数，缺失的键使用默认值
      *
-     * <p>支持的键：{@code maxChars}、{@code overlapChars}。
+     * <p>支持的键：{@code maxChars}、{@code overlapChars}
      * 数值越界会被修正：maxChars 下限 256，overlapChars 下限 0。</p>
      *
      * @param map 配置 Map，可为空
@@ -45,7 +45,7 @@ public record ChunkingOptions(
     }
 
     /**
-     * 安全解析对象为 int，解析失败返回默认值。
+     * 安全解析对象为 int，解析失败返回默认值
      *
      * @param v   待解析的值（可为 Number 或数字字符串）
      * @param def 解析失败时的默认值
@@ -66,7 +66,7 @@ public record ChunkingOptions(
     }
 
     /**
-     * 将当前参数序列化为不可变 Map，便于 JSON 序列化写入 {@code chunk_config}。
+     * 将当前参数序列化为不可变 Map，便于 JSON 序列化写入 {@code chunk_config}
      *
      * @return 包含 maxChars 和 overlapChars 的 Map
      */

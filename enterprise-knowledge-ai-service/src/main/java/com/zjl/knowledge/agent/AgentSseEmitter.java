@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * SSE 事件发射器，封装 Spring SseEmitter 的 SSE 输出。
+ * SSE 事件发射器，封装 Spring SseEmitter 的 SSE 输出
  */
 @Slf4j
 public class AgentSseEmitter {
@@ -22,7 +22,7 @@ public class AgentSseEmitter {
     }
 
     /**
-     * 获取底层 Spring SseEmitter（供 Controller 返回）。
+     * 获取底层 Spring SseEmitter（供 Controller 返回）
      *
      * @return Spring SseEmitter
      */
@@ -31,7 +31,7 @@ public class AgentSseEmitter {
     }
 
     /**
-     * 发送命名事件。
+     * 发送命名事件
      *
      * @param event 事件名
      * @param data  事件数据（将被序列化为 JSON）
@@ -46,7 +46,7 @@ public class AgentSseEmitter {
     }
 
     /**
-     * 发送 message 事件。
+     * 发送 message 事件
      *
      * @param data 消息数据
      */
@@ -55,7 +55,7 @@ public class AgentSseEmitter {
     }
 
     /**
-     * 标记完成。
+     * 标记完成
      */
     public void complete() {
         try {
@@ -69,7 +69,7 @@ public class AgentSseEmitter {
     }
 
     /**
-     * 发送错误。
+     * 发送错误
      *
      * @param message 错误信息
      */
@@ -85,7 +85,7 @@ public class AgentSseEmitter {
     }
 
     /**
-     * 发送错误并完成。
+     * 发送错误并完成
      *
      * @param error 异常
      */

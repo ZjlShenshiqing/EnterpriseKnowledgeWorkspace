@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * 本地磁盘文件存储实现。
+ * 本地磁盘文件存储实现
  */
 @Component
 @RequiredArgsConstructor

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Token 用量。
+ * Token 用量
  */
 @Data
 @Builder

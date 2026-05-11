@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DeepSeek API 客户端实现（OpenAI 兼容格式，支持 tool calling + SSE 流式）。
+ * DeepSeek API 客户端实现（OpenAI 兼容格式，支持 tool calling + SSE 流式）
  *
  * <p>当 app.agent.llm.provider=deepseek 时启用</p>
  */

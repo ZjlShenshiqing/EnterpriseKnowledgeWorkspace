@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 文档 Chunk API。
+ * 文档 Chunk API
  */
 @RestController
 @RequestMapping("/api/kb/documents/{docId}/chunks")

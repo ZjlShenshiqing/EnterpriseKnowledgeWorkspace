@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 知识库列表 Tool。
+ * 知识库列表 Tool
  */
 @Component
 @RequiredArgsConstructor

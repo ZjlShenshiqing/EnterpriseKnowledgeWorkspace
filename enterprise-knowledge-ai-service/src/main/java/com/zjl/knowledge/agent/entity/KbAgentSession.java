@@ -8,7 +8,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * Agent 对话会话实体。
+ * Agent 对话会话实体
  */
 @Data
 @TableName("kb_agent_session")

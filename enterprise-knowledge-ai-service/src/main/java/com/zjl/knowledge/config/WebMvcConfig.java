@@ -19,7 +19,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private final UserContextInterceptor userContextInterceptor;
 
     /**
-     * 注册拦截器。
+     * 注册拦截器
      *
      * @param registry 注册表
      */

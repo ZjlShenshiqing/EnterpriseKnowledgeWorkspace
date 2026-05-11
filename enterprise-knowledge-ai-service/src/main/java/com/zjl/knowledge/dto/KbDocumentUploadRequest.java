@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 文档上传元数据（multipart 中的 JSON 部分）。
+ * 文档上传元数据（multipart 中的 JSON 部分）
  */
 @Data
 public class KbDocumentUploadRequest {
@@ -25,7 +25,7 @@ public class KbDocumentUploadRequest {
     private Long categoryId;
 
     /**
-     * 可选；指定后向量写入该知识库对应的 Milvus 集合。
+     * 可选；指定后向量写入该知识库对应的 Milvus 集合
      */
     private Long kbId;
 

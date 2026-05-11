@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * LLM 返回的 tool call。
+ * LLM 返回的 tool call
  */
 @Data
 @Builder

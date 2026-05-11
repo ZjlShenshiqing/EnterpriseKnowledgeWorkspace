@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * {@link ChunkVectorStore} 的 Milvus 实现，直接委托 {@link MilvusVectorWriter}。
+ * {@link ChunkVectorStore} 的 Milvus 实现，直接委托 {@link MilvusVectorWriter}
  */
 @Component
 @RequiredArgsConstructor

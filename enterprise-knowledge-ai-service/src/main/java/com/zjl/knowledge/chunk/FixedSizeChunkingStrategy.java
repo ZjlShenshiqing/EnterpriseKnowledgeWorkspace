@@ -23,7 +23,7 @@ import java.util.List;
 public class FixedSizeChunkingStrategy implements ChunkingStrategy {
 
     /**
-     * 返回 {@link ChunkingMode#FIXED_SIZE} 模式标识。
+     * 返回 {@link ChunkingMode#FIXED_SIZE} 模式标识
      *
      * @return 固定大小分块模式
      */

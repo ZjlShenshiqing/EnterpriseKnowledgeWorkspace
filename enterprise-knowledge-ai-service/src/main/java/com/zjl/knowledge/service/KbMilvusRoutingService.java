@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * 根据文档关联的知识库解析 Milvus 集合名与嵌入模型（无 kb_id 时回落到全局配置）。
+ * 根据文档关联的知识库解析 Milvus 集合名与嵌入模型（无 kb_id 时回落到全局配置）
  */
 @Component
 @RequiredArgsConstructor
@@ -32,7 +32,7 @@ public class KbMilvusRoutingService {
     }
 
     /**
-     * 向量写入使用的 Milvus 集合名；{@code null} 表示使用 {@code app.milvus.collection}。
+     * 向量写入使用的 Milvus 集合名；{@code null} 表示使用 {@code app.milvus.collection}
      */
     public String collectionForVectorWrite(KbDocument doc) {
         if (doc == null || doc.getKbId() == null) {
@@ -46,7 +46,7 @@ public class KbMilvusRoutingService {
     }
 
     /**
-     * 删除文档向量等场景：知识库不可用时回退默认集合，避免阻塞删除（极端情况下可能残留孤儿向量）。
+     * 删除文档向量等场景：知识库不可用时回退默认集合，避免阻塞删除（极端情况下可能残留孤儿向量）
      */
     public String collectionForVectorWriteOrDefault(KbDocument doc) {
         try {
@@ -57,7 +57,7 @@ public class KbMilvusRoutingService {
     }
 
     /**
-     * 嵌入模型：知识库配置了则优先，否则使用全局默认。
+     * 嵌入模型：知识库配置了则优先，否则使用全局默认
      */
     public String embeddingModelOrDefault(KbDocument doc) {
         if (doc == null || doc.getKbId() == null) {

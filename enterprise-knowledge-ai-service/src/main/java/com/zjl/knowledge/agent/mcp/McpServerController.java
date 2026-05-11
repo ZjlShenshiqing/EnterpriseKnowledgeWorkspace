@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * MCP Server 端点。
+ * MCP Server 端点
  *
  * <p>实现 MCP 协议的 HTTP/SSE 传输模式：
  * GET  /mcp/sse       → 建立 SSE 连接
@@ -36,7 +36,7 @@ public class McpServerController {
     private final ToolRegistry toolRegistry;
 
     /**
-     * 建立 MCP SSE 连接。
+     * 建立 MCP SSE 连接
      *
      * @return SSE 流，返回 sessionId
      */
@@ -62,7 +62,7 @@ public class McpServerController {
     }
 
     /**
-     * 工具发现：返回所有注册的 Tool 定义（JSON Schema）。
+     * 工具发现：返回所有注册的 Tool 定义（JSON Schema）
      */
     @PostMapping("/tools/list")
     public Result<Map<String, Object>> listTools() {
@@ -80,7 +80,7 @@ public class McpServerController {
     }
 
     /**
-     * 接收 Tool 调用请求。
+     * 接收 Tool 调用请求
      *
      * @param sessionId MCP SSE 会话 ID
      * @param request   Tool 调用请求
@@ -101,7 +101,7 @@ public class McpServerController {
     }
 
     /**
-     * MCP Tool 调用请求。
+     * MCP Tool 调用请求
      */
     @lombok.Data
     public static class ToolCallRequest {

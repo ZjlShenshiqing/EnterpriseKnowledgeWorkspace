@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 按段落（两个以上连续换行）切分，单段超长时降级为固定窗口切分。
+ * 按段落（两个以上连续换行）切分，单段超长时降级为固定窗口切分
  *
  * <p>优先按 {@code \R\R+}（两个以上 Unicode 换行符）拆分，
  * 保持文档的自然段落结构。如果某段超过 {@link ChunkingOptions#maxChars()}，
@@ -23,12 +23,12 @@ import java.util.List;
 public class ParagraphChunkingStrategy implements ChunkingStrategy {
 
     /**
-     * 固定窗口策略，用于单段超长时的降级切分。
+     * 固定窗口策略，用于单段超长时的降级切分
      */
     private final FixedSizeChunkingStrategy fixedSizeChunkingStrategy;
 
     /**
-     * 返回 {@link ChunkingMode#PARAGRAPH} 模式标识。
+     * 返回 {@link ChunkingMode#PARAGRAPH} 模式标识
      *
      * @return 按段落分块模式
      */
@@ -38,7 +38,7 @@ public class ParagraphChunkingStrategy implements ChunkingStrategy {
     }
 
     /**
-     * 按段落结构切分文本。
+     * 按段落结构切分文本
      *
      * <p>步骤：</p>
      * <ol>

@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Anthropic Messages API 客户端实现。
+ * Anthropic Messages API 客户端实现
  *
- * <p>使用 Anthropic Java SDK 进行流式对话和 tool calling。
+ * <p>使用 Anthropic Java SDK 进行流式对话和 tool calling
  * 当 app.agent.llm.provider=anthropic 时启用</p>
  */
 @Slf4j

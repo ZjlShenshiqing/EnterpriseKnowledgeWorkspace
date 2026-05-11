@@ -20,7 +20,7 @@ public interface ChunkingStrategy {
     ChunkingMode mode();
 
     /**
-     * 将输入文本按策略切分为若干片段。
+     * 将输入文本按策略切分为若干片段
      *
      * <p>空文本返回空列表；单段超长时策略内部可递归降级，
      * 例如按段落分块时单段超出上限则回退到固定窗口切分。</p>

@@ -6,12 +6,12 @@ import com.zjl.knowledge.agent.model.ChatMessage;
 import java.util.List;
 
 /**
- * LLM 客户端抽象，支持流式对话与 tool calling。
+ * LLM 客户端抽象，支持流式对话与 tool calling
  */
 public interface LlmClient {
 
     /**
-     * 流式对话（带 tools）。
+     * 流式对话（带 tools）
      *
      * @param messages  对话历史（含 system prompt）
      * @param tools     可用工具定义

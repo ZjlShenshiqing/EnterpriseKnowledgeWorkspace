@@ -9,7 +9,7 @@ import java.util.Arrays;
  * 一期占位向量生成工具
  *
  * <p>将文本 SHA-256 哈希展开为固定维度浮点数组并做 L2 归一化，
- * 保证同一文本始终生成相同向量，可用于入库和检索。
+ * 保证同一文本始终生成相同向量，可用于入库和检索
  * Step4 接入真实 embedding 模型后替换实现即可平滑切换</p>
  */
 public final class PlaceholderEmbedding {

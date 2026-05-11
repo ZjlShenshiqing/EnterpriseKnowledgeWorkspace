@@ -81,7 +81,7 @@ public class MilvusVectorWriter {
     /**
      * 批量写入文档切片向量
      *
-     * <p>单次 Insert 请求包含多行，每行含 id / content / metadata(JSON) / embedding 四个字段。
+     * <p>单次 Insert 请求包含多行，每行含 id / content / metadata(JSON) / embedding 四个字段
      * content 超 {@value #CONTENT_MAX_LEN} 字符时自动截断</p>
      *
      * @param collectionName Milvus 集合名
@@ -132,7 +132,7 @@ public class MilvusVectorWriter {
     /**
      * 更新单条切片向量（Upsert）
      *
-     * <p>同一主键的行会被覆盖，实现单条切片的向量更新。
+     * <p>同一主键的行会被覆盖，实现单条切片的向量更新
      * content 超长时同样会截断</p>
      *
      * @param collectionName Milvus 集合名

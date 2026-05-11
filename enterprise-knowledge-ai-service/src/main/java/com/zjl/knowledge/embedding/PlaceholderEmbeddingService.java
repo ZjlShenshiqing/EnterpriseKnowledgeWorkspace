@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 占位向量：与 {@link PlaceholderEmbedding} 一致，后续可替换为 HTTP/SDK 调用真实模型。
+ * 占位向量：与 {@link PlaceholderEmbedding} 一致，后续可替换为 HTTP/SDK 调用真实模型
  */
 @Service
 @RequiredArgsConstructor

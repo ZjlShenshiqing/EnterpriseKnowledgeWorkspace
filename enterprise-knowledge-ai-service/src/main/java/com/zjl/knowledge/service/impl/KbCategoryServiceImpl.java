@@ -9,13 +9,13 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 /**
- * 知识分类服务实现。
+ * 知识分类服务实现
  */
 @Service
 public class KbCategoryServiceImpl extends ServiceImpl<KbCategoryMapper, KbCategory> implements KbCategoryService {
 
     /**
-     * 插入前填充时间字段。
+     * 插入前填充时间字段
      */
     @Override
     public boolean save(KbCategory entity) {
@@ -28,7 +28,7 @@ public class KbCategoryServiceImpl extends ServiceImpl<KbCategoryMapper, KbCateg
     }
 
     /**
-     * 更新前填充时间字段。
+     * 更新前填充时间字段
      */
     @Override
     public boolean updateById(KbCategory entity) {

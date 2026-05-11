@@ -13,7 +13,7 @@ public final class ContentHashUtil {
     }
 
     /**
-     * SHA-256 十六进制小写字符串。
+     * SHA-256 十六进制小写字符串
      */
     public static String sha256Hex(String content) {
         try {

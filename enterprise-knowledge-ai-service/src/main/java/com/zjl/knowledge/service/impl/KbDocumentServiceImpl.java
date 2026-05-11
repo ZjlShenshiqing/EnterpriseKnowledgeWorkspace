@@ -42,7 +42,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 知识文档服务：轻量查询/更新 + 委托给独立职责服务。
+ * 知识文档服务：轻量查询/更新 + 委托给独立职责服务
  */
 @Slf4j
 @Service

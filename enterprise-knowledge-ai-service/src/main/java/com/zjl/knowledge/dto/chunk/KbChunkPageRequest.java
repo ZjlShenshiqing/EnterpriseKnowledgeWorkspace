@@ -3,7 +3,7 @@ package com.zjl.knowledge.dto.chunk;
 import lombok.Data;
 
 /**
- * Chunk 分页查询参数。
+ * Chunk 分页查询参数
  */
 @Data
 public class KbChunkPageRequest {

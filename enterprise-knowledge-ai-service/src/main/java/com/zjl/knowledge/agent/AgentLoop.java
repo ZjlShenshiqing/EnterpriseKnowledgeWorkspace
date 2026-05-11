@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Agent 循环：用户输入 → LLM → tool call → 执行 → 回填 → 循环直到完成。
+ * Agent 循环：用户输入 → LLM → tool call → 执行 → 回填 → 循环直到完成
  */
 @Slf4j
 @Component
@@ -50,7 +50,7 @@ public class AgentLoop {
     private final AgentProperties agentProperties;
 
     /**
-     * 执行 Agent 对话循环。
+     * 执行 Agent 对话循环
      *
      * @param session   会话
      * @param user      当前用户

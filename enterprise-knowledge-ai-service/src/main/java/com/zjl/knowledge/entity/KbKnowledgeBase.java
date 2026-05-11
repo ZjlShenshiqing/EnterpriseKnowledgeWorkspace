@@ -21,12 +21,12 @@ public class KbKnowledgeBase {
     private String name;
 
     /**
-     * 嵌入模型标识；为空时使用全局 {@code app.knowledge-ai.embedding-model}。
+     * 嵌入模型标识；为空时使用全局 {@code app.knowledge-ai.embedding-model}
      */
     private String embeddingModel;
 
     /**
-     * Milvus 集合名（与向量维度需与全局配置一致）。
+     * Milvus 集合名（与向量维度需与全局配置一致）
      */
     private String collectionName;
 
