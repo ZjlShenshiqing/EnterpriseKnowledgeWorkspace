@@ -75,7 +75,7 @@ graph TB
             AGENT_SESSION[AgentSessionService<br/>会话持久化]
             MCP_SERVER[McpServerController<br/>MCP SSE 端点]
             TOOL_REG[ToolRegistry<br/>Tool 注册表]
-            AGENT_TOOLS[4 个检索 Tool<br/>search/list/detail/bases]
+            AGENT_TOOLS[5 个 Tool<br/>search/list/detail/bases/rag_qa]
             LLM_CLIENT[LlmClient<br/>LLM 调用抽象]
         end
 
@@ -1257,7 +1257,7 @@ erDiagram
     }
 ```
 
-### 7.2 KbDocument 完整字段分析（28 个字段）
+### 7.2 KbDocument 完整字段分析（31 个字段）
 
 **文件路径**：`entity/KbDocument.java`  
 **行数**：164 行  
@@ -1293,6 +1293,8 @@ erDiagram
 | 27 | `createdAt` | `LocalDateTime` | `created_at` | `TIMESTAMP` | NOW | — | 创建时间 |
 | 28 | `updatedAt` | `LocalDateTime` | `updated_at` | `TIMESTAMP` | NOW | — | 自动更新 |
 | 29 | `deleted` | `Integer` | `deleted` | `INT` | 0 | `@TableLogic` | 逻辑删除标记 |
+| 30 | `metadata` | `String` | `metadata` | `LONGTEXT` | null | — | Tika 自动提取的元数据（JSON，如 author、creationDate） |
+| 31 | `filterTags` | `String` | `filter_tags` | `LONGTEXT` | null | — | 管理员填写的过滤标签（JSON，如 {"department":"技术部"}） |
 
 ### 7.3 KbDocumentChunk 完整字段分析（14 个字段）
 
@@ -3426,7 +3428,62 @@ public void ensureCollectionLoaded(String collectionName) {
 }
 ```
 
-### 12.4 MilvusCollectionBootstrap —— 启动初始化
+### 12.4 MilvusVectorWriter.search() —— 向量检索
+
+```java
+public List<SearchResult> search(String collectionName, float[] vector, int topK, String filter) {
+    SearchReq req = SearchReq.builder()
+            .collectionName(collectionName)
+            .data(Collections.singletonList(queryVector))
+            .topK(topK)
+            .outputFields(List.of("id", "metadata"))
+            .filter(filter != null ? filter : "")
+            .build();
+    SearchResp resp = milvusClient.search(req);
+    // 解析 SearchResp → List<SearchResult>
+}
+```
+
+**SearchResult**：
+
+```java
+public record SearchResult(String chunkId, String docId, float score) {}
+```
+
+**调用链**：
+
+```mermaid
+sequenceDiagram
+    participant RAG as RagQaTool
+    participant VEC as VectorSyncService
+    participant EMB as DeepSeekEmbeddingService
+    participant STORE as ChunkVectorStore
+    participant WRITER as MilvusVectorWriter
+    participant MIL as Milvus
+
+    RAG->>VEC: searchSimilar(question, topK, doc)
+    VEC->>EMB: embed(question)
+    EMB-->>VEC: float[]
+    VEC->>STORE: search(collection, vector, topK, filter)
+    STORE->>WRITER: search(collection, vector, topK, filter)
+    WRITER->>MIL: gRPC SearchReq
+    MIL-->>WRITER: SearchResp { chunkId, metadata.doc_id, score }
+    WRITER-->>STORE: List&lt;SearchResult&gt;
+    STORE-->>VEC: List&lt;SearchResult&gt;
+    VEC-->>RAG: List&lt;SearchResult&gt;
+```
+
+**VectorSyncService.searchSimilar()**：
+
+```java
+public List<SearchResult> searchSimilar(String query, int topK, KbDocument document) {
+    float[] vector = toArray(embed(query, document));
+    String collection = resolveCollectionOrDefault(document);
+    return chunkVectorStore.search(collection, vector, topK, null);
+}
+```
+
+### 12.5 MilvusCollectionBootstrap —— 启动初始化
 
 **文件路径**：`milvus/MilvusCollectionBootstrap.java`  
 **行数**：51 行
@@ -3807,7 +3864,7 @@ graph TB
 | `agent/model/` | 3 | ChatMessage, ToolCall, ChatUsage |
 | `agent/llm/` | 4 | LlmClient, StreamListener, DeepSeekLlmClient, AnthropicLlmClient |
 | `agent/mcp/` | 4 | McpTool, ToolRegistry, ToolDefinition, ToolResult, McpServerController |
-| `agent/tool/` | 4 | SearchDocumentsTool, ListDocumentsTool, GetDocumentDetailTool, ListKnowledgeBasesTool |
+| `agent/tool/` | 5 | SearchDocumentsTool, ListDocumentsTool, GetDocumentDetailTool, ListKnowledgeBasesTool, RagQaTool |
 
 ### 15.3 AgentController — 对话与会话管理
 
@@ -4050,6 +4107,41 @@ classDiagram
 | `list_knowledge_bases` | 无 | `KbKnowledgeBaseService.pageQuery()` |
 
 **返回字段**：id, name, embeddingModel, collectionName, documentCount, createdAt
+
+#### 15.10.5 RagQaTool（RAG 问答）
+
+**文件路径**：`agent/tool/RagQaTool.java`  
+**依赖**：`VectorSyncService` + `KbDocumentMapper` + `KbDocumentChunkMapper`
+
+| Tool 名 | 参数 | 说明 |
+|---------|------|------|
+| `rag_qa` | `question`(必填, string), `topK`(可选, integer, 默认5, 最大10) | 向量检索 → 按文档聚合 → 返回 top-K 文档及 matchedChunks |
+
+**执行流程**：
+
+```mermaid
+sequenceDiagram
+    participant LLM as DeepSeek LLM
+    participant REG as ToolRegistry
+    participant RAG as RagQaTool
+    participant VEC as VectorSyncService
+    participant MIL as Milvus
+    participant DB as MySQL
+
+    LLM->>REG: tool_call: rag_qa(question, topK)
+    REG->>RAG: execute(args, user)
+    RAG->>VEC: searchSimilar(question, topK*3, doc)
+    VEC->>MIL: embed(question) → SearchReq
+    MIL-->>VEC: top-K SearchResult {chunkId, docId, score}
+    VEC-->>RAG: List of SearchResult
+    RAG->>DB: selectBatchIds(docIds)
+    RAG->>RAG: 权限过滤 → 按文档聚合 matchedChunks
+    RAG-->>REG: ToolResult { documents: [...] }
+```
+
+**返回格式**：每个文档包含 `documentId, title, summary, fileType, fileName, fileSize, createdAt, metadata(Tika自动提取), filterTags, matchedChunks[{chunkIndex, text, score}]`
+
+**安全约束**：不返回 `content_text`、`file_url`；matchedChunks 只返回匹配片段非全文
 
 ### 15.11 LLM 客户端层
 
@@ -4716,7 +4808,8 @@ enterprise-knowledge-ai-service/
     │   │       ├── SearchDocumentsTool.java           # 搜索文档
     │   │       ├── ListDocumentsTool.java             # 文档列表
     │   │       ├── GetDocumentDetailTool.java         # 文档详情
-    │   │       └── ListKnowledgeBasesTool.java        # 知识库列表
+    │   │       ├── ListKnowledgeBasesTool.java        # 知识库列表
+    │   │       └── RagQaTool.java                     # RAG 问答
     │   │
     │   ├── service/                                  # 服务层（17个文件）
     │   │   ├── KbCategoryService.java                # 接口
@@ -4764,7 +4857,7 @@ enterprise-knowledge-ai-service/
 
 ---
 
-**文档版本**：v5.2（DeepSeek LLM + Embedding + 事务修复 + 去占位）  
+**文档版本**：v5.3（RAG 智能问答 + Milvus Search + 文档元数据）  
 **最后更新**：2026-05-11  
 **覆盖范围**：107 个 Java 源文件（83 原有 + 24 Agent 新增）+ 3 个资源文件  
 **图表数量**：24 个 Mermaid 图表（架构图 × 4、时序图 × 6、流程图 × 4、ER 图 × 1、类图 × 5、状态图 × 1、依赖图 × 1、数据流图 × 2）
