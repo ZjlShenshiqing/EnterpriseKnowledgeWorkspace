@@ -1,55 +1,58 @@
 <template>
-  <el-container style="height:100vh">
-    <el-header style="height:56px;background:#409eff;display:flex;align-items:center;padding:0 20px">
-      <span style="color:#fff;font-size:18px;font-weight:bold">企业智能工作平台</span>
-      <div style="margin-left:auto;color:#fff;display:flex;align-items:center;gap:12px">
-        <span>管理员</span>
-        <el-avatar :size="32" />
+  <div style="height:100vh;display:flex">
+    <!-- Icon Sidebar -->
+    <div style="width:64px;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;padding-top:12px">
+      <div v-for="item in navItems" :key="item.path"
+           @click="$router.push(item.path)"
+           style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;cursor:pointer"
+           :style="{ background: isActive(item.path) ? '#409eff' : 'transparent' }">
+        <el-icon :size="22" :color="isActive(item.path) ? '#fff' : '#909399'"><component :is="item.icon" /></el-icon>
       </div>
-    </el-header>
-    <el-container>
-      <el-aside width="220px" style="background:#f5f7fa;border-right:1px solid #e4e7ed">
-        <el-menu :default-active="activeMenu" router style="border-right:none" @select="handleSelect">
-          <el-menu-item index="/">
-            <el-icon><Monitor /></el-icon><span>工作台</span>
-          </el-menu-item>
-          <el-sub-menu index="knowledge">
-            <template #title><el-icon><Document /></el-icon><span>知识库</span></template>
-            <el-menu-item index="/knowledge/documents">文档管理</el-menu-item>
-            <el-menu-item index="/knowledge/bases">知识库设置</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="ai">
-            <template #title><el-icon><ChatDotRound /></el-icon><span>智能助手</span></template>
-            <el-menu-item index="/agent/chat">智能对话</el-menu-item>
-            <el-menu-item index="/qa/ask">智能问答</el-menu-item>
-          </el-sub-menu>
-          <el-menu-item index="/meetings">
-            <el-icon><Calendar /></el-icon><span>会议预约</span>
-          </el-menu-item>
-          <el-menu-item index="/todos">
-            <el-icon><List /></el-icon><span>我的待办</span>
-          </el-menu-item>
-          <el-menu-item index="/tasks">
-            <el-icon><Aim /></el-icon><span>任务协同</span>
-          </el-menu-item>
-          <el-menu-item index="/notifications">
-            <el-icon><Bell /></el-icon><span>消息通知</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/users">
-            <el-icon><Setting /></el-icon><span>系统管理</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
-      <el-main style="background:#f0f2f5;padding:20px">
+      <div style="flex:1"></div>
+      <div v-if="isAdmin" @click="$router.push('/admin')"
+           style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;cursor:pointer"
+           :style="{ background: isAdminActive ? '#409eff' : 'transparent' }">
+        <el-icon :size="22" :color="isAdminActive ? '#fff' : '#909399'"><Setting /></el-icon>
+      </div>
+      <el-avatar :size="36" style="margin-bottom:12px" />
+    </div>
+
+    <!-- Main Content -->
+    <div style="flex:1;display:flex;flex-direction:column;background:#f5f6f7;overflow:hidden">
+      <div style="height:52px;background:#fff;border-bottom:1px solid #e5e6eb;display:flex;align-items:center;padding:0 20px;flex-shrink:0">
+        <span style="font-size:16px;font-weight:600">{{ title }}</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+          <span style="font-size:14px;color:#606266">管理员</span>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px">
         <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
-const activeMenu = computed(() => route.path)
+const isAdmin = ref(true)
+const title = computed(() => route.meta?.title || '工作台')
+
+const navItems = [
+  { path: '/', icon: 'HomeFilled' },
+  { path: '/chat', icon: 'ChatDotRound' },
+  { path: '/documents', icon: 'Document' },
+  { path: '/meetings', icon: 'Calendar' },
+  { path: '/todos', icon: 'List' },
+  { path: '/tasks', icon: 'Aim' },
+  { path: '/notifications', icon: 'Bell' },
+]
+
+const isAdminActive = computed(() => route.path.startsWith('/admin'))
+
+function isActive(path) {
+  if (path === '/') return route.path === '/'
+  return route.path.startsWith(path)
+}
 </script>
