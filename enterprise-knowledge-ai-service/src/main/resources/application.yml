@@ -17,7 +17,7 @@ spring:
       schema-locations: classpath:schema.sql
 
 server:
-  port: 8081
+  port: 8083
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
@@ -33,19 +33,20 @@ app:
   kb:
     upload-dir: ./data/kb-uploads
   knowledge:
-    embedding-model: ""           # 为空时不执行向量化（跳过 Milvus 写入）
+    embedding-model: deepseek-chat
     vector-write-enabled: true    # 全局向量写入开关
   milvus:
     uri: http://localhost:19530
     collection: kb_chunk_embedding
-    vector-dimension: 128
+    vector-dimension: 4096
     # 为 true 时：启动必须完成 Milvus 建表与 load。当 embedding-model 为空且仅使用文档分块功能时，可设为 false 允许无 Milvus 启动
     fail-on-init: false
   agent:
     llm:
-      provider: anthropic
-      api-key: ${ANTHROPIC_API_KEY:}
-      model: claude-sonnet-4-6
+      provider: deepseek
+      api-key: sk-e99b95e9d9f84909b2a0c5cbb6ea4c77
+      base-url: https://api.deepseek.com
+      model: deepseek-chat
       max-tokens: 4096
       temperature: 0.3
     session:
