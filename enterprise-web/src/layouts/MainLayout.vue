@@ -30,8 +30,18 @@
           <el-badge :value="unread" :max="99" v-if="unread>0">
             <el-icon :size="18" color="#606266" style="cursor:pointer" @click="$router.push('/notifications')"><Bell /></el-icon>
           </el-badge>
-          <span style="font-size:14px;color:#606266">管理员</span>
-          <el-avatar :size="30" />
+          <el-dropdown trigger="click" @command="handleCommand">
+            <span style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:14px;color:#606266">{{ userName }}</span>
+              <el-avatar :size="30" />
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
       <div style="flex:1;overflow-y:auto;padding:20px">
@@ -47,11 +57,24 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
+const router = useRouter()
 const isAdmin = ref(true)
 const unread = ref(3)
 const title = computed(() => route.meta?.title || '工作台')
+const userName = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  return user.realName || user.username || '管理员'
+})
+
+function handleCommand(cmd) {
+  if (cmd === 'logout') {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    router.push('/login')
+  }
+}
 
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '工作台' },

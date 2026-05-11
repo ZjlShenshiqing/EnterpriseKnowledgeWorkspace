@@ -1,13 +1,26 @@
 import axios from 'axios'
 
-const headers = {
-  'X-User-Id': '1',
-  'X-Department-Id': '1',
-  'X-Is-Admin': 'true'
+function getAuthHeaders() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  return {
+    'X-User-Id': String(user.id || '1'),
+    'X-Department-Id': String(user.departmentId || '1'),
+    'X-Is-Admin': String(user.isAdmin ? 'true' : 'false')
+  }
 }
 
-const kbApi = axios.create({ baseURL: '/api/kb', headers })
-const systemApi = axios.create({ baseURL: '/api/system', headers })
+const kbApi = axios.create({ baseURL: '/api/kb' })
+const systemApi = axios.create({ baseURL: '/api/system' })
+
+// Intercept requests to inject auth headers dynamically
+kbApi.interceptors.request.use(config => {
+  config.headers = { ...config.headers, ...getAuthHeaders() }
+  return config
+})
+systemApi.interceptors.request.use(config => {
+  config.headers = { ...config.headers, ...getAuthHeaders() }
+  return config
+})
 
 // ---- Knowledge Base ----
 
@@ -40,7 +53,7 @@ export function getKnowledgeBase(id) {
 export function agentChat(sessionId, message) {
   return fetch('/api/kb/agent/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ sessionId, message })
   })
 }

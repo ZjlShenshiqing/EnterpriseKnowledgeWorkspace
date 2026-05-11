@@ -4,12 +4,19 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../pages/Login.vue'),
+    meta: { title: '登录' }
+  },
+  {
     path: '/',
     component: MainLayout,
+    meta: { requiresAuth: true },
     children: [
       { path: '', name: 'Dashboard', component: () => import('../pages/Dashboard.vue'), meta: { title: '工作台' } },
       { path: 'chat', name: 'Chat', component: () => import('../pages/Chat.vue'), meta: { title: '智能对话' } },
-      { path: 'documents', name: 'Documents', component: () => import('../pages/Documents.vue'), meta: { title: '知识文档' } },
+      { path: 'documents', name: 'Documents', component: () => import('../pages/Documents.vue'), meta: { title: '文档协作' } },
       { path: 'meetings', name: 'Meetings', component: () => import('../pages/Meetings.vue'), meta: { title: '会议预约' } },
       { path: 'todos', name: 'Todos', component: () => import('../pages/Todos.vue'), meta: { title: '我的待办' } },
       { path: 'tasks', name: 'Tasks', component: () => import('../pages/Tasks.vue'), meta: { title: '任务协同' } },
@@ -19,6 +26,7 @@ const routes = [
   {
     path: '/admin',
     component: AdminLayout,
+    meta: { requiresAuth: true },
     children: [
       { path: '', name: 'AdminDashboard', component: () => import('../pages/admin/Documents.vue'), meta: { title: '文档管理' } },
       { path: 'documents', name: 'AdminDocuments', component: () => import('../pages/admin/Documents.vue'), meta: { title: '文档管理' } },
@@ -30,4 +38,17 @@ const routes = [
   }
 ]
 
-export default createRouter({ history: createWebHistory(), routes })
+const router = createRouter({ history: createWebHistory(), routes })
+
+router.beforeEach((to, from, next) => {
+  const user = localStorage.getItem('user')
+  if (to.meta.requiresAuth && !user) {
+    next('/login')
+  } else if (to.path === '/login' && user) {
+    next('/')
+  } else {
+    next()
+  }
+})
+
+export default router
