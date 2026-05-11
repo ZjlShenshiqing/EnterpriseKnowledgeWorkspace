@@ -149,8 +149,12 @@ public class DocumentChunkingService {
 
             long extractStart = System.currentTimeMillis();
             String text;
+            java.util.Map<String, String> docMetadata = java.util.Map.of();
             try (InputStream is = Files.newInputStream(Paths.get(document.getFileUrl()))) {
-                text = tikaDocumentParser.extractText(is, document.getFileName(), document.getFileType());
+                TikaDocumentParser.ParseResult parseResult = tikaDocumentParser.extractWithMetadata(
+                        is, document.getFileName(), document.getFileType());
+                text = parseResult.text();
+                docMetadata = parseResult.metadata();
             } catch (IOException | TikaException | SAXException ex) {
                 throw new BizException(ErrorCode.PARAM_INVALID, "文档解析失败: " + ex.getMessage());
             }
@@ -158,6 +162,8 @@ public class DocumentChunkingService {
             if (!StringUtils.hasText(text)) {
                 throw new BizException(ErrorCode.PARAM_INVALID, "未能从文件中提取正文");
             }
+
+            document.setMetadata(toJson(docMetadata));
 
             ChunkingMode chunkingMode = ChunkingMode.fromValue(document.getChunkStrategy());
             ChunkingStrategy strategy = chunkingStrategyFactory.requireStrategy(chunkingMode);
@@ -252,6 +258,7 @@ public class DocumentChunkingService {
                     .set(KbDocument::getContentText, fullText)
                     .set(KbDocument::getSummary, tikaDocumentParser.summarize(fullText, 200))
                     .set(KbDocument::getChunkCount, vectorChunks.size())
+                    .set(KbDocument::getMetadata, document.getMetadata())
                     .set(KbDocument::getStatus, DocumentStatus.SUCCESS.name())
                     .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
             count[0] = vectorChunks.size();
@@ -285,6 +292,14 @@ public class DocumentChunkingService {
                         .set(KbDocument::getStatus, DocumentStatus.FAILED.name())
                         .set(KbDocument::getSummary, reason != null && reason.length() > 1000 ? reason.substring(0, 1000) : reason)
                         .set(KbDocument::getUpdatedAt, LocalDateTime.now())));
+    }
+
+    private String toJson(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 
     private Map<String, Object> parseChunkConfig(String json) {

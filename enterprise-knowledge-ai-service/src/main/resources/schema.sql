@@ -64,6 +64,8 @@ CREATE TABLE kb_document (
     source_type VARCHAR(32) DEFAULT 'FILE',
     source_location VARCHAR(1024) NULL,
     schedule_enabled INT DEFAULT 0,
+    metadata LONGTEXT NULL,
+    filter_tags LONGTEXT NULL,
     schedule_cron VARCHAR(128) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

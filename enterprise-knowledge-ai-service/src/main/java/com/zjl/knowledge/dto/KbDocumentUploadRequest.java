@@ -89,4 +89,9 @@ public class KbDocumentUploadRequest {
      * 定时 Cron
      */
     private String scheduleCron;
+
+    /**
+     * 管理员填写的过滤标签，JSON 格式如 {"department":"技术部"}
+     */
+    private String filterTags;
 }

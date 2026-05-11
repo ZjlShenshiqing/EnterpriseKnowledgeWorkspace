@@ -161,4 +161,14 @@ public class KbDocument {
      */
     @TableLogic
     private Integer deleted;
+
+    /**
+     * Tika 自动提取的元数据（JSON 格式，如 author、creationDate）
+     */
+    private String metadata;
+
+    /**
+     * 管理员填写的过滤标签（JSON 格式，如 {"department":"技术部"}）
+     */
+    private String filterTags;
 }

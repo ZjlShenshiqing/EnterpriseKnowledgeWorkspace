@@ -118,6 +118,7 @@ public class DocumentUploadService {
         doc.setSourceLocation(StringUtils.hasText(meta.getSourceLocation()) ? meta.getSourceLocation().trim() : null);
         doc.setScheduleEnabled(Boolean.TRUE.equals(meta.getScheduleEnabled()) ? 1 : 0);
         doc.setScheduleCron(StringUtils.hasText(meta.getScheduleCron()) ? meta.getScheduleCron().trim() : null);
+        doc.setFilterTags(StringUtils.hasText(meta.getFilterTags()) ? meta.getFilterTags().trim() : null);
         doc.setCreatedAt(LocalDateTime.now());
         doc.setUpdatedAt(LocalDateTime.now());
         kbDocumentMapper.insert(doc);
