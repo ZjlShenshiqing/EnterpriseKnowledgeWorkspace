@@ -61,20 +61,32 @@ async function send() {
   sending.value = true; await scrollBottom()
   try {
     const resp = await agentChat(null, text)
+    if (!resp.ok) throw new Error('HTTP ' + resp.status)
     const reader = resp.body.getReader()
     const decoder = new TextDecoder()
     const msg = messages.value[messages.value.length-1]
     msg.typing = false
+    let buffer = ''
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      for (const line of decoder.decode(value).split('\n')) {
-        if (line.startsWith('data:')) {
-          try { const d = JSON.parse(line.slice(5).trim()); if (d.delta) msg.content += d.delta } catch(e) {}
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed) continue
+        if (trimmed.startsWith('data:')) {
+          const json = trimmed.substring(5).trim()
+          if (!json) continue
+          try {
+            const d = JSON.parse(json)
+            if (d.delta) { msg.content += d.delta; await scrollBottom() }
+          } catch(e) { console.log('SSE parse skip:', json.substring(0,50)) }
         }
       }
-      await scrollBottom()
     }
+    if (!msg.content) msg.content = '收到响应但未获取到内容，请重试。'
   } catch(e) {
     const msg = messages.value[messages.value.length-1]
     msg.typing = false
