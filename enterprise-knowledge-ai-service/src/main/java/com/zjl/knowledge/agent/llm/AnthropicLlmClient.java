@@ -22,7 +22,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = "app.agent.llm.provider", havingValue = "anthropic", matchIfMissing = true)
+@ConditionalOnProperty(value = "app.agent.llm.provider", havingValue = "anthropic")
 public class AnthropicLlmClient implements LlmClient {
 
     private final AgentProperties agentProperties;

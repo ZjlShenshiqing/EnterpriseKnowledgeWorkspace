@@ -19,17 +19,17 @@ public class AgentProperties {
     @Data
     public static class Llm {
 
-        /** LLM 提供商：anthropic / openai-compatible */
-        private String provider = "anthropic";
+        /** LLM 提供商：deepseek / anthropic */
+        private String provider = "deepseek";
 
         /** API Key */
         private String apiKey = "";
 
         /** 模型名 */
-        private String model = "claude-sonnet-4-6";
+        private String model = "deepseek-chat";
 
         /** API 地址 */
-        private String baseUrl = "https://api.anthropic.com";
+        private String baseUrl = "https://api.deepseek.com";
 
         /** 最大输出 token */
         private int maxTokens = 4096;

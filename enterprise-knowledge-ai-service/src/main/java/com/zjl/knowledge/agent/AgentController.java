@@ -20,7 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.Map;
 
 /**
- * Agent 对话与会话管理接口。
+ * Agent 对话与会话管理接口
  */
 @Slf4j
 @RestController
@@ -32,7 +32,7 @@ public class AgentController {
     private final AgentSessionService sessionService;
 
     /**
-     * 对话接口（SSE 流式）。
+     * 对话接口（SSE 流式）
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(@RequestBody ChatRequest request) {
@@ -60,7 +60,7 @@ public class AgentController {
     }
 
     /**
-     * 我的会话列表。
+     * 我的会话列表
      */
     @GetMapping("/sessions")
     public Result<java.util.List<KbAgentSession>> listSessions() {
@@ -69,7 +69,7 @@ public class AgentController {
     }
 
     /**
-     * 会话历史消息。
+     * 会话历史消息
      */
     @GetMapping("/sessions/{id}")
     public Result<java.util.List<com.zjl.knowledge.agent.model.ChatMessage>> getSessionHistory(
@@ -80,7 +80,7 @@ public class AgentController {
     }
 
     /**
-     * 归档会话。
+     * 归档会话
      */
     @DeleteMapping("/sessions/{id}")
     public Result<Void> archiveSession(@PathVariable("id") Long id) {
@@ -95,7 +95,7 @@ public class AgentController {
     }
 
     /**
-     * 对话请求。
+     * 对话请求
      */
     @lombok.Data
     public static class ChatRequest {
