@@ -9,9 +9,11 @@ import com.zjl.knowledge.config.MilvusProperties;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.vector.request.DeleteReq;
 import io.milvus.v2.service.vector.request.InsertReq;
+import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.UpsertReq;
 import io.milvus.v2.service.vector.response.DeleteResp;
 import io.milvus.v2.service.vector.response.InsertResp;
+import io.milvus.v2.service.vector.response.SearchResp;
 import io.milvus.v2.service.vector.response.UpsertResp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -276,22 +279,21 @@ public class MilvusVectorWriter {
                 queryVector.add(v);
             }
             String col = resolveCollection(collectionName);
-            io.milvus.v2.service.vector.request.SearchReq req = io.milvus.v2.service.vector.request.SearchReq.builder()
+            SearchReq req = SearchReq.builder()
                     .collectionName(col)
-                    .data(java.util.Collections.singletonList(queryVector))
+                    .data(Collections.singletonList(queryVector))
                     .topK(topK)
-                    .outputFields(java.util.List.of("id", "metadata"))
+                    .outputFields(List.of("id", "metadata"))
                     .filter(filter != null ? filter : "")
                     .build();
-            io.milvus.v2.service.vector.response.SearchResp resp = milvusClient.search(req);
+            SearchResp resp = milvusClient.search(req);
 
             List<SearchResult> results = new ArrayList<>();
             if (resp.getSearchResults() != null && !resp.getSearchResults().isEmpty()) {
-                for (io.milvus.v2.service.vector.response.SearchResp.SearchResultWrapper wrapper
-                        : resp.getSearchResults().get(0)) {
+                for (SearchResp.SearchResultWrapper wrapper : resp.getSearchResults().get(0)) {
                     String chunkId = (String) wrapper.getEntity().get("id");
-                    java.util.Map<String, Object> metadata = getMetadata(wrapper.getEntity());
-                    String docId = metadata != null ? (String) metadata.get("doc_id") : null;
+                    Map<String, Object> metaObj = getMetadata(wrapper.getEntity());
+                    String docId = metaObj != null ? (String) metaObj.get("doc_id") : null;
                     results.add(new SearchResult(chunkId, docId, wrapper.getScore()));
                 }
             }
@@ -303,10 +305,10 @@ public class MilvusVectorWriter {
     }
 
     @SuppressWarnings("unchecked")
-    private java.util.Map<String, Object> getMetadata(java.util.Map<String, Object> entity) {
+    private Map<String, Object> getMetadata(Map<String, Object> entity) {
         Object meta = entity.get("metadata");
-        if (meta instanceof java.util.Map) {
-            return (java.util.Map<String, Object>) meta;
+        if (meta instanceof Map) {
+            return (Map<String, Object>) meta;
         }
         return null;
     }
