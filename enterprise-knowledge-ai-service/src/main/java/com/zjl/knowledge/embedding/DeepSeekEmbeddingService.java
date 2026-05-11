@@ -25,8 +25,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @ConditionalOnProperty(value = "app.knowledge.embedding-model", matchIfMissing = false)
-public class
-DeepSeekEmbeddingService implements EmbeddingService {
+public class DeepSeekEmbeddingService implements EmbeddingService {
 
     private final AgentProperties agentProperties;
     private final ObjectMapper objectMapper = new ObjectMapper();
