@@ -51,4 +51,15 @@ public interface ChunkVectorStore {
      * @param chunkIds       切片主键字符串列表
      */
     void deleteChunksByIds(String collectionName, List<String> chunkIds);
+
+    /**
+     * 向量相似度检索
+     *
+     * @param collectionName Milvus 集合名
+     * @param vector         查询向量
+     * @param topK           返回数量
+     * @param filter         标量过滤表达式（可选）
+     * @return 搜索结果
+     */
+    List<SearchResult> search(String collectionName, float[] vector, int topK, String filter);
 }

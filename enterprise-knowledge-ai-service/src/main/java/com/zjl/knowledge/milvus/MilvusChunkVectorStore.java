@@ -38,4 +38,9 @@ public class MilvusChunkVectorStore implements ChunkVectorStore {
     public void deleteChunksByIds(String collectionName, List<String> chunkIds) {
         milvusVectorWriter.deleteByChunkIds(collectionName, chunkIds);
     }
+
+    @Override
+    public List<SearchResult> search(String collectionName, float[] vector, int topK, String filter) {
+        return milvusVectorWriter.search(collectionName, vector, topK, filter);
+    }
 }

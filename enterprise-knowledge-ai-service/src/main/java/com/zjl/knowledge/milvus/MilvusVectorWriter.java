@@ -261,6 +261,57 @@ public class MilvusVectorWriter {
     }
 
     /**
+     * 向量相似度检索
+     *
+     * @param collectionName Milvus 集合名
+     * @param vector         查询向量
+     * @param topK           返回数量
+     * @param filter         标量过滤表达式（可选，如 metadata["doc_id"] in [...]）
+     * @return 搜索结果列表
+     */
+    public List<SearchResult> search(String collectionName, float[] vector, int topK, String filter) {
+        try {
+            List<Float> queryVector = new ArrayList<>(vector.length);
+            for (float v : vector) {
+                queryVector.add(v);
+            }
+            String col = resolveCollection(collectionName);
+            io.milvus.v2.service.vector.request.SearchReq req = io.milvus.v2.service.vector.request.SearchReq.builder()
+                    .collectionName(col)
+                    .data(java.util.Collections.singletonList(queryVector))
+                    .topK(topK)
+                    .outputFields(java.util.List.of("id", "metadata"))
+                    .filter(filter != null ? filter : "")
+                    .build();
+            io.milvus.v2.service.vector.response.SearchResp resp = milvusClient.search(req);
+
+            List<SearchResult> results = new ArrayList<>();
+            if (resp.getSearchResults() != null && !resp.getSearchResults().isEmpty()) {
+                for (io.milvus.v2.service.vector.response.SearchResp.SearchResultWrapper wrapper
+                        : resp.getSearchResults().get(0)) {
+                    String chunkId = (String) wrapper.getEntity().get("id");
+                    java.util.Map<String, Object> metadata = getMetadata(wrapper.getEntity());
+                    String docId = metadata != null ? (String) metadata.get("doc_id") : null;
+                    results.add(new SearchResult(chunkId, docId, wrapper.getScore()));
+                }
+            }
+            return results;
+        } catch (Exception ex) {
+            throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
+                    "向量检索失败: " + ex.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private java.util.Map<String, Object> getMetadata(java.util.Map<String, Object> entity) {
+        Object meta = entity.get("metadata");
+        if (meta instanceof java.util.Map) {
+            return (java.util.Map<String, Object>) meta;
+        }
+        return null;
+    }
+
+    /**
      * 转义过滤表达式中的特殊字符，防止注入
      *
      * @param s 原始字符串

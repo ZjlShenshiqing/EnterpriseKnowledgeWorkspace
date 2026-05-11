@@ -169,6 +169,20 @@ public class VectorSyncService {
     }
 
     /**
+     * 向量相似检索：embed(query) → Milvus Search
+     *
+     * @param query    查询文本
+     * @param topK     返回数量
+     * @param document 上下文文档（用于路由集合）
+     * @return 搜索结果
+     */
+    public List<com.zjl.knowledge.milvus.SearchResult> searchSimilar(String query, int topK, KbDocument document) {
+        float[] vector = toArray(embed(query, document));
+        String collection = resolveCollectionOrDefault(document);
+        return chunkVectorStore.search(collection, vector, topK, null);
+    }
+
+    /**
      * List&lt;Float&gt; → float[]
      */
     public static float[] toArray(List<Float> list) {
