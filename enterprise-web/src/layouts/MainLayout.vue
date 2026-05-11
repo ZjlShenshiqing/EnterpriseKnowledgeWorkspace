@@ -56,7 +56,7 @@ const title = computed(() => route.meta?.title || '工作台')
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '工作台' },
   { path: '/chat', icon: 'ChatDotRound', label: '智能对话' },
-  { path: '/documents', icon: 'Document', label: '知识文档' },
+  { path: '/documents', icon: 'Document', label: '文档协作' },
   { path: '/meetings', icon: 'Calendar', label: '会议预约' },
   { path: '/todos', icon: 'List', label: '我的待办' },
   { path: '/tasks', icon: 'Aim', label: '任务协同' },
