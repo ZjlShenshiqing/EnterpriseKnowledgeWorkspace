@@ -16,9 +16,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const bases=ref([
-  {id:1,name:'技术文档库',collectionName:'tech_docs',embeddingModel:'deepseek-chat',documentCount:45},
-  {id:2,name:'公司制度库',collectionName:'company_policy',embeddingModel:'',documentCount:12},
-])
+import { ref, onMounted } from 'vue'
+import { getKnowledgeBases } from '../../api'
+
+const bases = ref([])
+
+onMounted(async () => {
+  try {
+    const res = await getKnowledgeBases({ current: 1, size: 50 })
+    bases.value = res.data.data?.records || []
+  } catch(e) {
+    bases.value = [
+      {id:1,name:'技术文档库',collectionName:'tech_docs',embeddingModel:'deepseek-chat',documentCount:45},
+      {id:2,name:'公司制度库',collectionName:'company_policy',embeddingModel:'',documentCount:12},
+    ]
+  }
+})
 </script>
