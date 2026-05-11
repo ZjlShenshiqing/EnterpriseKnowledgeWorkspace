@@ -3,15 +3,12 @@ package com.zjl.knowledge.embedding;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zjl.knowledge.agent.config.AgentProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +16,9 @@ import java.util.stream.Collectors;
 
 /**
  * DeepSeek Embedding 服务实现（OpenAI 兼容格式）
- *
- * <p>当 app.knowledge.embedding-model 配置了值时启用</p>
  */
 @Slf4j
 @Service
-@ConditionalOnProperty(value = "app.knowledge.embedding-model", matchIfMissing = false)
 public class DeepSeekEmbeddingService implements EmbeddingService {
 
     private final AgentProperties agentProperties;
