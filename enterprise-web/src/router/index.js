@@ -22,6 +22,7 @@ const routes = [
       { path: 'meetings', name: 'Meetings', component: () => import('../pages/Meetings.vue'), meta: { title: '会议预约' } },
       { path: 'todos', name: 'Todos', component: () => import('../pages/Todos.vue'), meta: { title: '我的待办' } },
       { path: 'tasks', name: 'Tasks', component: () => import('../pages/Tasks.vue'), meta: { title: '任务协同' } },
+      { path: 'analytics', name: 'Analytics', component: () => import('../pages/Analytics.vue'), meta: { title: '数据看板' } },
       { path: 'approvals', name: 'Approvals', component: () => import('../pages/Approvals.vue'), meta: { title: '流程审批' } },
       { path: 'notifications', name: 'Notifications', component: () => import('../pages/Announcements.vue'), meta: { title: '公告通知' } },
     ]

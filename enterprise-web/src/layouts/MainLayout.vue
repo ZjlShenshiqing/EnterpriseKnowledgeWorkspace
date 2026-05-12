@@ -65,6 +65,7 @@ const userName = computed(() => {
 
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '工作台' },
+  { path: '/analytics', icon: 'DataAnalysis', label: '数据看板' },
   { path: '/chat', icon: 'ChatDotRound', label: '智能对话' },
   { path: '/documents', icon: 'Document', label: '文档协作' },
   { path: '/chats', icon: 'ChatLineSquare', label: '即时通讯' },

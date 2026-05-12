@@ -67,6 +67,48 @@ public class WorkbenchController {
         return Results.success(data);
     }
 
+    @GetMapping("/stats")
+    public Result<Map<String,Object>> stats(@RequestHeader(UA) Long userId, @RequestHeader(value=AD,defaultValue="false") String isAdmin) {
+        Map<String,Object> data = new LinkedHashMap<>();
+        var headers = Map.of(UA, String.valueOf(userId), AD, isAdmin);
+
+        try {
+            var tasks = callList(collabUrl + "/api/tasks", headers);
+            long todo=0, inProgress=0, review=0, done=0;
+            for (var t : tasks) {
+                String s = String.valueOf(((Map<?,?>)t).get("status"));
+                switch(s) { case "todo": todo++; break; case "in_progress": inProgress++; break; case "review": review++; break; case "done": done++; break; }
+            }
+            data.put("taskStats", Map.of("todo",todo,"inProgress",inProgress,"review",review,"done",done,"total",tasks.size()));
+        } catch(Exception e) { data.put("taskStats", Map.of()); }
+
+        try {
+            var approvals = callList(collabUrl + "/api/approvals", headers);
+            long pending=0, approved=0, rejected=0;
+            for (var a : approvals) {
+                String s = String.valueOf(((Map<?,?>)a).get("status"));
+                if ("approved".equals(s)) approved++; else if ("rejected".equals(s)) rejected++; else pending++;
+            }
+            data.put("approvalStats", Map.of("pending",pending,"approved",approved,"rejected",rejected,"total",approvals.size()));
+        } catch(Exception e) { data.put("approvalStats", Map.of()); }
+
+        try {
+            var meetings = callList(collabUrl + "/api/meetings", headers);
+            var today = java.time.LocalDate.now().toString();
+            long todayMeetings = meetings.stream().filter(m -> today.equals(String.valueOf(((Map<?,?>)m).get("date")))).count();
+            data.put("meetingStats", Map.of("today",todayMeetings,"total",meetings.size()));
+        } catch(Exception e) { data.put("meetingStats", Map.of()); }
+
+        try {
+            var kbResp = rt.getForObject(knowledgeUrl + "/api/kb/documents?current=1&size=1", Map.class);
+            if (kbResp != null && kbResp.get("data") instanceof Map kbData) {
+                data.put("docCount", kbData.getOrDefault("total", 0));
+            }
+        } catch(Exception e) { data.put("docCount", 0); }
+
+        return Results.success(data);
+    }
+
     @SuppressWarnings("unchecked")
     private List<Map<String,Object>> callList(String url, Map<String,String> headers) {
         var resp = rt.getForObject(url, Map.class);
