@@ -1,6 +1,6 @@
 # enterprise-collaboration-service 服务解析
 
-> 基于 2026-05-12 代码，解析 JWT 用户认证微服务的完整架构、组件职责与数据流。
+> 基于 2026-05-12 代码，解析企业协同微服务的完整架构、组件职责与数据流。涵盖认证、即时通讯、通讯录、公告、任务看板、OA 审批。
 
 ---
 
@@ -9,13 +9,13 @@
 1. [系统架构总览](#1-系统架构总览)
 2. [启动入口](#2-启动入口)
 3. [配置体系](#3-配置体系)
-4. [完整业务流程](#4-完整业务流程)
-5. [Entity 层](#5-entity-层)
-6. [DTO 层](#6-dto-层)
-7. [Mapper 层](#7-mapper-层)
-8. [Service 层](#8-service-层)
-9. [Controller 层](#9-controller-层)
-10. [JWT 认证链路](#10-jwt-认证链路)
+4. [模块全景](#4-模块全景)
+5. [Entity / DTO 层](#5-entity--dto-层)
+6. [认证模块](#6-认证模块)
+7. [即时通讯模块](#7-即时通讯模块)
+8. [通讯录与公告模块](#8-通讯录与公告模块)
+9. [任务管理模块](#9-任务管理模块)
+10. [OA 审批模块](#10-oa-审批模块)
 11. [数据库设计](#11-数据库设计)
 12. [完整 API 接口清单](#12-完整-api-接口清单)
 13. [目录结构速查](#13-目录结构速查)
@@ -34,62 +34,67 @@ graph TB
         subgraph "Web 层"
             FILTER[JwtAuthFilter<br/>Bearer Token → 请求头]
             AUTH_CTL[AuthController<br/>/api/auth/*]
+            CHAT_CTL[ChatController<br/>/api/chat/*]
+            CONTACT_CTL[ContactController<br/>/api/contacts/*]
+            ANNOUNCE_CTL[AnnouncementController<br/>/api/announcements/*]
+            TASK_CTL[TaskController<br/>/api/tasks/*]
+            APPROVAL_CTL[ApprovalController<br/>/api/approvals/*]
         end
 
         subgraph "Service 层"
-            LOGIN_SVC[UserLoginService 接口]
-            LOGIN_IMPL[UserLoginServiceImpl<br/>BCrypt + JWT + 黑名单]
+            LOGIN_SVC[UserLoginService<br/>BCrypt + JWT + 黑名单]
+        end
+
+        subgraph "实时通讯"
+            WS[JwtAuthFilter<br/>Bearer Token → 请求头]
+            WS_HANDLER[ChatWebSocketHandler<br/>/ws/chat]
         end
 
         subgraph "数据层"
-            MYSQL[(MySQL<br/>enterprise_collaboration<br/>sys_user / sys_dept)]
-        end
-
-        subgraph "工具层"
-            JWT[JwtUtil<br/>HS256 签发/验证]
-            WRAPPER[MutableRequestWrapper<br/>自定义请求头注入]
+            MYSQL[(MySQL<br/>enterprise_collaboration<br/>12张表)]
         end
     end
 
-    FRONTEND[Vue 前端 :5173] -->|POST /api/auth/login| AUTH_CTL
-    FRONTEND -->|Bearer Token| FILTER
-    FILTER -->|X-User-Id X-Is-Admin| AUTH_CTL
+    FRONTEND[Vue 前端 :5173] --> AUTH_CTL & CHAT_CTL & CONTACT_CTL & ANNOUNCE_CTL & TASK_CTL & APPROVAL_CTL
+    FRONTEND -->|WebSocket| WS_HANDLER
     AUTH_CTL --> LOGIN_SVC
-    LOGIN_SVC --> LOGIN_IMPL
-    LOGIN_IMPL --> MYSQL
-    LOGIN_IMPL --> JWT
-    FILTER --> JWT
-    FILTER --> WRAPPER
+    LOGIN_SVC --> MYSQL
+    CHAT_CTL & CONTACT_CTL & ANNOUNCE_CTL & TASK_CTL & APPROVAL_CTL --> MYSQL
+    WS_HANDLER --> MYSQL
 ```
 
-### 1.2 JWT 认证数据流
+### 1.2 数据流全景
 
 ```mermaid
 sequenceDiagram
     participant U as 用户
-    participant CTL as AuthController
-    participant SVC as UserLoginServiceImpl
+    participant AUTH as 认证模块
+    participant CHAT as 聊天模块
+    participant TASK as 任务模块
+    participant APPROVAL as 审批模块
     participant DB as MySQL
-    participant JWT as JwtUtil
-    participant FILTER as JwtAuthFilter
 
-    Note over U,FILTER: ① 登录流程
-    U->>CTL: POST /api/auth/login<br/>{username, password}
-    CTL->>SVC: login(req)
-    SVC->>DB: SELECT * FROM sys_user WHERE username=?
-    DB-->>SVC: SysUser
-    SVC->>SVC: BCrypt.matches(password, hash)
-    SVC->>JWT: generate({userId, username, isAdmin})
-    JWT-->>SVC: accessToken (HS256)
-    SVC-->>CTL: UserLoginRespDTO
-    CTL-->>U: {accessToken, userId, username...}
+    Note over U,DB: ① 登录 → 获取 JWT
+    U->>AUTH: POST /api/auth/login
+    AUTH->>DB: 验证用户
+    AUTH-->>U: JWT Token
 
-    Note over U,FILTER: ② 认证流程（后续请求）
-    U->>FILTER: Authorization: Bearer xxx
-    FILTER->>JWT: parse(token)
-    JWT-->>FILTER: Claims {userId, username, isAdmin}
-    FILTER->>FILTER: MutableRequestWrapper<br/>注入 X-User-Id / X-Is-Admin
-    FILTER->>CTL: 请求转发（带用户头）
+    Note over U,DB: ② 即时通讯
+    U->>CHAT: WebSocket /ws/chat
+    CHAT->>DB: 收发消息
+    CHAT-->>U: 实时推送
+
+    Note over U,DB: ③ 任务协作
+    U->>TASK: POST /api/tasks
+    TASK->>DB: 创建任务
+    U->>TASK: PUT /api/tasks/1/status
+    TASK->>DB: 状态流转
+
+    Note over U,DB: ④ OA审批
+    U->>APPROVAL: POST /api/approvals
+    APPROVAL->>DB: 提交申请
+    U->>APPROVAL: POST /api/approvals/1/approve
+    APPROVAL->>DB: 审批记录
 ```
 
 ---
@@ -97,8 +102,6 @@ sequenceDiagram
 ## 2. 启动入口
 
 ### 2.1 CollaborationApplication
-
-**文件路径**：`CollaborationApplication.java`
 
 ```java
 @SpringBootApplication(scanBasePackages = {"com.zjl.collaboration", "com.zjl.common"})
@@ -112,8 +115,8 @@ public class CollaborationApplication {
 
 | 注解 | 作用 |
 |------|------|
-| `@SpringBootApplication(scanBasePackages)` | 扫描 `com.zjl.collaboration`（本服务）和 `com.zjl.common`（frameworks 公共组件） |
-| `@MapperScan("com.zjl.collaboration.mapper")` | 为 MyBatis-Plus Mapper 接口生成代理 |
+| `@SpringBootApplication(scanBasePackages)` | 扫描本服务包 + frameworks 公共组件 |
+| `@MapperScan` | MyBatis-Plus Mapper 代理生成 |
 
 ---
 
@@ -121,492 +124,281 @@ public class CollaborationApplication {
 
 ### 3.1 application.yml
 
-**文件路径**：`src/main/resources/application.yml`
-
 ```yaml
 spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/enterprise_collaboration
-    username: root
-    password: 123456
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:db/schema.sql
-
-server:
-  port: 8090
-
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-
-auth:
-  jwt:
-    secret: enterprise-work-platform-jwt-secret-key-2026
-    expiration: 86400000
+    username: root / password: 123456
+  sql.init.mode: always
+server.port: 8090
+mybatis-plus.configuration.map-underscore-to-camel-case: true
+auth.jwt.secret: enterprise-work-platform-jwt-secret-key-2026
+auth.jwt.expiration: 86400000  # 24h
 ```
 
-| 配置项 | 值 | 说明 |
-|--------|-----|------|
-| `server.port` | 8090 | 服务端口 |
-| `spring.datasource.url` | `enterprise_collaboration` | 专属数据库 |
-| `spring.sql.init.mode` | always | 每次启动执行 schema.sql |
-| `auth.jwt.secret` | HS256 密钥 | JWT 签名密钥 |
-| `auth.jwt.expiration` | 86400000 (24h) | Token 过期时间（毫秒） |
+### 3.2 关键配置类
 
-### 3.2 FilterConfig
-
-**文件路径**：`config/FilterConfig.java`
-
-```java
-@Configuration
-public class FilterConfig {
-    @Bean
-    public FilterRegistrationBean<JwtAuthFilter> jwtFilter(JwtAuthFilter filter) {
-        FilterRegistrationBean<JwtAuthFilter> reg = new FilterRegistrationBean<>();
-        reg.setFilter(filter);
-        reg.addUrlPatterns("/api/*");
-        reg.setOrder(1);
-        return reg;
-    }
-}
-```
-
-注册 `JwtAuthFilter` 拦截 `/api/*` 所有请求。
+| 配置类 | 作用 |
+|--------|------|
+| `FilterConfig` | 注册 JwtAuthFilter，拦截 `/api/*` |
+| `WebSocketConfig` | 注册 ChatWebSocketHandler，路径 `/ws/chat` |
 
 ---
 
+## 4. 模块全景
 
-## 4. 完整业务流程
-
-### 4.1 用户登录完整链路
-
-```mermaid
-sequenceDiagram
-    participant FE as Vue前端 :5173
-    participant VITE as Vite代理
-    participant CTL as AuthController :8090
-    participant SVC as UserLoginServiceImpl
-    participant DB as MySQL
-    participant JWT as JwtUtil
-
-    FE->>FE: 用户输入用户名密码
-    FE->>VITE: POST /api/auth/login
-    VITE->>CTL: 转发到 :8090
-    CTL->>SVC: login(UserLoginReqDTO)
-
-    Note over SVC: 步骤1: 参数校验
-    SVC->>SVC: username/password 非空判断
-
-    Note over SVC: 步骤2: 数据库查询
-    SVC->>DB: SELECT * FROM sys_user<br/>WHERE username = ?
-    DB-->>SVC: SysUser 或 null
-
-    alt 用户不存在或已禁用
-        SVC-->>CTL: throw BizException(UNAUTHORIZED)
-        CTL-->>FE: 40100 用户名或密码错误
-    end
-
-    Note over SVC: 步骤3: 密码验证
-    SVC->>SVC: BCryptPasswordEncoder<br/>.matches(password, hash)
-
-    alt 密码不匹配
-        SVC-->>CTL: throw BizException(UNAUTHORIZED)
-        CTL-->>FE: 40100 用户名或密码错误
-    end
-
-    Note over SVC: 步骤4: JWT 签发
-    SVC->>JWT: generate({userId, username, isAdmin})
-    JWT->>JWT: Jwts.builder()<br/>.claims(claims)<br/>.expiration(now + 24h)<br/>.signWith(HS256 key)
-    JWT-->>SVC: accessToken (eyJhbGci...)
-
-    SVC-->>CTL: UserLoginRespDTO
-    CTL-->>FE: Result { data: {userId, username, realName, isAdmin, accessToken} }
-
-    Note over FE: 步骤5: 前端存储
-    FE->>FE: localStorage.setItem('user', JSON.stringify(user))
-    FE->>FE: localStorage.setItem('token', accessToken)
-    FE->>FE: router.push('/') 跳转到工作台
 ```
-
-### 4.2 请求认证链路（登录后每个请求）
-
-```mermaid
-sequenceDiagram
-    participant FE as Vue前端
-    participant VITE as Vite代理
-    participant FILTER as JwtAuthFilter
-    participant CTL as AuthController
-    participant API as 业务API (knowledge-ai)
-
-    Note over FE: 每个请求都带 Authorization 头
-
-    FE->>VITE: GET /api/kb/documents<br/>Authorization: Bearer eyJhbG...
-    VITE->>FILTER: 转发到 :8090
-
-    Note over FILTER: 步骤1: 路径白名单检查
-    FILTER->>FILTER: /api/auth/login? → 跳过认证
-
-    Note over FILTER: 步骤2: 提取 Bearer Token
-    FILTER->>FILTER: authHeader.startsWith("Bearer ")<br/>token = authHeader.substring(7)
-
-    Note over FILTER: 步骤3: JWT 解析
-    FILTER->>FILTER: jwtUtil.parse(token)<br/>→ Claims {userId, username, isAdmin}
-
-    alt Token 过期
-        FILTER-->>FE: 401 Token已过期
-    else Token 无效
-        FILTER-->>FE: 401 Token无效
-    end
-
-    Note over FILTER: 步骤4: 注入请求头
-    FILTER->>FILTER: MutableRequestWrapper.putHeader<br/>("X-User-Id", userId)<br/>("X-Is-Admin", isAdmin)
-
-    FILTER->>API: 转发到 knowledge-ai :8083<br/>带 X-User-Id / X-Is-Admin 头
-    API-->>FILTER: 响应
-    FILTER-->>FE: 响应
-```
-
-### 4.3 用户注册流程
-
-```mermaid
-sequenceDiagram
-    participant FE as Vue前端
-    participant CTL as AuthController
-    participant SVC as UserLoginServiceImpl
-    participant DB as MySQL
-
-    FE->>CTL: POST /api/auth/register<br/>{username, password, realName, deptId}
-
-    CTL->>SVC: register(req)
-    SVC->>SVC: 参数校验: username/password 非空
-
-    SVC->>DB: SELECT COUNT(1) FROM sys_user<br/>WHERE username = ?
-    DB-->>SVC: count
-
-    alt count > 0
-        SVC-->>CTL: throw BizException(PARAM_INVALID)
-        CTL-->>FE: 40000 用户名已存在
-    end
-
-    SVC->>SVC: BCryptPasswordEncoder.encode(password)
-    SVC->>DB: INSERT INTO sys_user<br/>(username, password_hash, real_name, dept_id)<br/>VALUES (?, ?, ?, ?)
-
-    Note over SVC: isAdmin 默认 0, enabled 默认 1
-
-    SVC-->>CTL: UserRegisterRespDTO {userId, username}
-    CTL-->>FE: 注册成功
-
-    Note over FE: 自动切回登录页<br/>回填用户名
-```
-
-### 4.4 用户登出与注销流程
-
-```mermaid
-flowchart TD
-    A[用户操作] --> B{操作类型}
-    B -->|登出| C[POST /api/auth/logout?accessToken=xxx]
-    B -->|注销账号| D[POST /api/auth/deletion]
-
-    C --> E["Token 加入黑名单"]
-    E --> F[前端清除 localStorage]
-    F --> G[跳转到登录页]
-
-    D --> H[参数校验]
-    H --> I[查询用户]
-    I --> J{用户存在?}
-    J -->|否| K[NOT_FOUND]
-    J -->|是| L{BCrypt 密码验证}
-    L -->|失败| M[PARAM_INVALID]
-    L -->|通过| N[物理删除用户]
-    N --> O[返回成功]
-```
-
-### 4.5 Token 黑名单机制
-
-```mermaid
-sequenceDiagram
-    participant U as 用户
-    participant CTL as AuthController
-    participant SVC as UserLoginServiceImpl
-    participant BL as tokenBlacklist<br/>(ConcurrentHashMap)
-    participant JWT as JwtUtil
-
-    Note over U,JWT: 登出场景
-    U->>CTL: POST /api/auth/logout?accessToken=xxx
-    CTL->>SVC: logout(accessToken)
-    SVC->>BL: add(accessToken)
-    Note over BL: Token 加入黑名单<br/>即使未过期也标记失效
-
-    Note over U,JWT: 再次请求场景
-    U->>CTL: 请求带已登出的 Token
-    CTL->>SVC: checkLogin(accessToken)
-    SVC->>BL: contains(accessToken)?
-    BL-->>SVC: true (在黑名单中)
-    SVC-->>CTL: throw BizException(UNAUTHORIZED, "Token已失效")
-    CTL-->>U: 40100
-
-    Note over BL: 黑名单存储在内存<br/>服务重启后清空
-    Note over JWT: JWT 本身24h后自然过期
+enterprise-collaboration-service :8090
+├── 认证模块 (/api/auth)         login/register/checkLogin/logout/deletion
+├── 即时通讯 (/api/chat + /ws/chat)  会话/消息/群聊 + WebSocket实时推送
+├── 通讯录 (/api/contacts)       部门筛选 + 员工列表
+├── 公告 (/api/announcements)    发布/删除/列表
+├── 任务 (/api/tasks)            Kanban看板 + 状态流转 + 评论
+└── 审批 (/api/approvals)        请假/报销 + 固定审批链
 ```
 
 ---
 
-## 5. Entity 层
+## 5. Entity / DTO 层
 
-### 5.1 SysUser
+### 5.1 SysUser 实体
 
-## 5. Entity 层
+**表名**：`sys_user` | **主键策略**：`IdType.AUTO`
 
-### 11.1 SysUser
-
-**文件路径**：`entity/SysUser.java`  
-**表名**：`sys_user`  
-**主键策略**：`IdType.AUTO`（自增）
-
-| 字段 | 类型 | 数据库列 | 说明 |
-|------|------|----------|------|
+| 字段 | 类型 | DB列 | 说明 |
+|------|------|------|------|
 | `id` | `Long` | `id BIGINT PK AUTO_INCREMENT` | 自增主键 |
 | `username` | `String` | `username VARCHAR(64) UNIQUE` | 用户名 |
-| `passwordHash` | `String` | `password_hash VARCHAR(200)` | BCrypt 密码哈希 |
+| `passwordHash` | `String` | `password_hash VARCHAR(200)` | BCrypt哈希 |
 | `realName` | `String` | `real_name VARCHAR(64)` | 真实姓名 |
-| `deptId` | `Long` | `dept_id BIGINT` | 部门 ID |
-| `isAdmin` | `Integer` | `is_admin TINYINT DEFAULT 0` | 是否管理员 |
-| `enabled` | `Integer` | `enabled TINYINT DEFAULT 1` | 是否启用 |
-| `createdAt` | `LocalDateTime` | `created_at` | 创建时间 |
-| `updatedAt` | `LocalDateTime` | `updated_at` | 更新时间 |
+| `deptId` | `Long` | `dept_id BIGINT` | 部门ID |
+| `isAdmin` | `Integer` | `is_admin TINYINT DEFAULT 0` | 管理员标识 |
+| `enabled` | `Integer` | `enabled TINYINT DEFAULT 1` | 启用状态 |
 
----
-
-## 6. DTO 层
+### 5.2 DTO 清单
 
 ```mermaid
 classDiagram
-    class UserLoginReqDTO {
-        +String username
-        +String password
-    }
-    class UserLoginRespDTO {
-        +Long userId
-        +String username
-        +String realName
-        +Boolean isAdmin
-        +Long deptId
-        +String accessToken
-    }
-    class UserRegisterReqDTO {
-        +String username
-        +String password
-        +String realName
-        +Long deptId
-    }
-    class UserRegisterRespDTO {
-        +Long userId
-        +String username
-    }
-    class UserDeletionReqDTO {
-        +String username
-        +String password
-    }
-
-    UserLoginReqDTO --> UserLoginRespDTO : login()
-    UserRegisterReqDTO --> UserRegisterRespDTO : register()
-    UserDeletionReqDTO --> UserLoginRespDTO : deletion()
-```
-
-### 11.1 DTO 清单
-
-| DTO | 字段 | 用途 |
-|-----|------|------|
-| `UserLoginReqDTO` | username, password | 登录请求 |
-| `UserLoginRespDTO` | userId, username, realName, isAdmin, deptId, accessToken | 登录/checkLogin 响应 |
-| `UserRegisterReqDTO` | username, password, realName, deptId | 注册请求 |
-| `UserRegisterRespDTO` | userId, username | 注册响应 |
-| `UserDeletionReqDTO` | username, password | 注销请求 |
-
----
-
-## 7. Mapper 层
-
-### 11.1 SysUserMapper
-
-**文件路径**：`mapper/SysUserMapper.java`
-
-```java
-@Mapper
-public interface SysUserMapper extends BaseMapper<SysUser> {
-}
-```
-
-继承 `BaseMapper<SysUser>`，获得 MyBatis-Plus 内置的 insert / updateById / deleteById / selectById / selectOne / selectCount 等方法。
-
----
-
-## 8. Service 层
-
-### 11.1 UserLoginService 接口
-
-**文件路径**：`service/UserLoginService.java`
-
-```java
-public interface UserLoginService {
-    UserLoginRespDTO login(UserLoginReqDTO requestParam);        // 登录
-    UserLoginRespDTO checkLogin(String accessToken);              // Token 验证
-    void logout(String accessToken);                              // 登出
-    Boolean hasUserName(String username);                         // 用户名检查
-    UserRegisterRespDTO register(UserRegisterReqDTO requestParam); // 注册
-    void deletion(UserDeletionReqDTO requestParam);               // 注销用户
-}
-```
-
-### 8.2 UserLoginServiceImpl 详解
-
-**文件路径**：`service/impl/UserLoginServiceImpl.java`  
-**依赖**：`SysUserMapper` + `JwtUtil` + `BCryptPasswordEncoder`
-
-#### login() 流程
-
-```
-login(req)
-  ├── 参数校验：username/password 非空
-  ├── 查库：SELECT * FROM sys_user WHERE username=?
-  ├── 状态检查：enabled == 0 → UNAUTHORIZED
-  ├── 密码校验：BCryptPasswordEncoder.matches(password, hash)
-  │     └── 不匹配 → UNAUTHORIZED
-  ├── 构造 JWT Claims：{userId, username, isAdmin}
-  ├── jwtUtil.generate(claims) → accessToken
-  └── 返回 UserLoginRespDTO
-```
-
-#### checkLogin() 流程
-
-```
-checkLogin(accessToken)
-  ├── 空值检查
-  ├── 黑名单检查：tokenBlacklist.contains(token) → UNAUTHORIZED
-  ├── jwtUtil.parse(token) → Claims
-  ├── 查库：selectById(userId)
-  │     └── 不存在或 disabled → UNAUTHORIZED
-  └── 返回 UserLoginRespDTO（不含 token）
-```
-
-#### register() 流程
-
-```
-register(req)
-  ├── 参数校验：username/password 非空
-  ├── 用户名唯一性检查：hasUserName()
-  ├── BCryptPasswordEncoder.encode(password)
-  ├── INSERT sys_user (isAdmin=0, enabled=1)
-  └── 返回 UserRegisterRespDTO {userId, username}
-```
-
-#### logout() 与 deletion()
-
-```
-logout(accessToken)
-  └── tokenBlacklist.add(accessToken)   // 内存黑名单
-
-deletion(req)
-  ├── 用户名密码校验
-  ├── sysUserMapper.deleteById(id)      // 物理删除
-  └── @Transactional 保护
+    class UserLoginReqDTO { +String username +String password }
+    class UserLoginRespDTO { +Long userId +String accessToken +Boolean isAdmin }
+    class UserRegisterReqDTO { +String username +String password +String realName }
+    class UserRegisterRespDTO { +Long userId +String username }
+    class UserDeletionReqDTO { +String username +String password }
 ```
 
 ---
 
-## 9. Controller 层
+## 6. 认证模块
 
-### 11.1 AuthController
-
-**文件路径**：`web/AuthController.java`  
-**路径前缀**：`/api/auth`  
-**依赖**：`UserLoginService`
-
-| 方法 | 路径 | 请求体 | 响应 | 说明 |
-|------|------|--------|------|------|
-| `POST` | `/login` | `UserLoginReqDTO` | `Result<UserLoginRespDTO>` | 登录，返回 JWT |
-| `GET` | `/check-login` | Query: `accessToken` | `Result<UserLoginRespDTO>` | 验证 token 有效性 |
-| `POST` | `/logout` | Query: `accessToken` | `Result<Void>` | 登出，token 加黑名单 |
-| `GET` | `/has-username` | Query: `username` | `Result<Boolean>` | 用户名是否存在 |
-| `POST` | `/register` | `UserRegisterReqDTO` | `Result<UserRegisterRespDTO>` | 注册新用户 |
-| `POST` | `/deletion` | `UserDeletionReqDTO` | `Result<Void>` | 注销用户 |
-
----
-
-## 10. JWT 认证链路
-
-### 11.1 JwtUtil
-
-**文件路径**：`util/JwtUtil.java`
+### 6.1 JWT 工具
 
 ```java
 @Component
 public class JwtUtil {
-    private final SecretKey key;        // HS256 密钥
-    private final long expiration;      // 24h
-
-    public JwtUtil(@Value("${auth.jwt.secret}") String secret,
-                   @Value("${auth.jwt.expiration}") long expiration) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.expiration = expiration;
-    }
-
-    public String generate(Map<String, Object> claims) {
-        return Jwts.builder()
-                .claims(claims)                              // {userId, username, isAdmin}
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(key)
-                .compact();
-    }
-
-    public Claims parse(String token) {
-        return Jwts.parser().verifyWith(key).build()
-                .parseSignedClaims(token).getPayload();
-    }
+    // HS256 签名 + 24h 过期
+    public String generate(Map<String, Object> claims) { ... }
+    public Claims parse(String token) { ... }
 }
 ```
 
-### 11.2 JwtAuthFilter
+### 6.2 UserLoginService
 
-**文件路径**：`web/JwtAuthFilter.java`
+| 方法 | 说明 |
+|------|------|
+| `login(req)` | BCrypt 验密 → JWT 签发 |
+| `checkLogin(token)` | 黑名单检查 → JWT 解析 → 用户状态检查 |
+| `logout(token)` | Token 加入内存黑名单 |
+| `hasUserName(name)` | 用户名唯一性检查 |
+| `register(req)` | BCrypt 加密 → INSERT |
+| `deletion(req)` | 密码验证 → 物理删除 |
+
+### 6.3 JWT 认证链路
 
 ```mermaid
 flowchart TD
-    A[请求进入] --> B{路径是 /api/auth/login?}
-    B -->|是| C[放行，不校验 Token]
+    A[请求进入] --> B{/api/auth/login?}
+    B -->|是| C[放行]
     B -->|否| D{Authorization: Bearer xxx?}
-    D -->|否| E[放行，无用户头]
-    D -->|是| F[截取 Token]
-    F --> G{parse(token) 成功?}
-    G -->|过期| H[401 Token已过期]
-    G -->|无效| I[401 Token无效]
-    G -->|成功| J[提取 Claims]
-    J --> K[MutableRequestWrapper 注入:<br/>X-User-Id / X-Department-Id / X-Is-Admin]
-    K --> L[chain.doFilter]
+    D -->|否| E[放行无用户头]
+    D -->|是| F[截取Token]
+    F --> G{parse成功?}
+    G -->|过期/无效| H[401]
+    G -->|成功| I[MutableRequestWrapper注入 X-User-Id]
+    I --> J[chain.doFilter]
 ```
 
-### 11.3 MutableRequestWrapper
+### 6.4 AuthController 接口
 
-**文件路径**：`web/MutableRequestWrapper.java`
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/login` | 登录返回JWT |
+| `GET` | `/check-login` | Token验证 |
+| `POST` | `/logout` | 登出黑名单 |
+| `GET` | `/has-username` | 用户名检查 |
+| `POST` | `/register` | 注册 |
+| `POST` | `/deletion` | 注销 |
 
-继承 `HttpServletRequestWrapper`，允许向请求中添加自定义 Header。解决 `HttpServletRequest` 不允许修改 Header 的限制。
+### 6.5 登录完整链路
 
-```java
-public class MutableRequestWrapper extends HttpServletRequestWrapper {
-    private final Map<String, String> customHeaders = new HashMap<>();
+```mermaid
+sequenceDiagram
+    participant FE as Vue前端
+    participant CTL as AuthController
+    participant SVC as UserLoginServiceImpl
+    participant DB as MySQL
+    participant JWT as JwtUtil
 
-    public void putHeader(String name, String value) {
-        customHeaders.put(name, value);
-    }
+    FE->>CTL: POST /api/auth/login
+    CTL->>SVC: login(req)
+    SVC->>DB: SELECT * FROM sys_user WHERE username=?
+    SVC->>SVC: BCrypt.matches(password, hash)
+    SVC->>JWT: generate({userId, username, isAdmin})
+    JWT-->>SVC: accessToken
+    SVC-->>FE: {userId, accessToken, isAdmin...}
+    FE->>FE: localStorage存储
+    FE->>FE: router.push('/')
+```
 
-    @Override
-    public String getHeader(String name) {
-        return customHeaders.getOrDefault(name, super.getHeader(name));
-    }
-}
+---
+
+## 7. 即时通讯模块
+
+### 7.1 架构
+
+```mermaid
+sequenceDiagram
+    participant U1 as 用户A
+    participant WS as WebSocket /ws/chat
+    participant DB as MySQL
+    participant U2 as 用户B
+
+    U1->>WS: 建立连接 (token认证)
+    WS->>WS: JWT解析 → userId
+    WS->>WS: onlineUsers[userId]=session
+    WS-->>U2: 广播上线状态
+
+    U1->>WS: {conversationId:1, content:"你好"}
+    WS->>DB: INSERT im_message
+    WS->>DB: SELECT members FROM conversation
+    WS-->>U2: 实时推送消息
+```
+
+### 7.2 ChatWebSocketHandler
+
+**文件**：`web/ChatWebSocketHandler.java`
+
+| 回调 | 逻辑 |
+|------|------|
+| `afterConnectionEstablished` | JWT 解析 → userId → onlineUsers.put |
+| `handleTextMessage` | 落库 im_message → 查询群成员 → 遍历推送 |
+| `afterConnectionClosed` | onlineUsers.remove → 广播离线状态 |
+
+### 7.3 ChatController REST 接口
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/conversations` | 我的会话列表（含最后消息） |
+| `GET` | `/messages/{convId}` | 会话历史消息（最近100条） |
+| `POST` | `/conversations` | 创建群聊（指定成员） |
+| `GET` | `/members/{convId}` | 查看群成员 |
+
+---
+
+## 8. 通讯录与公告模块
+
+### 8.1 ContactController
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/contacts/users?deptId=` | 按部门筛选员工 |
+| `GET` | `/api/contacts/departments` | 部门列表 |
+
+### 8.2 AnnouncementController
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/announcements` | 公告列表（置顶优先） |
+| `POST` | `/api/announcements` | 管理员发布公告 |
+| `DELETE` | `/api/announcements/{id}` | 删除公告 |
+
+---
+
+## 9. 任务管理模块
+
+### 9.1 Kanban 状态流转
+
+```mermaid
+flowchart LR
+    A[todo 待开始] --> B[in_progress 进行中]
+    B --> C[review 待确认]
+    C --> D[done 已完成]
+    B -.-> A
+    C -.-> B
+```
+
+### 9.2 TaskController
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/tasks?status=` | 任务列表（可按状态筛选） |
+| `POST` | `/api/tasks` | 创建任务（标题/描述/负责人/优先级/截止日） |
+| `PUT` | `/api/tasks/{id}` | 更新任务 |
+| `PUT` | `/api/tasks/{id}/status` | 状态流转 |
+| `DELETE` | `/api/tasks/{id}` | 删除任务 |
+| `GET` | `/api/tasks/{id}/comments` | 查看评论 |
+| `POST` | `/api/tasks/{id}/comments` | 添加评论 |
+
+---
+
+## 10. OA 审批模块
+
+### 10.1 审批流程
+
+```mermaid
+flowchart LR
+    subgraph 请假流程
+        L1[submit 提交] --> L2[manager_approved 主管审批]
+        L2 --> L3[approved 通过]
+        L2 -.-> L4[rejected 驳回]
+    end
+
+    subgraph 报销流程
+        E1[submit 提交] --> E2[manager_approved 主管审批]
+        E2 --> E3[finance_approved 财务审批]
+        E3 --> E4[approved 通过]
+        E2 -.-> E5[rejected 驳回]
+        E3 -.-> E5
+    end
+```
+
+### 10.2 ApprovalController
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/approvals` | 审批列表（管理员看全部，普通用户看自己） |
+| `POST` | `/api/approvals` | 提交审批（type + formData JSON） |
+| `GET` | `/api/approvals/{id}` | 审批详情（含审批记录时间线） |
+| `POST` | `/api/approvals/{id}/approve` | 审批通过/驳回 |
+
+### 10.3 审批数据流
+
+```mermaid
+sequenceDiagram
+    participant U as 员工
+    participant CTL as ApprovalController
+    participant DB as MySQL
+    participant MGR as 管理员
+
+    U->>CTL: POST /api/approvals {type:leave,formData:{...}}
+    CTL->>DB: INSERT sys_approval_request (status=pending)
+
+    MGR->>CTL: GET /api/approvals (待审批列表)
+    CTL->>DB: SELECT WHERE status != approved/rejected
+    DB-->>MGR: 待审批列表
+
+    MGR->>CTL: POST /approvals/1/approve {action:approve}
+    CTL->>DB: INSERT sys_approval_record
+    CTL->>DB: UPDATE status → 下一个节点
 ```
 
 ---
@@ -618,50 +410,136 @@ public class MutableRequestWrapper extends HttpServletRequestWrapper {
 ```mermaid
 erDiagram
     sys_dept ||--o{ sys_user : dept_id
-
-    sys_dept {
-        BIGINT id PK "自增"
-        VARCHAR name "部门名(唯一)"
-        BIGINT parent_id "父部门"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
-    }
+    sys_user ||--o{ im_conversation_member : user_id
+    im_conversation ||--o{ im_conversation_member : conversation_id
+    im_conversation ||--o{ im_message : conversation_id
+    sys_user ||--o{ sys_task : assignee_id
+    sys_task ||--o{ sys_task_comment : task_id
+    sys_user ||--o{ sys_approval_request : user_id
+    sys_approval_request ||--o{ sys_approval_record : request_id
 
     sys_user {
-        BIGINT id PK "自增"
-        VARCHAR username UK "用户名(唯一)"
-        VARCHAR password_hash "BCrypt哈希"
-        VARCHAR real_name "真实姓名"
-        BIGINT dept_id FK "部门"
-        TINYINT is_admin "管理员 0/1"
-        TINYINT enabled "启用 0/1"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
+        BIGINT id PK
+        VARCHAR username UK
+        VARCHAR password_hash
+        VARCHAR real_name
+        BIGINT dept_id FK
+        TINYINT is_admin
+        TINYINT enabled
+    }
+    im_conversation {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR type
+        BIGINT created_by
+    }
+    im_message {
+        BIGINT id PK
+        BIGINT conversation_id FK
+        BIGINT sender_id
+        VARCHAR content
+    }
+    sys_task {
+        BIGINT id PK
+        VARCHAR title
+        BIGINT assignee_id FK
+        VARCHAR priority
+        VARCHAR status
+        DATE due_date
+    }
+    sys_approval_request {
+        BIGINT id PK
+        VARCHAR type
+        BIGINT user_id FK
+        VARCHAR status
+        JSON form_data
+    }
+    sys_approval_record {
+        BIGINT id PK
+        BIGINT request_id FK
+        VARCHAR action
+        VARCHAR comment
     }
 ```
 
-### 11.2 种子数据
+### 11.2 12 张表总览
 
-| 用户名 | 密码 | 角色 |
-|--------|------|------|
-| `admin` | `123456` (BCrypt) | 管理员 |
-| `zhangsan` | `123456` | 普通用户 |
-| `lisi` | `123456` | 普通用户 |
+| 表名 | 用途 | 删除策略 |
+|------|------|----------|
+| `sys_dept` | 部门 | 保留 |
+| `sys_user` | 用户 | 物理删除 |
+| `sys_announcement` | 公告 | 物理删除 |
+| `im_conversation` | 会话 | 保留 |
+| `im_conversation_member` | 会话成员 | 物理删除 |
+| `im_message` | 聊天消息 | 保留 |
+| `sys_task` | 任务 | 物理删除 |
+| `sys_task_comment` | 任务评论 | 物理删除 |
+| `sys_approval_request` | 审批申请 | 保留 |
+| `sys_approval_record` | 审批记录 | 保留 |
 
-部门：`技术部`、`产品部`、`设计部`
+### 11.3 种子数据
+
+| 用户名 | 密码 | 角色 | 部门 |
+|--------|------|------|------|
+| `admin` | `123456` | 管理员 | 技术部 |
+| `zhangsan` | `123456` | 普通用户 | 技术部 |
+| `lisi` | `123456` | 普通用户 | 产品部 |
+| `wangwu` | `123456` | 普通用户 | 技术部 |
+| `zhaoliu` | `123456` | 普通用户 | 设计部 |
 
 ---
 
 ## 12. 完整 API 接口清单
 
-| # | 方法 | 路径 | 参数 | 响应 | 认证 |
-|---|------|------|------|------|------|
-| 1 | `POST` | `/api/auth/login` | `{username, password}` | `{userId, username, realName, isAdmin, deptId, accessToken}` | 否 |
-| 2 | `GET` | `/api/auth/check-login` | Query: `accessToken` | `{userId, username, realName, isAdmin, deptId}` | 否 |
-| 3 | `POST` | `/api/auth/logout` | Query: `accessToken` | `null` | 否 |
-| 4 | `GET` | `/api/auth/has-username` | Query: `username` | `true/false` | 否 |
-| 5 | `POST` | `/api/auth/register` | `{username, password, realName, deptId}` | `{userId, username}` | 否 |
-| 6 | `POST` | `/api/auth/deletion` | `{username, password}` | `null` | 否 |
+### 12.1 认证 /api/auth（6个）
+
+| # | 方法 | 路径 | 说明 |
+|---|------|------|------|
+| 1 | `POST` | `/login` | 登录 → JWT |
+| 2 | `GET` | `/check-login` | Token验证 |
+| 3 | `POST` | `/logout` | 登出黑名单 |
+| 4 | `GET` | `/has-username` | 用户名检查 |
+| 5 | `POST` | `/register` | 注册 |
+| 6 | `POST` | `/deletion` | 注销 |
+
+### 12.2 即时通讯 /api/chat（4个）
+
+| # | 方法 | 路径 | 说明 |
+|---|------|------|------|
+| 7 | `GET` | `/conversations` | 会话列表 |
+| 8 | `GET` | `/messages/{convId}` | 历史消息 |
+| 9 | `POST` | `/conversations` | 创建群聊 |
+| 10 | `GET` | `/members/{convId}` | 群成员 |
+
+### 12.3 通讯录 + 公告（4个）
+
+| # | 方法 | 路径 | 说明 |
+|---|------|------|------|
+| 11 | `GET` | `/api/contacts/users` | 员工列表 |
+| 12 | `GET` | `/api/contacts/departments` | 部门列表 |
+| 13 | `GET/POST/DELETE` | `/api/announcements` | 公告CRUD |
+| 14 | `DELETE` | `/api/announcements/{id}` | 删除公告 |
+
+### 12.4 任务管理 /api/tasks（7个）
+
+| # | 方法 | 路径 | 说明 |
+|---|------|------|------|
+| 15 | `GET` | `/api/tasks` | 列表(可按status筛选) |
+| 16 | `POST` | `/api/tasks` | 创建任务 |
+| 17 | `PUT` | `/api/tasks/{id}` | 更新任务 |
+| 18 | `PUT` | `/api/tasks/{id}/status` | 状态流转 |
+| 19 | `DELETE` | `/api/tasks/{id}` | 删除 |
+| 20 | `GET` | `/api/tasks/{id}/comments` | 评论列表 |
+| 21 | `POST` | `/api/tasks/{id}/comments` | 添加评论 |
+
+### 12.5 OA审批 /api/approvals（4个）
+
+| # | 方法 | 路径 | 说明 |
+|---|------|------|------|
+| 22 | `GET` | `/api/approvals` | 列表(管理员全量) |
+| 23 | `POST` | `/api/approvals` | 提交审批 |
+| 24 | `GET` | `/api/approvals/{id}` | 详情+记录 |
+| 25 | `POST` | `/api/approvals/{id}/approve` | 通过/驳回 |
 
 ---
 
@@ -672,38 +550,45 @@ enterprise-collaboration-service/
 ├── pom.xml
 └── src/main/
     ├── java/com/zjl/collaboration/
-    │   ├── CollaborationApplication.java       # 启动类
+    │   ├── CollaborationApplication.java
     │   ├── config/
-    │   │   └── FilterConfig.java               # JWT 过滤器注册
-    │   ├── dto/                                 # DTO（5个文件）
-    │   │   ├── UserLoginReqDTO.java             # 登录入参
-    │   │   ├── UserLoginRespDTO.java            # 登录出参
-    │   │   ├── UserRegisterReqDTO.java          # 注册入参
-    │   │   ├── UserRegisterRespDTO.java         # 注册出参
-    │   │   └── UserDeletionReqDTO.java          # 注销入参
+    │   │   ├── FilterConfig.java             # JWT过滤器注册
+    │   │   └── WebSocketConfig.java          # WebSocket注册 /ws/chat
+    │   ├── dto/                              # 5个DTO
+    │   │   ├── UserLoginReqDTO.java
+    │   │   ├── UserLoginRespDTO.java
+    │   │   ├── UserRegisterReqDTO.java
+    │   │   ├── UserRegisterRespDTO.java
+    │   │   └── UserDeletionReqDTO.java
     │   ├── entity/
-    │   │   └── SysUser.java                     # 用户实体
+    │   │   └── SysUser.java                  # 用户实体
     │   ├── mapper/
-    │   │   └── SysUserMapper.java               # extends BaseMapper
+    │   │   └── SysUserMapper.java            # MyBatis-Plus Mapper
     │   ├── service/
-    │   │   ├── UserLoginService.java            # 接口（6个方法）
+    │   │   ├── UserLoginService.java         # 接口 6方法
     │   │   └── impl/
-    │   │       └── UserLoginServiceImpl.java    # BCrypt + JWT + 黑名单
+    │   │       └── UserLoginServiceImpl.java # BCrypt+JWT+黑名单
     │   ├── util/
-    │   │   └── JwtUtil.java                     # HS256 JWT 工具
+    │   │   └── JwtUtil.java                  # HS256工具
     │   └── web/
-    │       ├── AuthController.java              # /api/auth/*
-    │       ├── JwtAuthFilter.java               # Bearer Token 过滤器
-    │       └── MutableRequestWrapper.java       # 请求头注入包装器
+    │       ├── AuthController.java           # /api/auth/*
+    │       ├── ChatController.java           # /api/chat/*
+    │       ├── ChatWebSocketHandler.java     # /ws/chat WebSocket
+    │       ├── ContactController.java        # /api/contacts/*
+    │       ├── AnnouncementController.java   # /api/announcements/*
+    │       ├── TaskController.java           # /api/tasks/*
+    │       ├── ApprovalController.java       # /api/approvals/*
+    │       ├── JwtAuthFilter.java            # Bearer Token过滤器
+    │       └── MutableRequestWrapper.java    # 请求头注入
     └── resources/
-        ├── application.yml                      # 端口 8090 + JWT 配置
+        ├── application.yml                   # 端口8090 + JWT配置
         └── db/
-            └── schema.sql                       # sys_user + sys_dept + 种子数据
+            └── schema.sql                    # 10表 + 种子数据
 ```
 
 ---
 
-**文档版本**：v1.1（含完整业务流程）  
+**文档版本**：v2.0（全模块版）  
 **最后更新**：2026-05-12  
-**覆盖范围**：14 个 Java 源文件 + 2 个资源文件  
-**图表数量**：10 个 Mermaid 图表（架构图 ×2、时序图 ×5、流程图 ×2、类图 ×1、ER 图 ×1）
+**覆盖范围**：20个 Java 源文件 + 2个资源文件，涵盖 6 大模块  
+**图表数量**：9 个 Mermaid 图表
