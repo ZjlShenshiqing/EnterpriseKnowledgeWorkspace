@@ -309,19 +309,18 @@ flowchart TD
     B -->|登出| C[POST /api/auth/logout?accessToken=xxx]
     B -->|注销账号| D[POST /api/auth/deletion]
 
-    C --> E[tokenBlacklist.add(accessToken)]
+    C --> E["Token 加入黑名单"]
     E --> F[前端清除 localStorage]
-    F --> G[router.push('/login')]
+    F --> G[跳转到登录页]
 
     D --> H[参数校验]
-    H --> I[SELECT user BY username]
+    H --> I[查询用户]
     I --> J{用户存在?}
     J -->|否| K[NOT_FOUND]
-    J -->|是| L{BCrypt密码验证}
+    J -->|是| L{BCrypt 密码验证}
     L -->|失败| M[PARAM_INVALID]
-    L -->|通过| N[sysUserMapper.deleteById]
-    N --> O[物理删除用户记录]
-    O --> P[返回成功]
+    L -->|通过| N[物理删除用户]
+    N --> O[返回成功]
 ```
 
 ### 4.5 Token 黑名单机制
