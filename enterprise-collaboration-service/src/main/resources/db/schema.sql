@@ -86,3 +86,30 @@ CREATE TABLE im_message (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_msg_conv (conversation_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS sys_task;
+CREATE TABLE sys_task (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
+    description TEXT NULL,
+    creator_id BIGINT NOT NULL,
+    assignee_id BIGINT NULL,
+    priority VARCHAR(16) DEFAULT 'medium',
+    status VARCHAR(32) DEFAULT 'todo',
+    due_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_task_assignee (assignee_id),
+    KEY idx_task_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS sys_task_comment;
+CREATE TABLE sys_task_comment (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    user_name VARCHAR(64) NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_comment_task (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
