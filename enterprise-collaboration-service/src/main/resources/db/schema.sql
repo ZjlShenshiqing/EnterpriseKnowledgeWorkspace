@@ -140,3 +140,28 @@ CREATE TABLE sys_approval_record (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_record_request (request_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS sys_meeting;
+CREATE TABLE sys_meeting (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
+    room VARCHAR(128) NULL,
+    creator_id BIGINT NOT NULL,
+    date DATE NULL,
+    start_time VARCHAR(8) NULL,
+    end_time VARCHAR(8) NULL,
+    attendees TEXT NULL,
+    status VARCHAR(32) DEFAULT 'confirmed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS sys_todo;
+CREATE TABLE sys_todo (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
+    user_id BIGINT NOT NULL,
+    priority VARCHAR(16) DEFAULT 'normal',
+    due_date DATE NULL,
+    done TINYINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
