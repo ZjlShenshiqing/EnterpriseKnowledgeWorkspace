@@ -261,3 +261,177 @@ CREATE TABLE sys_token_blacklist (
     UNIQUE KEY idx_sys_token_blacklist_token_hash (token_hash),
     KEY idx_sys_token_blacklist_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='JWT Token黑名单表';
+
+-- ============================================================
+-- 数据库 enterprise_collaboration（协同服务）
+-- ============================================================
+-- CREATE DATABASE IF NOT EXISTS enterprise_collaboration DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE enterprise_collaboration;
+
+DROP TABLE IF EXISTS sys_doc;
+DROP TABLE IF EXISTS sys_todo;
+DROP TABLE IF EXISTS sys_meeting;
+DROP TABLE IF EXISTS sys_approval_record;
+DROP TABLE IF EXISTS sys_approval_request;
+DROP TABLE IF EXISTS sys_task_comment;
+DROP TABLE IF EXISTS sys_task;
+DROP TABLE IF EXISTS im_message;
+DROP TABLE IF EXISTS im_conversation_member;
+DROP TABLE IF EXISTS im_conversation;
+DROP TABLE IF EXISTS sys_announcement;
+DROP TABLE IF EXISTS sys_user;
+DROP TABLE IF EXISTS sys_dept;
+
+CREATE TABLE sys_dept (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    name VARCHAR(128) NOT NULL COMMENT '部门名称',
+    parent_id BIGINT NULL COMMENT '父部门ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_dept_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
+
+CREATE TABLE sys_user (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    username VARCHAR(64) NOT NULL COMMENT '用户名',
+    password_hash VARCHAR(200) NOT NULL COMMENT 'BCrypt密码哈希',
+    real_name VARCHAR(64) NULL COMMENT '真实姓名',
+    dept_id BIGINT NULL COMMENT '部门ID',
+    is_admin TINYINT NOT NULL DEFAULT 0 COMMENT '是否管理员',
+    enabled TINYINT NOT NULL DEFAULT 1 COMMENT '是否启用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_user_username (username),
+    KEY idx_user_dept (dept_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+
+CREATE TABLE sys_announcement (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    title VARCHAR(256) NOT NULL COMMENT '公告标题',
+    content TEXT NOT NULL COMMENT '公告内容',
+    publisher_id BIGINT NOT NULL COMMENT '发布人ID',
+    publisher_name VARCHAR(64) NULL COMMENT '发布人姓名',
+    is_pinned TINYINT DEFAULT 0 COMMENT '是否置顶',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
+
+CREATE TABLE im_conversation (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    name VARCHAR(128) NULL COMMENT '会话名称',
+    type VARCHAR(16) NOT NULL DEFAULT 'group' COMMENT '会话类型 group/private',
+    avatar VARCHAR(256) NULL COMMENT '头像',
+    created_by BIGINT NOT NULL COMMENT '创建人',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会话表';
+
+CREATE TABLE im_conversation_member (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    conversation_id BIGINT NOT NULL COMMENT '会话ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_conv_user (conversation_id, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会话成员表';
+
+CREATE TABLE im_message (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    conversation_id BIGINT NOT NULL COMMENT '会话ID',
+    sender_id BIGINT NOT NULL COMMENT '发送人ID',
+    sender_name VARCHAR(64) NULL COMMENT '发送人姓名',
+    content TEXT NOT NULL COMMENT '消息内容',
+    msg_type VARCHAR(16) DEFAULT 'text' COMMENT '消息类型',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_msg_conv (conversation_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天消息表';
+
+CREATE TABLE sys_task (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    title VARCHAR(256) NOT NULL COMMENT '任务标题',
+    description TEXT NULL COMMENT '任务描述',
+    creator_id BIGINT NOT NULL COMMENT '创建人ID',
+    assignee_id BIGINT NULL COMMENT '负责人ID',
+    priority VARCHAR(16) DEFAULT 'medium' COMMENT '优先级 high/medium/low',
+    status VARCHAR(32) DEFAULT 'todo' COMMENT '状态 todo/in_progress/review/done',
+    due_date DATE NULL COMMENT '截止日期',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_task_assignee (assignee_id),
+    KEY idx_task_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务表';
+
+CREATE TABLE sys_task_comment (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    task_id BIGINT NOT NULL COMMENT '任务ID',
+    user_id BIGINT NOT NULL COMMENT '评论人ID',
+    user_name VARCHAR(64) NULL COMMENT '评论人姓名',
+    content TEXT NOT NULL COMMENT '评论内容',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_comment_task (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务评论表';
+
+CREATE TABLE sys_approval_request (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    type VARCHAR(32) NOT NULL COMMENT '审批类型 leave/expense',
+    user_id BIGINT NOT NULL COMMENT '申请人ID',
+    user_name VARCHAR(64) NULL COMMENT '申请人姓名',
+    title VARCHAR(256) NOT NULL COMMENT '审批标题',
+    form_data JSON NULL COMMENT '表单数据JSON',
+    status VARCHAR(32) DEFAULT 'pending' COMMENT '状态',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_approval_user (user_id),
+    KEY idx_approval_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审批申请表';
+
+CREATE TABLE sys_approval_record (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    request_id BIGINT NOT NULL COMMENT '审批请求ID',
+    approver_id BIGINT NOT NULL COMMENT '审批人ID',
+    approver_name VARCHAR(64) NULL COMMENT '审批人姓名',
+    action VARCHAR(16) NOT NULL COMMENT '操作 approve/reject',
+    comment VARCHAR(512) NULL COMMENT '审批意见',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_record_request (request_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审批记录表';
+
+CREATE TABLE sys_meeting (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    title VARCHAR(256) NOT NULL COMMENT '会议标题',
+    room VARCHAR(128) NULL COMMENT '会议室',
+    creator_id BIGINT NOT NULL COMMENT '创建人ID',
+    date DATE NULL COMMENT '会议日期',
+    start_time VARCHAR(8) NULL COMMENT '开始时间',
+    end_time VARCHAR(8) NULL COMMENT '结束时间',
+    attendees TEXT NULL COMMENT '参会人',
+    status VARCHAR(32) DEFAULT 'confirmed' COMMENT '状态',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会议表';
+
+CREATE TABLE sys_todo (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    title VARCHAR(256) NOT NULL COMMENT '待办标题',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    priority VARCHAR(16) DEFAULT 'normal' COMMENT '优先级',
+    due_date DATE NULL COMMENT '截止日期',
+    done TINYINT DEFAULT 0 COMMENT '是否完成',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='待办事项表';
+
+CREATE TABLE sys_doc (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    title VARCHAR(256) NOT NULL COMMENT '文档标题',
+    content LONGTEXT NULL COMMENT '文档内容(HTML)',
+    updated_by BIGINT NULL COMMENT '最后编辑人ID',
+    updated_by_name VARCHAR(64) NULL COMMENT '最后编辑人姓名',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='协作文档表';
+
+INSERT INTO sys_dept (id, name) VALUES (1, '技术部'), (2, '产品部'), (3, '设计部');
+
+INSERT INTO sys_user (id, username, password_hash, real_name, dept_id, is_admin)
+VALUES (1, 'admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 1, 1),
+       (2, 'zhangsan', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '张三', 1, 0),
+       (3, 'lisi', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李四', 2, 0),
+       (4, 'wangwu', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '王五', 1, 0),
+       (5, 'zhaoliu', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '赵六', 3, 0);
