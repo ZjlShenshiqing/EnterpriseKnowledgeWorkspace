@@ -61,10 +61,16 @@ const todos = ref([
 ])
 
 onMounted(async () => {
+  const headers = (() => { const u = JSON.parse(localStorage.getItem('user')||'{}'); return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false')} })()
   try {
-    const res = await getDocuments({ current: 1, size: 5 })
-    recentDocs.value = res.data.data?.records || []
-    cards.value[0].count = res.data.data?.total || 0
-  } catch (e) { console.log('Mock') }
+    const resp = await fetch('/api/workbench/overview', { headers })
+    const data = (await resp.json()).data || {}
+    cards.value[0].count = data.docCount || 0
+    cards.value[1].count = data.meetingCount || 0
+    cards.value[2].count = data.todoCount || 0
+    cards.value[3].count = data.inProgressTaskCount || 0
+    recentDocs.value = data.recentDocs || []
+    todos.value = (data.todos || []).slice(0, 4).map(t => ({ id: t.id, title: t.title, done: t.done===1||t.done===true, urgent: t.priority==='high' }))
+  } catch (e) { console.log('Workbench not available, using mock') }
 })
 </script>
