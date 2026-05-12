@@ -72,6 +72,7 @@ const navItems = [
   { path: '/meetings', icon: 'Calendar', label: '会议预约' },
   { path: '/todos', icon: 'List', label: '我的待办' },
   { path: '/tasks', icon: 'Aim', label: '任务协同' },
+  { path: '/approvals', icon: 'Checked', label: '流程审批' },
   { path: '/notifications', icon: 'Bell', label: '公告通知' },
 ]
 

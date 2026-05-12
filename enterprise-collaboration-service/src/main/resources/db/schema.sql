@@ -113,3 +113,30 @@ CREATE TABLE sys_task_comment (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_comment_task (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS sys_approval_request;
+CREATE TABLE sys_approval_request (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    type VARCHAR(32) NOT NULL,
+    user_id BIGINT NOT NULL,
+    user_name VARCHAR(64) NULL,
+    title VARCHAR(256) NOT NULL,
+    form_data JSON NULL,
+    status VARCHAR(32) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_approval_user (user_id),
+    KEY idx_approval_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS sys_approval_record;
+CREATE TABLE sys_approval_record (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    request_id BIGINT NOT NULL,
+    approver_id BIGINT NOT NULL,
+    approver_name VARCHAR(64) NULL,
+    action VARCHAR(16) NOT NULL,
+    comment VARCHAR(512) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_record_request (request_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
