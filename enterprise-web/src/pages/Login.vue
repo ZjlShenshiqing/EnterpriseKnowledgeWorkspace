@@ -58,8 +58,10 @@ async function login() {
       body: JSON.stringify({ username: form.username, password: form.password })
     })
     if (resp.ok) {
-      const data = await resp.json()
-      saveAuth({ id: data.data?.userId || 1, username: form.username, realName: form.username, isAdmin: true, token: data.data?.token || '' })
+      const result = await resp.json()
+      const data = result.data || {}
+      const user = { id: data.userId, username: data.username, realName: data.realName || data.username, isAdmin: data.isAdmin, departmentId: data.deptId, token: data.token }
+      saveAuth(user)
       ElMessage.success('登录成功')
       router.push('/')
     } else {
@@ -73,7 +75,7 @@ async function login() {
 }
 
 function demoLogin() {
-  saveAuth({ id: 1, username: 'admin', realName: '管理员', isAdmin: true, departmentId: 1, projectId: null })
+  saveAuth({ id: 1, username: 'admin', realName: '管理员', isAdmin: true, departmentId: 1, token: '' })
   router.push('/')
 }
 </script>

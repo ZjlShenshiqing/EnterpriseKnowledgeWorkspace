@@ -2,11 +2,13 @@ import axios from 'axios'
 
 function getAuthHeaders() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
-  return {
+  const headers = {
     'X-User-Id': String(user.id || '1'),
     'X-Department-Id': String(user.departmentId || '1'),
     'X-Is-Admin': String(user.isAdmin ? 'true' : 'false')
   }
+  if (user.token) headers['Authorization'] = 'Bearer ' + user.token
+  return headers
 }
 
 const kbApi = axios.create({ baseURL: '/api/kb' })
