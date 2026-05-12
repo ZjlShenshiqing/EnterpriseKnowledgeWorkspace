@@ -38,9 +38,16 @@ public class ZoomMeetingClient {
     }
 
     public Map<String, Object> createMeeting(String topic, String startTime, int durationMinutes) {
-        if (!isConfigured()) return null;
+        if (!isConfigured()) {
+            log.warn("Zoom is not configured: accountId={}, clientId={}", 
+                accountId != null ? "set" : "null", 
+                clientId != null ? "set" : "null");
+            return null;
+        }
         try {
             String token = getAccessToken();
+            log.info("Zoom token obtained successfully, creating meeting: topic={}, startTime={}", topic, startTime);
+            
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("topic", topic);
             body.put("type", 2);
@@ -57,11 +64,20 @@ public class ZoomMeetingClient {
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(mapper.writeValueAsBytes(body));
             }
-            if (conn.getResponseCode() == 201) {
-                return mapper.readValue(conn.getInputStream(), new TypeReference<Map<String, Object>>() {});
+            
+            int responseCode = conn.getResponseCode();
+            log.info("Zoom create meeting response code: {}", responseCode);
+            
+            if (responseCode == 201) {
+                Map<String, Object> result = mapper.readValue(conn.getInputStream(), new TypeReference<Map<String, Object>>() {});
+                log.info("Zoom meeting created successfully: id={}, join_url={}", result.get("id"), result.get("join_url"));
+                return result;
             }
-            log.warn("Zoom API error: {} {}", conn.getResponseCode(), new String(conn.getErrorStream().readAllBytes()));
-        } catch (Exception e) { log.error("Zoom create meeting failed", e); }
+            String errorMsg = new String(conn.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            log.error("Zoom API error: {} {}", responseCode, errorMsg);
+        } catch (Exception e) { 
+            log.error("Zoom create meeting failed", e); 
+        }
         return null;
     }
 
@@ -69,7 +85,8 @@ public class ZoomMeetingClient {
         if (cachedToken != null && System.currentTimeMillis() < tokenExpiry) return cachedToken;
 
         String credentials = Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
-        String body = "grant_type=account_credentials&account_id=" + URLEncoder.encode(accountId, StandardCharsets.UTF_8);
+        String scopes = URLEncoder.encode("meeting:write:meeting", StandardCharsets.UTF_8);
+        String body = "grant_type=account_credentials&account_id=" + URLEncoder.encode(accountId, StandardCharsets.UTF_8) + "&scope=" + scopes;
 
         HttpURLConnection conn = (HttpURLConnection) URI.create("https://zoom.us/oauth/token").toURL().openConnection();
         conn.setRequestMethod("POST");
@@ -77,6 +94,14 @@ public class ZoomMeetingClient {
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         conn.setDoOutput(true);
         try (OutputStream os = conn.getOutputStream()) { os.write(body.getBytes()); }
+        
+        int responseCode = conn.getResponseCode();
+        if (responseCode != 200) {
+            String errorMsg = new String(conn.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            log.error("Zoom OAuth token request failed: {} {}", responseCode, errorMsg);
+            throw new RuntimeException("Zoom OAuth failed: " + errorMsg);
+        }
+        
         Map<String, Object> resp = mapper.readValue(conn.getInputStream(), new TypeReference<Map<String, Object>>() {});
         cachedToken = resp.get("access_token").toString();
         tokenExpiry = System.currentTimeMillis() + ((Number) resp.get("expires_in")).longValue() * 1000 - 60000;

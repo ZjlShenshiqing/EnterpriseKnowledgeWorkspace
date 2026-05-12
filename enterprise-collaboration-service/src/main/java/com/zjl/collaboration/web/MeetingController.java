@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -33,19 +34,34 @@ public class MeetingController {
     @PostMapping
     public Result<Long> create(@RequestBody MeetingReq req, @RequestHeader("X-User-Id") Long userId) {
         SysMeeting m = new SysMeeting();
-        m.setTitle(req.getTitle()); m.setRoom(req.getRoom()); m.setCreatorId(userId);
-        m.setDate(req.getDate()); m.setStartTime(req.getStartTime()); m.setEndTime(req.getEndTime());
-        m.setAttendees(req.getAttendees()); m.setStatus("confirmed");
+        m.setTitle(req.getTitle()); 
+        m.setRoom(req.getRoom()); 
+        m.setCreatorId(userId);
+        m.setDate(LocalDate.parse(req.getDate())); 
+        m.setStartTime(req.getStartTime()); 
+        m.setEndTime(req.getEndTime());
+        m.setAttendees(req.getAttendees()); 
+        m.setStatus("confirmed");
 
         if ("线上-Zoom".equals(req.getRoom()) && zoomClient.isConfigured()) {
             try {
                 String startTime = req.getDate() + "T" + (req.getStartTime() != null ? req.getStartTime() : "10:00") + ":00";
+                log.info("Creating Zoom meeting: title={}, startTime={}", req.getTitle(), startTime);
                 Map<String, Object> zoomResp = zoomClient.createMeeting(req.getTitle(), startTime, 60);
                 if (zoomResp != null) {
                     m.setMeetingId(String.valueOf(zoomResp.get("id")));
                     m.setJoinUrl(String.valueOf(zoomResp.get("join_url")));
+                    log.info("Zoom meeting created: id={}, joinUrl={}", m.getMeetingId(), m.getJoinUrl());
+                } else {
+                    log.warn("Zoom API returned null response");
                 }
-            } catch (Exception e) { log.warn("Zoom API failed, creating local meeting only", e); }
+            } catch (Exception e) { 
+                log.warn("Zoom API failed, creating local meeting only", e); 
+            }
+        } else {
+            if ("线上-Zoom".equals(req.getRoom())) {
+                log.warn("Zoom is not configured, cannot create Zoom meeting");
+            }
         }
 
         meetingMapper.insert(m);
@@ -56,8 +72,12 @@ public class MeetingController {
     public Result<Void> update(@PathVariable Long id, @RequestBody MeetingReq req) {
         SysMeeting m = meetingMapper.selectById(id);
         if (m == null) return Results.success();
-        m.setTitle(req.getTitle()); m.setRoom(req.getRoom()); m.setDate(req.getDate());
-        m.setStartTime(req.getStartTime()); m.setEndTime(req.getEndTime()); m.setAttendees(req.getAttendees());
+        m.setTitle(req.getTitle()); 
+        m.setRoom(req.getRoom()); 
+        m.setDate(LocalDate.parse(req.getDate()));
+        m.setStartTime(req.getStartTime()); 
+        m.setEndTime(req.getEndTime()); 
+        m.setAttendees(req.getAttendees());
         meetingMapper.updateById(m);
         return Results.success();
     }

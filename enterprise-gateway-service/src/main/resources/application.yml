@@ -40,7 +40,7 @@ spring:
             - Path=/api/kb/**,/api/ai-qa/**
         # 协同业务服务
         - id: collaboration
-          uri: http://localhost:8082
+          uri: http://localhost:8090
           predicates:
             - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**
         # 工作台聚合服务

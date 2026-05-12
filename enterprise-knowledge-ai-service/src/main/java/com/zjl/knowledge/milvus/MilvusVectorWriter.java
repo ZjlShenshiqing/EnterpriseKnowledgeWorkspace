@@ -281,7 +281,7 @@ public class MilvusVectorWriter {
             String col = resolveCollection(collectionName);
             SearchReq req = SearchReq.builder()
                     .collectionName(col)
-                    .data(Collections.singletonList(queryVector))
+                    .data(Collections.singletonList(new io.milvus.v2.service.vector.request.data.FloatVec(queryVector)))
                     .topK(topK)
                     .outputFields(List.of("id", "metadata"))
                     .filter(filter != null ? filter : "")
@@ -290,11 +290,13 @@ public class MilvusVectorWriter {
 
             List<SearchResult> results = new ArrayList<>();
             if (resp.getSearchResults() != null && !resp.getSearchResults().isEmpty()) {
-                for (SearchResp.SearchResultWrapper wrapper : resp.getSearchResults().get(0)) {
-                    String chunkId = (String) wrapper.getEntity().get("id");
-                    Map<String, Object> metaObj = getMetadata(wrapper.getEntity());
-                    String docId = metaObj != null ? (String) metaObj.get("doc_id") : null;
-                    results.add(new SearchResult(chunkId, docId, wrapper.getScore()));
+                for (List<SearchResp.SearchResult> resultList : resp.getSearchResults()) {
+                    for (SearchResp.SearchResult sr : resultList) {
+                        String chunkId = (String) sr.getEntity().get("id");
+                        Map<String, Object> metaObj = getMetadata(sr.getEntity());
+                        String docId = metaObj != null ? (String) metaObj.get("doc_id") : null;
+                        results.add(new SearchResult(chunkId, docId, sr.getScore()));
+                    }
                 }
             }
             return results;

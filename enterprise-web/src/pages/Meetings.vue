@@ -11,8 +11,8 @@
       <el-table-column label="时间" width="140"><template #default="{row}">{{ row.start_time }} - {{ row.end_time }}</template></el-table-column>
       <el-table-column prop="attendees" label="参会人" width="200" />
       <el-table-column label="状态" width="90"><template #default="{row}"><el-tag :type="row.status==='confirmed'?'success':'warning'" size="small">{{ row.status==='confirmed'?'已确认':'待确认' }}</el-tag></template></el-table-column>
-      <el-table-column label="入会" width="100"><template #default="{row}">
-        <a v-if="row.join_url" :href="row.join_url" target="_blank" style="color:var(--brand-500);text-decoration:none;font-size:13px">加入会议</a>
+      <el-table-column label="入会" width="120"><template #default="{row}">
+        <el-button v-if="row.join_url" size="small" type="primary" @click="openMeeting(row)" style="padding:4px 12px">立即入会</el-button>
         <span v-else style="color:var(--text-tertiary);font-size:12px">—</span>
       </template></el-table-column>
       <el-table-column label="操作" width="80"><template #default="{row}"><el-button size="small" type="danger" @click="doDelete(row)">取消</el-button></template></el-table-column>
@@ -21,7 +21,7 @@
     <el-dialog v-model="dlg" :title="editId?'编辑会议':'新建会议'" width="480px">
       <el-form :model="f" label-width="70px">
         <el-form-item label="标题"><el-input v-model="f.title" /></el-form-item>
-        <el-form-item label="会议室"><el-select v-model="f.room" style="width:100%"><el-option label="A301 (20人)" /><el-option label="B102 (10人)" /><el-option label="C501 (50人)" /><el-option label="线上-Zoom" /></el-select></el-form-item>
+        <el-form-item label="会议室"><el-select v-model="f.room" style="width:100%"><el-option label="A301 (20人)" value="A301 (20人)" /><el-option label="B102 (10人)" value="B102 (10人)" /><el-option label="C501 (50人)" value="C501 (50人)" /><el-option label="线上-Zoom" value="线上-Zoom" /></el-select></el-form-item>
         <el-form-item label="日期"><el-date-picker v-model="f.date" style="width:100%" /></el-form-item>
         <el-form-item label="时间"><el-time-picker v-model="f.timeRange" is-range style="width:100%" format="HH:mm" /></el-form-item>
         <el-form-item label="参会人"><el-input v-model="f.attendees" placeholder="姓名用逗号分隔" /></el-form-item>
@@ -52,11 +52,34 @@ function openCreate() { editId.value = null; f.value = { title:'',room:'A301 (20
 
 async function save() {
   if (!f.value.title) return
-  const body = { title:f.value.title, room:f.value.room, date:f.value.date, startTime:f.value.timeRange[0]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', endTime:f.value.timeRange[1]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', attendees:f.value.attendees }
+  const formatDate = (d) => {
+    if (!d) return ''
+    const date = new Date(d)
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+  }
+  const body = { title:f.value.title, room:f.value.room, date:formatDate(f.value.date), startTime:f.value.timeRange[0]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', endTime:f.value.timeRange[1]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', attendees:f.value.attendees }
   const url = editId.value ? `/api/meetings/${editId.value}` : '/api/meetings'
   const method = editId.value ? 'PUT' : 'POST'
-  await fetch(url,{method,headers:headers(),body:JSON.stringify(body)})
+  const r = await fetch(url,{method,headers:headers(),body:JSON.stringify(body)})
+  const result = await r.json()
   dlg.value = false; ElMessage.success(editId.value?'已更新':'已创建'); await load()
+  
+  if (!editId.value && f.value.room === '线上-Zoom') {
+    setTimeout(() => {
+      const newMeeting = meetings.value.find(m => m.title === f.value.title && m.date === formatDate(f.value.date))
+      if (newMeeting && newMeeting.join_url) {
+        if (confirm('Zoom会议已创建，是否立即加入会议？')) {
+          window.open(newMeeting.join_url, '_blank')
+        }
+      }
+    }, 500)
+  }
+}
+
+function openMeeting(row) {
+  if (row.join_url) {
+    window.open(row.join_url, '_blank')
+  }
 }
 
 async function doDelete(row) {
