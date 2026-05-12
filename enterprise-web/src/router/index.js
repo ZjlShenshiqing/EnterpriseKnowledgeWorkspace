@@ -17,10 +17,12 @@ const routes = [
       { path: '', name: 'Dashboard', component: () => import('../pages/Dashboard.vue'), meta: { title: '工作台' } },
       { path: 'chat', name: 'Chat', component: () => import('../pages/Chat.vue'), meta: { title: '智能对话' } },
       { path: 'documents', name: 'Documents', component: () => import('../pages/Documents.vue'), meta: { title: '文档协作' } },
+      { path: 'chats', name: 'Chats', component: () => import('../pages/Chats.vue'), meta: { title: '即时通讯' } },
+      { path: 'contacts', name: 'Contacts', component: () => import('../pages/Contacts.vue'), meta: { title: '通讯录' } },
       { path: 'meetings', name: 'Meetings', component: () => import('../pages/Meetings.vue'), meta: { title: '会议预约' } },
       { path: 'todos', name: 'Todos', component: () => import('../pages/Todos.vue'), meta: { title: '我的待办' } },
       { path: 'tasks', name: 'Tasks', component: () => import('../pages/Tasks.vue'), meta: { title: '任务协同' } },
-      { path: 'notifications', name: 'Notifications', component: () => import('../pages/Notifications.vue'), meta: { title: '消息通知' } },
+      { path: 'notifications', name: 'Notifications', component: () => import('../pages/Announcements.vue'), meta: { title: '公告通知' } },
     ]
   },
   {

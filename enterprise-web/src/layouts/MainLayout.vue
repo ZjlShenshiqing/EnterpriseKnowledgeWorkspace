@@ -67,10 +67,12 @@ const navItems = [
   { path: '/', icon: 'HomeFilled', label: '工作台' },
   { path: '/chat', icon: 'ChatDotRound', label: '智能对话' },
   { path: '/documents', icon: 'Document', label: '文档协作' },
+  { path: '/chats', icon: 'ChatLineSquare', label: '即时通讯' },
+  { path: '/contacts', icon: 'User', label: '通讯录' },
   { path: '/meetings', icon: 'Calendar', label: '会议预约' },
   { path: '/todos', icon: 'List', label: '我的待办' },
   { path: '/tasks', icon: 'Aim', label: '任务协同' },
-  { path: '/notifications', icon: 'Bell', label: '消息通知' },
+  { path: '/notifications', icon: 'Bell', label: '公告通知' },
 ]
 
 const isAdminActive = computed(() => route.path.startsWith('/admin'))
