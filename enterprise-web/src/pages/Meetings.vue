@@ -11,13 +11,17 @@
       <el-table-column label="时间" width="140"><template #default="{row}">{{ row.start_time }} - {{ row.end_time }}</template></el-table-column>
       <el-table-column prop="attendees" label="参会人" width="200" />
       <el-table-column label="状态" width="90"><template #default="{row}"><el-tag :type="row.status==='confirmed'?'success':'warning'" size="small">{{ row.status==='confirmed'?'已确认':'待确认' }}</el-tag></template></el-table-column>
-      <el-table-column label="操作" width="100"><template #default="{row}"><el-button size="small" type="danger" @click="doDelete(row)">取消</el-button></template></el-table-column>
+      <el-table-column label="入会" width="100"><template #default="{row}">
+        <a v-if="row.join_url" :href="row.join_url" target="_blank" style="color:var(--brand-500);text-decoration:none;font-size:13px">加入会议</a>
+        <span v-else style="color:var(--text-tertiary);font-size:12px">—</span>
+      </template></el-table-column>
+      <el-table-column label="操作" width="80"><template #default="{row}"><el-button size="small" type="danger" @click="doDelete(row)">取消</el-button></template></el-table-column>
     </el-table>
 
     <el-dialog v-model="dlg" :title="editId?'编辑会议':'新建会议'" width="480px">
       <el-form :model="f" label-width="70px">
         <el-form-item label="标题"><el-input v-model="f.title" /></el-form-item>
-        <el-form-item label="会议室"><el-select v-model="f.room" style="width:100%"><el-option label="A301 (20人)" /><el-option label="B102 (10人)" /><el-option label="C501 (50人)" /><el-option label="线上-腾讯会议" /></el-select></el-form-item>
+        <el-form-item label="会议室"><el-select v-model="f.room" style="width:100%"><el-option label="A301 (20人)" /><el-option label="B102 (10人)" /><el-option label="C501 (50人)" /><el-option label="线上-Zoom" /></el-select></el-form-item>
         <el-form-item label="日期"><el-date-picker v-model="f.date" style="width:100%" /></el-form-item>
         <el-form-item label="时间"><el-time-picker v-model="f.timeRange" is-range style="width:100%" format="HH:mm" /></el-form-item>
         <el-form-item label="参会人"><el-input v-model="f.attendees" placeholder="姓名用逗号分隔" /></el-form-item>

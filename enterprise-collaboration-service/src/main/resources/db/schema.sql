@@ -152,6 +152,8 @@ CREATE TABLE sys_meeting (
     end_time VARCHAR(8) NULL,
     attendees TEXT NULL,
     status VARCHAR(32) DEFAULT 'confirmed',
+    join_url VARCHAR(1024) NULL,
+    meeting_id VARCHAR(128) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

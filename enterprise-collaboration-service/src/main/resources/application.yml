@@ -14,6 +14,11 @@ spring:
 server:
   port: 8090
 
+zoom:
+  account-id: ${ZOOM_ACCOUNT_ID:}
+  client-id: ${ZOOM_CLIENT_ID:}
+  client-secret: ${ZOOM_CLIENT_SECRET:}
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

@@ -15,5 +15,7 @@ public class SysMeeting {
     private String endTime;
     private String attendees;
     private String status;
+    private String joinUrl;
+    private String meetingId;
     private LocalDateTime createdAt;
 }
