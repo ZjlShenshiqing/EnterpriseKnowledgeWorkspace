@@ -106,3 +106,32 @@
 6. 自动生成会议纪要。
 7. 移动端应用。
 8. 高级数据分析看板。
+
+---
+
+## 6. 技术规范（Non-Negotiable）
+
+### 6.1 数据访问层
+
+**必须使用 MyBatis-Plus，禁止使用 JdbcTemplate 或原生 JDBC。**
+
+- 所有数据库表必须定义对应的 Entity 类（`@TableName`、`@TableId`）
+- 所有 Entity 必须有对应的 Mapper 接口（继承 `BaseMapper<T>`）
+- Service 层通过注入 Mapper 进行数据操作，使用 `Wrappers.lambdaQuery()` / `Wrappers.lambdaUpdate()` 构建条件
+- 分页查询使用 MyBatis-Plus `Page<T>` + `PaginationInnerInterceptor`
+
+**禁止事项**：
+- 禁止在 Controller/Service 中注入 `JdbcTemplate`
+- 禁止拼接 SQL 字符串
+- 禁止使用 `jdbc.update()` / `jdbc.queryForList()` 等方式直接操作数据库
+
+### 6.2 注释规范
+
+- 所有类/方法注释使用 Javadoc 格式（`/** ... */`）
+- 注释末尾不加句号
+
+### 6.3 响应格式
+
+- 所有 Controller 返回 `Result<T>` 或 `Results.success(data)`
+- 异常通过 `throw new BizException(ErrorCode.XXX)` 抛出
+- 不在 Controller 中 try-catch 返回错误结果

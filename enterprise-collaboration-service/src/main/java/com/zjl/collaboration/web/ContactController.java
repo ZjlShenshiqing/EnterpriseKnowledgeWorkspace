@@ -8,9 +8,7 @@ import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/contacts")
@@ -23,23 +21,10 @@ public class ContactController {
     public Result<List<Map<String,Object>>> listUsers(@RequestParam(required=false) Long deptId) {
         var q = Wrappers.lambdaQuery(SysUser.class).eq(SysUser::getEnabled, 1);
         if (deptId != null) q.eq(SysUser::getDeptId, deptId);
-        List<Map<String,Object>> list = sysUserMapper.selectList(q).stream().map(u -> {
+        return Results.success(sysUserMapper.selectList(q).stream().map(u -> {
             Map<String,Object> m = new LinkedHashMap<>();
-            m.put("id", u.getId()); m.put("username", u.getUsername());
-            m.put("realName", u.getRealName()); m.put("deptId", u.getDeptId());
-            m.put("isAdmin", u.getIsAdmin()); return m;
-        }).toList();
-        return Results.success(list);
-    }
-
-    @GetMapping("/departments")
-    public Result<List<Map<String,Object>>> listDepts() {
-        List<Map<String,Object>> list = sysUserMapper.selectList(
-            Wrappers.lambdaQuery(SysUser.class).select(SysUser::getDeptId).groupBy(SysUser::getDeptId)
-        ).stream().map(u -> {
-            Map<String,Object> m = new LinkedHashMap<>();
-            m.put("id", u.getDeptId()); return m;
-        }).toList();
-        return Results.success(list);
+            m.put("id", u.getId()); m.put("username", u.getUsername()); m.put("realName", u.getRealName());
+            m.put("deptId", u.getDeptId()); m.put("isAdmin", u.getIsAdmin()); return m;
+        }).toList());
     }
 }

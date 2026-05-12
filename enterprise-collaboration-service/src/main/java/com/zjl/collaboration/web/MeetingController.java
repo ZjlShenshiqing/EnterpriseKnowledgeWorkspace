@@ -1,49 +1,50 @@
 package com.zjl.collaboration.web;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.zjl.collaboration.entity.SysMeeting;
+import com.zjl.collaboration.mapper.SysMeetingMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
 public class MeetingController {
 
-    private final JdbcTemplate jdbc;
+    private final SysMeetingMapper meetingMapper;
 
     @GetMapping
-    public Result<List<Map<String,Object>>> list() {
-        return Results.success(jdbc.queryForList("SELECT * FROM sys_meeting ORDER BY date DESC, start_time ASC"));
+    public Result<List<SysMeeting>> list() {
+        return Results.success(meetingMapper.selectList(Wrappers.lambdaQuery(SysMeeting.class).orderByDesc(SysMeeting::getDate).orderByAsc(SysMeeting::getStartTime)));
     }
 
     @PostMapping
     public Result<Long> create(@RequestBody MeetingReq req, @RequestHeader("X-User-Id") Long userId) {
-        jdbc.update("INSERT INTO sys_meeting (title,room,creator_id,date,start_time,end_time,attendees,status) VALUES (?,?,?,?,?,?,?,?)",
-            req.getTitle(), req.getRoom(), userId, req.getDate(), req.getStartTime(), req.getEndTime(), req.getAttendees(), "confirmed");
-        return Results.success(jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class));
+        SysMeeting m = new SysMeeting();
+        m.setTitle(req.getTitle()); m.setRoom(req.getRoom()); m.setCreatorId(userId);
+        m.setDate(req.getDate()); m.setStartTime(req.getStartTime()); m.setEndTime(req.getEndTime());
+        m.setAttendees(req.getAttendees()); m.setStatus("confirmed");
+        meetingMapper.insert(m);
+        return Results.success(m.getId());
     }
 
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody MeetingReq req) {
-        jdbc.update("UPDATE sys_meeting SET title=?,room=?,date=?,start_time=?,end_time=?,attendees=? WHERE id=?",
-            req.getTitle(), req.getRoom(), req.getDate(), req.getStartTime(), req.getEndTime(), req.getAttendees(), id);
+        SysMeeting m = meetingMapper.selectById(id);
+        if (m == null) return Results.success();
+        m.setTitle(req.getTitle()); m.setRoom(req.getRoom()); m.setDate(req.getDate());
+        m.setStartTime(req.getStartTime()); m.setEndTime(req.getEndTime()); m.setAttendees(req.getAttendees());
+        meetingMapper.updateById(m);
         return Results.success();
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        jdbc.update("DELETE FROM sys_meeting WHERE id=?", id);
-        return Results.success();
-    }
+    public Result<Void> delete(@PathVariable Long id) { meetingMapper.deleteById(id); return Results.success(); }
 
-    @Data public static class MeetingReq {
-        private String title; private String room; private String date;
-        private String startTime; private String endTime; private String attendees;
-    }
+    @Data public static class MeetingReq { private String title; private String room; private String date; private String startTime; private String endTime; private String attendees; }
 }

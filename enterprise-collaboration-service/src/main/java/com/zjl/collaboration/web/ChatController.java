@@ -1,52 +1,72 @@
 package com.zjl.collaboration.web;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.zjl.collaboration.entity.*;
+import com.zjl.collaboration.mapper.*;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final JdbcTemplate jdbc;
+    private final ImConversationMapper convMapper;
+    private final ImConversationMemberMapper memberMapper;
+    private final ImMessageMapper msgMapper;
+    private final SysUserMapper userMapper;
 
     @GetMapping("/conversations")
     public Result<List<Map<String,Object>>> conversations(@RequestHeader("X-User-Id") Long userId) {
-        List<Map<String,Object>> list = jdbc.queryForList(
-            "SELECT c.*, (SELECT content FROM im_message WHERE conversation_id=c.id ORDER BY created_at DESC LIMIT 1) as last_msg FROM im_conversation c WHERE c.id IN (SELECT conversation_id FROM im_conversation_member WHERE user_id=?) ORDER BY c.updated_at DESC", userId);
-        return Results.success(list);
+        List<Long> convIds = memberMapper.selectList(
+            Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getUserId, userId))
+            .stream().map(ImConversationMember::getConversationId).toList();
+        if (convIds.isEmpty()) return Results.success(List.of());
+
+        List<ImConversation> convs = convMapper.selectBatchIds(convIds).stream()
+            .sorted((a,b) -> b.getUpdatedAt() != null && a.getUpdatedAt() != null ? b.getUpdatedAt().compareTo(a.getUpdatedAt()) : 0).toList();
+
+        List<Map<String,Object>> result = new ArrayList<>();
+        for (ImConversation c : convs) {
+            Map<String,Object> m = new LinkedHashMap<>();
+            m.put("id", c.getId()); m.put("name", c.getName()); m.put("type", c.getType());
+            ImMessage last = msgMapper.selectOne(Wrappers.lambdaQuery(ImMessage.class).eq(ImMessage::getConversationId, c.getId()).orderByDesc(ImMessage::getCreatedAt).last("LIMIT 1"));
+            m.put("last_msg", last != null ? last.getContent() : null);
+            result.add(m);
+        }
+        return Results.success(result);
     }
 
     @GetMapping("/messages/{convId}")
-    public Result<List<Map<String,Object>>> messages(@PathVariable Long convId) {
-        return Results.success(jdbc.queryForList(
-            "SELECT * FROM im_message WHERE conversation_id=? ORDER BY created_at ASC LIMIT 100", convId));
+    public Result<List<ImMessage>> messages(@PathVariable Long convId) {
+        return Results.success(msgMapper.selectList(
+            Wrappers.lambdaQuery(ImMessage.class).eq(ImMessage::getConversationId, convId).orderByAsc(ImMessage::getCreatedAt).last("LIMIT 100")));
     }
 
     @PostMapping("/conversations")
     public Result<Long> createConv(@RequestBody CreateConvReq req, @RequestHeader("X-User-Id") Long userId) {
-        jdbc.update("INSERT INTO im_conversation (name, type, created_by, created_at) VALUES (?,?,?,?)",
-            req.getName(), req.getType(), userId, LocalDateTime.now());
-        Long convId = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-        jdbc.update("INSERT INTO im_conversation_member (conversation_id, user_id) VALUES (?,?)", convId, userId);
+        ImConversation c = new ImConversation();
+        c.setName(req.getName()); c.setType(req.getType()); c.setCreatedBy(userId); c.setCreatedAt(LocalDateTime.now()); c.setUpdatedAt(LocalDateTime.now());
+        convMapper.insert(c);
+        ImConversationMember self = new ImConversationMember(); self.setConversationId(c.getId()); self.setUserId(userId); memberMapper.insert(self);
         for (Long uid : req.getMemberIds()) {
-            jdbc.update("INSERT INTO im_conversation_member (conversation_id, user_id) VALUES (?,?)", convId, uid);
+            ImConversationMember m = new ImConversationMember(); m.setConversationId(c.getId()); m.setUserId(uid); memberMapper.insert(m);
         }
-        return Results.success(convId);
+        return Results.success(c.getId());
     }
 
     @GetMapping("/members/{convId}")
     public Result<List<Map<String,Object>>> members(@PathVariable Long convId) {
-        return Results.success(jdbc.queryForList(
-            "SELECT u.id, u.username, u.real_name FROM sys_user u JOIN im_conversation_member m ON u.id=m.user_id WHERE m.conversation_id=?", convId));
+        List<Long> userIds = memberMapper.selectList(Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getConversationId, convId)).stream().map(ImConversationMember::getUserId).toList();
+        List<SysUser> users = userMapper.selectBatchIds(userIds);
+        return Results.success(users.stream().map(u -> { Map<String,Object> m = new LinkedHashMap<>(); m.put("id",u.getId()); m.put("username",u.getUsername()); m.put("realName",u.getRealName()); return m; }).collect(Collectors.toList()));
     }
 
     @Data public static class CreateConvReq { private String name; private String type; private List<Long> memberIds; }
