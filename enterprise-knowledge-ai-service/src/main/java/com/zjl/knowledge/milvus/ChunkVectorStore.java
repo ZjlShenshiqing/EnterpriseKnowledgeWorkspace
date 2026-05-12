@@ -3,7 +3,7 @@ package com.zjl.knowledge.milvus;
 import java.util.List;
 
 /**
- * 向量库存取抽象门面
+ * 向量库存取接口
  *
  * <p>业务层通过此接口操作向量，不直接依赖具体实现，
  * 当前落地为 {@link MilvusChunkVectorStore}</p>

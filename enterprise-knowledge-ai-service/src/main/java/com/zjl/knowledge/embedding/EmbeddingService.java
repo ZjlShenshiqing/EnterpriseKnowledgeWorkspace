@@ -3,7 +3,7 @@ package com.zjl.knowledge.embedding;
 import java.util.List;
 
 /**
- * 文本向量化（一期占位实现可对接真实 embedding 服务）
+ * 文本向量化
  */
 public interface EmbeddingService {
 

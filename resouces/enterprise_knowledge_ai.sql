@@ -8,7 +8,7 @@
 -- 数据库 enterprise_knowledge_ai（知识库微服务）
 -- ============================================================
 -- CREATE DATABASE IF NOT EXISTS enterprise_knowledge_ai DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE enterprise_knowledge_ai;
+USE enterprise_knowledge_ai;
 
 -- -------------------- kb_category 知识分类表 --------------------
 DROP TABLE IF EXISTS kb_category;
@@ -168,8 +168,8 @@ WHERE NOT EXISTS (SELECT 1 FROM kb_category WHERE id = 1001);
 -- ============================================================
 -- 数据库 enterprise_gateway（网关服务）
 -- ============================================================
--- CREATE DATABASE IF NOT EXISTS enterprise_gateway DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE enterprise_gateway;
+CREATE DATABASE IF NOT EXISTS enterprise_gateway DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE enterprise_gateway;
 
 -- -------------------- sys_dept 部门表 --------------------
 DROP TABLE IF EXISTS sys_dept;
@@ -266,7 +266,7 @@ CREATE TABLE sys_token_blacklist (
 -- 数据库 enterprise_collaboration（协同服务）
 -- ============================================================
 -- CREATE DATABASE IF NOT EXISTS enterprise_collaboration DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE enterprise_collaboration;
+USE enterprise_collaboration;
 
 DROP TABLE IF EXISTS sys_doc;
 DROP TABLE IF EXISTS sys_todo;

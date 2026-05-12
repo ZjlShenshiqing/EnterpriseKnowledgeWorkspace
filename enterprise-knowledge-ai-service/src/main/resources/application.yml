@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:classpath:application-secrets.yml
   application:
     name: enterprise-knowledge-ai-service
   servlet:
@@ -6,10 +8,9 @@ spring:
       max-file-size: 50MB
       max-request-size: 55MB
   datasource:
-    # 本地 MySQL：请先创建库 enterprise_knowledge_ai（见 schema.sql 顶部注释）
     url: jdbc:mysql://127.0.0.1:3306/enterprise_knowledge_ai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: root
-    password: 123456
+    password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
@@ -44,7 +45,7 @@ app:
   agent:
     llm:
       provider: deepseek
-      api-key: sk-e99b95e9d9f84909b2a0c5cbb6ea4c77
+      api-key: ${DEEPSEEK_API_KEY:}
       base-url: https://api.deepseek.com
       model: deepseek-chat
       max-tokens: 4096

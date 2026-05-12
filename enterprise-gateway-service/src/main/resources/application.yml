@@ -7,10 +7,11 @@ spring:
   # 用于 RBAC 用户部门角色权限 操作日志 token 黑名单
   # 当前为 MySQL 连接配置
   datasource:
-    url: jdbc:mysql://192.168.150.100:3306/enterprise_gateway?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/enterprise_gateway?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: root
-    password: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
 
   # JPA 自动建表配置
   jpa:
