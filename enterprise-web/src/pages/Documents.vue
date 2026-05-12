@@ -19,7 +19,7 @@
             </el-icon>
             <div style="font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.title }}</div>
           </div>
-          <div style="font-size:11px;color:#c0c4cc;margin-top:4px;margin-left:26px">{{ doc.updatedAt }} · {{ doc.owner }}</div>
+          <div style="font-size:11px;color:#c0c4cc;margin-top:4px;margin-left:26px">{{ doc.updatedAt || doc.created_at }} · {{ doc.updatedByName || doc.updated_by_name || '未知' }}</div>
         </div>
       </div>
       <div style="border-top:1px solid #eee;padding:12px;display:flex;gap:6px;align-items:center">
@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 
 const searchText = ref('')
@@ -155,21 +155,42 @@ const comments = ref([
   {id:2,user:'王五',color:'#e6a23c',text:'已补充数据来源，请再次确认',time:'10:45'},
 ])
 
-const docs = ref([
-  {id:1,title:'Q2项目评审报告',type:'doc',content:'<h2>Q2项目评审报告</h2><p>本报告总结了2026年第二季度的项目进展情况。</p><h3>一、项目概况</h3><p>Q2共完成5个重点项目，其中<strong>知识库微服务</strong>为核心交付。</p><h3>二、关键指标</h3><table border="1" style="border-collapse:collapse;width:100%"><tr><th>指标</th><th>目标</th><th>实际</th></tr><tr><td>文档覆盖率</td><td>80%</td><td>92%</td></tr><tr><td>检索准确率</td><td>85%</td><td>89%</td></tr></table><h3>三、后续计划</h3><p>Q3重点推进<strong>RAG智能问答</strong>和文档协作功能。</p>',owner:'张三',updatedAt:'10:45'},
-  {id:2,title:'技术架构设计文档',type:'doc',content:'<h2>技术架构设计文档</h2><p>本文档描述企业智能工作平台的技术架构设计。</p><h3>微服务架构</h3><ul><li>Gateway 网关服务</li><li>Knowledge-AI 知识库服务</li><li>Collaboration 协同服务</li><li>Workbench 工作台服务</li></ul><h3>技术栈</h3><ul><li>后端: Java 17 + Spring Boot 3</li><li>前端: Vue 3 + Element Plus</li><li>向量库: Milvus 2.6</li><li>LLM: DeepSeek</li></ul>',owner:'张三',updatedAt:'09:30'},
-  {id:3,title:'Q2数据汇总表',type:'sheet',content:'',owner:'李四',updatedAt:'昨天'},
-  {id:4,title:'系统架构图.png',type:'image',content:'',owner:'王五',updatedAt:'2天前'},
-])
+onMounted(loadDocs)
+
+const mockDocs = [
+  {id:1,title:'Q2项目评审报告',type:'doc',content:'<h2>Q2项目评审报告</h2><p>本报告总结了2026年第二季度的项目进展情况。</p><h3>一、项目概况</h3><p>Q2共完成5个重点项目，其中<strong>知识库微服务</strong>为核心交付。</p>',updatedByName:'张三',updatedAt:'10:45'},
+  {id:2,title:'技术架构设计文档',type:'doc',content:'<h2>技术架构设计文档</h2><p>本文档描述企业智能工作平台的技术架构设计。</p><h3>微服务架构</h3><ul><li>Gateway 网关服务</li><li>Knowledge-AI 知识库服务</li><li>Collaboration 协同服务</li><li>Workbench 工作台服务</li></ul>',updatedByName:'张三',updatedAt:'09:30'},
+]
 
 const filteredDocs = computed(() => docs.value.filter(d => !searchText.value || d.title.includes(searchText.value)))
 
-function createDoc() {
-  const d = { id: Date.now(), title: '未命名文档', type:'doc', content:'', owner:'我', updatedAt:'刚刚' }
-  docs.value.unshift(d); activeDoc.value = d
+function headers() { const u=JSON.parse(localStorage.getItem('user')||'{}'); return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false'),'Content-Type':'application/json'} }
+
+async function loadDocs() {
+  try { const r=await fetch('/api/docs',{headers:headers()}); docs.value=(await r.json()).data||[] }
+  catch(e) { docs.value=mockDocs }
 }
+
+async function createDoc() {
+  try {
+    const r=await fetch('/api/docs',{method:'POST',headers:headers(),body:JSON.stringify({title:'未命名文档',content:''})})
+    const id=(await r.json()).data; const d={id,title:'未命名文档',type:'doc',content:'',updatedBy:'我',updatedAt:'刚刚'}
+    docs.value.unshift(d); activeDoc.value=d
+  } catch(e) { const d={id:Date.now(),title:'未命名文档',type:'doc',content:'',updatedBy:'我',updatedAt:'刚刚'}; docs.value.unshift(d); activeDoc.value=d }
+}
+
 function openDoc(doc) { activeDoc.value = doc }
-function autoSave() {}
+
+let saveTimer=null
+function autoSave() {
+  if (!activeDoc.value) return
+  clearTimeout(saveTimer)
+  saveTimer=setTimeout(async () => {
+    const el=document.querySelector('[contenteditable="true"]')
+    if (el) activeDoc.value.content=el.innerHTML
+    try { await fetch(`/api/docs/${activeDoc.value.id}`,{method:'PUT',headers:headers(),body:JSON.stringify({title:activeDoc.value.title,content:activeDoc.value.content})}) } catch(e) {}
+  }, 1500)
+}
 function execCmd(cmd) { document.execCommand(cmd, false, null); editor.value?.focus() }
 function setHeading(v) { document.execCommand('formatBlock', false, `<${v}>`); editor.value?.focus() }
 function insertTable() {
