@@ -8,10 +8,12 @@
         <div class="logo-icon pulse-ring">
           <span class="logo-text">E</span>
         </div>
-        <div class="title">企业智能工作平台</div>
-        <div class="subtitle">Enterprise Work Platform</div>
+        <div class="title">{{ showRegister ? '注册账号' : '企业智能工作平台' }}</div>
+        <div class="subtitle">{{ showRegister ? 'Create Account' : 'Enterprise Work Platform' }}</div>
       </div>
-      <el-form :model="form" :rules="rules" ref="formRef">
+
+      <!-- Login Form -->
+      <el-form v-if="!showRegister" :model="form" :rules="rules" ref="formRef">
         <el-form-item prop="username">
           <el-input v-model="form.username" placeholder="用户名" size="large" :prefix-icon="User" class="login-input" />
         </el-form-item>
@@ -24,10 +26,29 @@
           </el-button>
         </el-form-item>
       </el-form>
+      <!-- Register Form -->
+      <el-form v-if="showRegister" :model="regForm" :rules="regRules" ref="regFormRef">
+        <el-form-item prop="username">
+          <el-input v-model="regForm.username" placeholder="用户名" size="large" :prefix-icon="User" class="login-input" />
+        </el-form-item>
+        <el-form-item prop="realName">
+          <el-input v-model="regForm.realName" placeholder="真实姓名" size="large" :prefix-icon="User" class="login-input" />
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input v-model="regForm.password" type="password" placeholder="密码" size="large" :prefix-icon="Lock" show-password class="login-input" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="success" size="large" class="login-btn" @click="doRegister" :loading="regLoading">注 册</el-button>
+        </el-form-item>
+      </el-form>
+
       <div class="demo-link">
-        <el-button link @click="demoLogin">演示登录</el-button>
-        <span class="dot">·</span>
-        <el-button link @click="demoLogin">注册账号</el-button>
+        <el-button v-if="showRegister" link @click="showRegister=false">← 返回登录</el-button>
+        <template v-else>
+          <el-button link @click="showRegister = true">注册账号</el-button>
+          <span class="dot">·</span>
+          <el-button link @click="demoLogin">演示登录</el-button>
+        </template>
       </div>
       <div class="footer-text">Demo · Enterprise Knowledge Workspace</div>
     </div>
@@ -42,12 +63,21 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(false)
+const regLoading = ref(false)
+const showRegister = ref(false)
 const formRef = ref(null)
+const regFormRef = ref(null)
 const cardRef = ref(null)
 const form = reactive({ username: '', password: '' })
+const regForm = reactive({ username: '', password: '', realName: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+}
+const regRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
 }
 
 const shapes = Array.from({length:6}, (_,i) => ({
@@ -87,6 +117,30 @@ async function login() {
 }
 
 function shakeCard() { cardRef.value?.classList.add('shake'); setTimeout(() => cardRef.value?.classList.remove('shake'), 500) }
+
+async function doRegister() {
+  const valid = await regFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  regLoading.value = true
+  try {
+    const resp = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(regForm)
+    })
+    if (resp.ok) {
+      ElMessage.success('注册成功，请登录')
+      showRegister.value = false
+      form.username = regForm.username
+      form.password = ''
+      regForm.username = ''; regForm.password = ''; regForm.realName = ''
+    } else {
+      const err = await resp.json()
+      ElMessage.error(err.message || '注册失败')
+    }
+  } catch (e) { ElMessage.warning('注册服务未启动，使用演示模式'); demoLogin() }
+  regLoading.value = false
+}
 
 function demoLogin() {
   saveAuth({ id: 1, username: 'admin', realName: '管理员', isAdmin: true, departmentId: 1, token: '' })
@@ -139,10 +193,19 @@ function demoLogin() {
 .subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 6px; letter-spacing: .5px; }
 
 .login-input .el-input__wrapper {
-  border-radius: 12px; transition: all .25s; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  border-radius: 12px; transition: all .25s;
+  box-shadow: none !important;
+  border: 1px solid #e5e6eb;
 }
-.login-input .el-input__wrapper:hover { box-shadow: 0 2px 8px rgba(51,112,255,0.12); }
-.login-input .el-input__wrapper.is-focus { box-shadow: 0 2px 12px rgba(51,112,255,0.18); }
+.login-input .el-input__wrapper:hover { border-color: #c0c4cc; }
+.login-input .el-input__wrapper.is-focus { border-color: var(--brand-500) !important; box-shadow: none !important; }
+.login-input .el-input__inner:-webkit-autofill,
+.login-input .el-input__inner:-webkit-autofill:hover,
+.login-input .el-input__inner:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
 
 .login-btn {
   width: 100%; border-radius: 12px; height: 46px; font-size: 16px; letter-spacing: 4px;
