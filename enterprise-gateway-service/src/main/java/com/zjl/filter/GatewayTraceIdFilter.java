@@ -15,7 +15,7 @@ import java.util.UUID;
  * 请求链路追踪过滤器：透传或生成 traceId，并写入 MDC 供日志打印
  */
 @Component
-public class TraceIdFilter implements WebFilter {
+public class GatewayTraceIdFilter implements WebFilter {
 
     /**
      * 请求头中的 traceId 键名
