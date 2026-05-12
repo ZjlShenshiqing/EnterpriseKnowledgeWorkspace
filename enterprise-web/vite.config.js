@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api/auth': 'http://localhost:8082',
+      '/api/auth': 'http://localhost:8090',
       '/api/kb': 'http://localhost:8083',
       '/mcp': 'http://localhost:8083',
     }
