@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>com.zjl</groupId>
-            <artifactId>frameworks-web-spring-boot-starter</artifactId>
+            <artifactId>frameworks-common-spring-boot-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
