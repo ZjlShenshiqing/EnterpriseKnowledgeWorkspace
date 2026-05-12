@@ -9,15 +9,16 @@
 1. [系统架构总览](#1-系统架构总览)
 2. [启动入口](#2-启动入口)
 3. [配置体系](#3-配置体系)
-4. [Entity 层](#4-entity-层)
-5. [DTO 层](#5-dto-层)
-6. [Mapper 层](#6-mapper-层)
-7. [Service 层](#7-service-层)
-8. [Controller 层](#8-controller-层)
-9. [JWT 认证链路](#9-jwt-认证链路)
-10. [数据库设计](#10-数据库设计)
-11. [完整 API 接口清单](#11-完整-api-接口清单)
-12. [目录结构速查](#12-目录结构速查)
+4. [完整业务流程](#4-完整业务流程)
+5. [Entity 层](#5-entity-层)
+6. [DTO 层](#6-dto-层)
+7. [Mapper 层](#7-mapper-层)
+8. [Service 层](#8-service-层)
+9. [Controller 层](#9-controller-层)
+10. [JWT 认证链路](#10-jwt-认证链路)
+11. [数据库设计](#11-数据库设计)
+12. [完整 API 接口清单](#12-完整-api-接口清单)
+13. [目录结构速查](#13-目录结构速查)
 
 ---
 
@@ -176,9 +177,190 @@ public class FilterConfig {
 
 ---
 
-## 4. Entity 层
 
-### 4.1 SysUser
+## 4. 完整业务流程
+
+### 4.1 用户登录完整链路
+
+```mermaid
+sequenceDiagram
+    participant FE as Vue前端 :5173
+    participant VITE as Vite代理
+    participant CTL as AuthController :8090
+    participant SVC as UserLoginServiceImpl
+    participant DB as MySQL
+    participant JWT as JwtUtil
+
+    FE->>FE: 用户输入用户名密码
+    FE->>VITE: POST /api/auth/login
+    VITE->>CTL: 转发到 :8090
+    CTL->>SVC: login(UserLoginReqDTO)
+
+    Note over SVC: 步骤1: 参数校验
+    SVC->>SVC: username/password 非空判断
+
+    Note over SVC: 步骤2: 数据库查询
+    SVC->>DB: SELECT * FROM sys_user<br/>WHERE username = ?
+    DB-->>SVC: SysUser 或 null
+
+    alt 用户不存在或已禁用
+        SVC-->>CTL: throw BizException(UNAUTHORIZED)
+        CTL-->>FE: 40100 用户名或密码错误
+    end
+
+    Note over SVC: 步骤3: 密码验证
+    SVC->>SVC: BCryptPasswordEncoder<br/>.matches(password, hash)
+
+    alt 密码不匹配
+        SVC-->>CTL: throw BizException(UNAUTHORIZED)
+        CTL-->>FE: 40100 用户名或密码错误
+    end
+
+    Note over SVC: 步骤4: JWT 签发
+    SVC->>JWT: generate({userId, username, isAdmin})
+    JWT->>JWT: Jwts.builder()<br/>.claims(claims)<br/>.expiration(now + 24h)<br/>.signWith(HS256 key)
+    JWT-->>SVC: accessToken (eyJhbGci...)
+
+    SVC-->>CTL: UserLoginRespDTO
+    CTL-->>FE: Result { data: {userId, username, realName, isAdmin, accessToken} }
+
+    Note over FE: 步骤5: 前端存储
+    FE->>FE: localStorage.setItem('user', JSON.stringify(user))
+    FE->>FE: localStorage.setItem('token', accessToken)
+    FE->>FE: router.push('/') 跳转到工作台
+```
+
+### 4.2 请求认证链路（登录后每个请求）
+
+```mermaid
+sequenceDiagram
+    participant FE as Vue前端
+    participant VITE as Vite代理
+    participant FILTER as JwtAuthFilter
+    participant CTL as AuthController
+    participant API as 业务API (knowledge-ai)
+
+    Note over FE: 每个请求都带 Authorization 头
+
+    FE->>VITE: GET /api/kb/documents<br/>Authorization: Bearer eyJhbG...
+    VITE->>FILTER: 转发到 :8090
+
+    Note over FILTER: 步骤1: 路径白名单检查
+    FILTER->>FILTER: /api/auth/login? → 跳过认证
+
+    Note over FILTER: 步骤2: 提取 Bearer Token
+    FILTER->>FILTER: authHeader.startsWith("Bearer ")<br/>token = authHeader.substring(7)
+
+    Note over FILTER: 步骤3: JWT 解析
+    FILTER->>FILTER: jwtUtil.parse(token)<br/>→ Claims {userId, username, isAdmin}
+
+    alt Token 过期
+        FILTER-->>FE: 401 Token已过期
+    else Token 无效
+        FILTER-->>FE: 401 Token无效
+    end
+
+    Note over FILTER: 步骤4: 注入请求头
+    FILTER->>FILTER: MutableRequestWrapper.putHeader<br/>("X-User-Id", userId)<br/>("X-Is-Admin", isAdmin)
+
+    FILTER->>API: 转发到 knowledge-ai :8083<br/>带 X-User-Id / X-Is-Admin 头
+    API-->>FILTER: 响应
+    FILTER-->>FE: 响应
+```
+
+### 4.3 用户注册流程
+
+```mermaid
+sequenceDiagram
+    participant FE as Vue前端
+    participant CTL as AuthController
+    participant SVC as UserLoginServiceImpl
+    participant DB as MySQL
+
+    FE->>CTL: POST /api/auth/register<br/>{username, password, realName, deptId}
+
+    CTL->>SVC: register(req)
+    SVC->>SVC: 参数校验: username/password 非空
+
+    SVC->>DB: SELECT COUNT(1) FROM sys_user<br/>WHERE username = ?
+    DB-->>SVC: count
+
+    alt count > 0
+        SVC-->>CTL: throw BizException(PARAM_INVALID)
+        CTL-->>FE: 40000 用户名已存在
+    end
+
+    SVC->>SVC: BCryptPasswordEncoder.encode(password)
+    SVC->>DB: INSERT INTO sys_user<br/>(username, password_hash, real_name, dept_id)<br/>VALUES (?, ?, ?, ?)
+
+    Note over SVC: isAdmin 默认 0, enabled 默认 1
+
+    SVC-->>CTL: UserRegisterRespDTO {userId, username}
+    CTL-->>FE: 注册成功
+
+    Note over FE: 自动切回登录页<br/>回填用户名
+```
+
+### 4.4 用户登出与注销流程
+
+```mermaid
+flowchart TD
+    A[用户操作] --> B{操作类型}
+    B -->|登出| C[POST /api/auth/logout?accessToken=xxx]
+    B -->|注销账号| D[POST /api/auth/deletion]
+
+    C --> E[tokenBlacklist.add(accessToken)]
+    E --> F[前端清除 localStorage]
+    F --> G[router.push('/login')]
+
+    D --> H[参数校验]
+    H --> I[SELECT user BY username]
+    I --> J{用户存在?}
+    J -->|否| K[NOT_FOUND]
+    J -->|是| L{BCrypt密码验证}
+    L -->|失败| M[PARAM_INVALID]
+    L -->|通过| N[sysUserMapper.deleteById]
+    N --> O[物理删除用户记录]
+    O --> P[返回成功]
+```
+
+### 4.5 Token 黑名单机制
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant CTL as AuthController
+    participant SVC as UserLoginServiceImpl
+    participant BL as tokenBlacklist<br/>(ConcurrentHashMap)
+    participant JWT as JwtUtil
+
+    Note over U,JWT: 登出场景
+    U->>CTL: POST /api/auth/logout?accessToken=xxx
+    CTL->>SVC: logout(accessToken)
+    SVC->>BL: add(accessToken)
+    Note over BL: Token 加入黑名单<br/>即使未过期也标记失效
+
+    Note over U,JWT: 再次请求场景
+    U->>CTL: 请求带已登出的 Token
+    CTL->>SVC: checkLogin(accessToken)
+    SVC->>BL: contains(accessToken)?
+    BL-->>SVC: true (在黑名单中)
+    SVC-->>CTL: throw BizException(UNAUTHORIZED, "Token已失效")
+    CTL-->>U: 40100
+
+    Note over BL: 黑名单存储在内存<br/>服务重启后清空
+    Note over JWT: JWT 本身24h后自然过期
+```
+
+---
+
+## 5. Entity 层
+
+### 5.1 SysUser
+
+## 5. Entity 层
+
+### 11.1 SysUser
 
 **文件路径**：`entity/SysUser.java`  
 **表名**：`sys_user`  
@@ -198,7 +380,7 @@ public class FilterConfig {
 
 ---
 
-## 5. DTO 层
+## 6. DTO 层
 
 ```mermaid
 classDiagram
@@ -234,7 +416,7 @@ classDiagram
     UserDeletionReqDTO --> UserLoginRespDTO : deletion()
 ```
 
-### 5.1 DTO 清单
+### 11.1 DTO 清单
 
 | DTO | 字段 | 用途 |
 |-----|------|------|
@@ -246,9 +428,9 @@ classDiagram
 
 ---
 
-## 6. Mapper 层
+## 7. Mapper 层
 
-### 6.1 SysUserMapper
+### 11.1 SysUserMapper
 
 **文件路径**：`mapper/SysUserMapper.java`
 
@@ -262,9 +444,9 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
 
 ---
 
-## 7. Service 层
+## 8. Service 层
 
-### 7.1 UserLoginService 接口
+### 11.1 UserLoginService 接口
 
 **文件路径**：`service/UserLoginService.java`
 
@@ -279,7 +461,7 @@ public interface UserLoginService {
 }
 ```
 
-### 7.2 UserLoginServiceImpl 详解
+### 8.2 UserLoginServiceImpl 详解
 
 **文件路径**：`service/impl/UserLoginServiceImpl.java`  
 **依赖**：`SysUserMapper` + `JwtUtil` + `BCryptPasswordEncoder`
@@ -335,9 +517,9 @@ deletion(req)
 
 ---
 
-## 8. Controller 层
+## 9. Controller 层
 
-### 8.1 AuthController
+### 11.1 AuthController
 
 **文件路径**：`web/AuthController.java`  
 **路径前缀**：`/api/auth`  
@@ -354,9 +536,9 @@ deletion(req)
 
 ---
 
-## 9. JWT 认证链路
+## 10. JWT 认证链路
 
-### 9.1 JwtUtil
+### 11.1 JwtUtil
 
 **文件路径**：`util/JwtUtil.java`
 
@@ -388,7 +570,7 @@ public class JwtUtil {
 }
 ```
 
-### 9.2 JwtAuthFilter
+### 11.2 JwtAuthFilter
 
 **文件路径**：`web/JwtAuthFilter.java`
 
@@ -407,7 +589,7 @@ flowchart TD
     K --> L[chain.doFilter]
 ```
 
-### 9.3 MutableRequestWrapper
+### 11.3 MutableRequestWrapper
 
 **文件路径**：`web/MutableRequestWrapper.java`
 
@@ -430,9 +612,9 @@ public class MutableRequestWrapper extends HttpServletRequestWrapper {
 
 ---
 
-## 10. 数据库设计
+## 11. 数据库设计
 
-### 10.1 ER 图
+### 11.1 ER 图
 
 ```mermaid
 erDiagram
@@ -459,7 +641,7 @@ erDiagram
     }
 ```
 
-### 10.2 种子数据
+### 11.2 种子数据
 
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
@@ -471,7 +653,7 @@ erDiagram
 
 ---
 
-## 11. 完整 API 接口清单
+## 12. 完整 API 接口清单
 
 | # | 方法 | 路径 | 参数 | 响应 | 认证 |
 |---|------|------|------|------|------|
@@ -484,7 +666,7 @@ erDiagram
 
 ---
 
-## 12. 目录结构速查
+## 13. 目录结构速查
 
 ```
 enterprise-collaboration-service/
@@ -522,7 +704,7 @@ enterprise-collaboration-service/
 
 ---
 
-**文档版本**：v1.0  
+**文档版本**：v1.1（含完整业务流程）  
 **最后更新**：2026-05-12  
 **覆盖范围**：14 个 Java 源文件 + 2 个资源文件  
-**图表数量**：5 个 Mermaid 图表
+**图表数量**：10 个 Mermaid 图表（架构图 ×2、时序图 ×5、流程图 ×2、类图 ×1、ER 图 ×1）
