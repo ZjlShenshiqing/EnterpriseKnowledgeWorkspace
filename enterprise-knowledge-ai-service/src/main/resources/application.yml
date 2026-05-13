@@ -53,6 +53,12 @@ app:
     session:
       max-history: 50
       archive-after-days: 30
+    web-search:
+      enabled: true
+      api-key: ${BOCHA_API_KEY:}
+      base-url: https://api.bochaai.com/v1
+      count: 8
+      freshness: noLimit
 
 logging:
   pattern:
