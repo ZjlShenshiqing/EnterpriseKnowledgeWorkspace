@@ -1,49 +1,99 @@
 <template>
   <div class="chat-fullpage">
     <!-- Messages Area -->
-    <div class="messages-container" ref="box">
-      <!-- Empty State -->
-      <div v-if="!messages.length" class="empty-state">
-        <div class="empty-logo">
-          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+    <div
+      class="messages-container"
+      ref="box"
+      :class="{ 'messages-container--landing': !messages.length }"
+    >
+      <!-- 飞书式落地：白底居中 + 大输入卡 + 推荐问 -->
+      <div v-if="!messages.length" class="chat-landing">
+        <div class="feishu-logo-ring" aria-hidden="true">
+          <svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="emptyLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#ff6b9d"/>
-                <stop offset="50%" style="stop-color:#c084fc"/>
-                <stop offset="100%" style="stop-color:#22d3ee"/>
+              <linearGradient id="chatRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="22%" stop-color="#d946ef"/>
+                <stop offset="45%" stop-color="#f43f5e"/>
+                <stop offset="68%" stop-color="#f97316"/>
+                <stop offset="88%" stop-color="#facc15"/>
+                <stop offset="100%" stop-color="#22d3ee"/>
               </linearGradient>
-              <filter id="logoGlow">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
             </defs>
-            <circle cx="50" cy="50" r="40" fill="none" stroke="url(#emptyLogoGradient)" stroke-width="6" stroke-linecap="round" stroke-dasharray="200 200" transform="rotate(-90 50 50)" filter="url(#logoGlow)">
-              <animateTransform attributeName="transform" type="rotate" from="-90 50 50" to="270 50 50" dur="3s" repeatCount="indefinite"/>
-              <animate attributeName="stroke-dashoffset" from="0" to="-400" dur="3s" repeatCount="indefinite"/>
-            </circle>
+            <circle cx="44" cy="44" r="34" fill="none" stroke="url(#chatRingGrad)" stroke-width="9" stroke-linecap="round"/>
           </svg>
         </div>
-        <div class="empty-title">智能助手</div>
-        <div class="empty-subtitle">整合企业知识库，AI搜索生成回答</div>
-        
-        <div class="quick-actions">
-          <div 
-            v-for="(action, index) in quickActions" 
-            :key="action.label"
-            class="quick-action-card"
-            :style="{ animationDelay: `${index * 0.1}s` }"
-            @click="sendQuick(action.text)"
-          >
-            <div class="quick-action-icon" :style="{ background: action.color }">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path :d="action.icon"/>
-              </svg>
+
+        <h1 class="chat-landing-title">智能知识问答</h1>
+        <p class="chat-landing-sub">整合企业知识库，AI 搜索生成回答</p>
+
+        <div class="composer-card">
+          <textarea
+            v-model="input"
+            class="composer-textarea"
+            placeholder="试试输入“/”，支持深入研究、写作、带图提问"
+            @keydown.enter.exact.prevent="send"
+            :disabled="sending"
+            rows="3"
+            ref="textarea"
+            @input="autoResize"
+          />
+          <div class="composer-bar">
+            <div class="composer-bar-left">
+              <button type="button" class="btn-icon-circle" title="添加（即将支持）" @click.prevent>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+              <span class="pill-web">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/>
+                </svg>
+                联网搜索
+              </span>
             </div>
-            <span class="quick-action-label">{{ action.label }}</span>
+            <div class="composer-bar-right">
+              <button type="button" class="btn-icon-circle" title="更多" @click.prevent>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="send-btn-circle"
+                :disabled="sending || !input.trim()"
+                @click="send"
+              >
+                <svg v-if="!sending" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <span v-else class="send-btn-dots send-btn-dots--on-light" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </span>
+              </button>
+            </div>
           </div>
+        </div>
+
+        <div class="suggestion-row">
+          <button
+            v-for="(card, index) in suggestionCards"
+            :key="card.text"
+            type="button"
+            class="suggestion-card"
+            :style="{ animationDelay: `${index * 0.06}s` }"
+            @click="sendQuick(card.text)"
+          >
+            <span class="suggestion-card-icon" :class="'suggestion-card-icon--' + card.tone" v-html="card.iconSvg"></span>
+            <span class="suggestion-card-text">{{ card.text }}</span>
+          </button>
+        </div>
+
+        <div class="landing-footer">
+          <svg class="landing-footer-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15"/><polyline points="18 21 12 15 6 21"/>
+          </svg>
+          <span>探索知识库，发现优质内容</span>
         </div>
       </div>
 
@@ -92,44 +142,54 @@
       <div ref="bottom" />
     </div>
 
-    <!-- Input Area -->
-    <div class="input-area">
-      <div class="input-wrapper">
-        <button class="input-btn" title="上传文件">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-        </button>
-        <textarea 
-          v-model="input" 
-          placeholder="试试输入“/”，支持深入研究、写作、带图提问" 
+    <!-- 对话中：底部同款大圆角输入卡 -->
+    <div v-if="messages.length" class="input-area input-area--thread">
+      <div class="composer-card composer-card--thread">
+        <textarea
+          v-model="input"
+          class="composer-textarea composer-textarea--thread"
+          placeholder="试试输入“/”，支持深入研究、写作、带图提问"
           @keydown.enter.exact.prevent="send"
-          :disabled="sending" 
-          rows="1" 
+          :disabled="sending"
+          rows="1"
           ref="textarea"
-          class="message-input"
-          @input="autoResize" 
+          @input="autoResize"
         />
-        <button 
-          @click="send" 
-          :disabled="sending || !input.trim()"
-          class="send-btn"
-        >
-          <svg v-if="!sending" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-          <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" class="send-loading">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="16 8"/>
-          </svg>
-        </button>
-      </div>
-      <div class="input-footer">
-        <div class="footer-tags">
-          <span class="footer-tag">联网搜索</span>
+        <div class="composer-bar">
+          <div class="composer-bar-left">
+            <button type="button" class="btn-icon-circle" title="添加（即将支持）" @click.prevent>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="pill-web">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/>
+              </svg>
+              联网搜索
+            </span>
+          </div>
+          <div class="composer-bar-right">
+            <button type="button" class="btn-icon-circle" title="更多" @click.prevent>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="send-btn-circle"
+              :disabled="sending || !input.trim()"
+              @click="send"
+            >
+              <svg v-if="!sending" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              <span v-else class="send-btn-dots send-btn-dots--on-light" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </span>
+            </button>
+          </div>
         </div>
-        <span class="footer-text">探索知识库，发现优质内容</span>
       </div>
     </div>
   </div>
@@ -146,11 +206,25 @@ const box = ref(null)
 const bottom = ref(null)
 const textarea = ref(null)
 
-const quickActions = [
-  { label: '查找文档', text: '帮我找关于微服务架构的文档', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7', color: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' },
-  { label: '浏览文档', text: '最近有哪些文档', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7', color: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' },
-  { label: '知识库', text: '有哪些知识库', icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4', color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
-  { label: '帮我总结', text: '帮我总结最近上传的文档', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' },
+const suggestionCards = [
+  {
+    text: '企业知识问答能做什么？',
+    tone: 'amber',
+    iconSvg:
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+  },
+  {
+    text: '如何用 AI 提高我的工作效率？',
+    tone: 'blue',
+    iconSvg:
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
+  },
+  {
+    text: '最近上传的文档有哪些？',
+    tone: 'violet',
+    iconSvg:
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>',
+  },
 ]
 
 function sendQuick(q) { 
@@ -258,56 +332,206 @@ async function send() {
   background: #fafafa;
 }
 
-.empty-state {
+.messages-container--landing {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 20px 24px 40px;
+  background: #fff;
+}
+
+.chat-landing {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
 }
 
-.empty-logo {
-  margin-bottom: 24px;
+.feishu-logo-ring {
+  margin: 12px 0 4px;
+  flex-shrink: 0;
 }
 
-.empty-title {
-  font-size: 24px;
+.chat-landing-title {
+  font-size: 26px;
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 8px;
+  color: #111827;
+  letter-spacing: -0.02em;
+  margin: 18px 0 10px;
+  text-align: center;
 }
 
-.empty-subtitle {
+.chat-landing-sub {
   font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 28px;
+  max-width: 420px;
+}
+
+.composer-card {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  box-shadow: 0 4px 28px rgba(15, 23, 42, 0.06);
+  padding: 16px 16px 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.composer-card:focus-within {
+  border-color: #ddd6fe;
+  box-shadow: 0 6px 32px rgba(124, 58, 237, 0.08);
+}
+
+.composer-card--thread {
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.05);
+}
+
+.composer-textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #1f2937;
+  font-family: inherit;
+  min-height: 72px;
+  max-height: 200px;
+  background: transparent;
+}
+
+.composer-textarea::placeholder {
   color: #9ca3af;
-  margin-bottom: 40px;
 }
 
-.quick-actions {
+.composer-textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.composer-textarea--thread {
+  min-height: 44px;
+  max-height: 160px;
+}
+
+.composer-bar {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
 }
 
-.quick-action-card {
+.composer-bar-left,
+.composer-bar-right {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 18px;
-  background: #fff;
+}
+
+.btn-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   border: 1px solid #e5e7eb;
-  border-radius: 20px;
+  background: #fff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.25s ease;
-  animation: slideUp 0.4s ease forwards;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-icon-circle:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.pill-web {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  font-size: 13px;
+  color: #4b5563;
+  user-select: none;
+}
+
+.send-btn-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 45%, #ec4899 100%);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.send-btn-circle:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+.send-btn-circle:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-btn-dots--on-light > span {
+  background: #6b7280;
+}
+
+.suggestion-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@media (max-width: 720px) {
+  .suggestion-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.suggestion-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px;
+  text-align: left;
+  border: 1px solid #ebebeb;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  animation: suggestionFade 0.45s ease forwards;
   opacity: 0;
 }
 
-@keyframes slideUp {
+@keyframes suggestionFade {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -315,27 +539,77 @@ async function send() {
   }
 }
 
-.quick-action-card:hover {
-  border-color: #d1d5db;
-  background: #f9fafb;
-  transform: translateY(-2px);
+.suggestion-card:hover {
+  background: #fafafa;
+  border-color: #e0e0e0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
-.quick-action-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+.suggestion-card-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: #4b5563;
+}
+
+.suggestion-card-icon svg {
+  display: block;
+}
+
+.suggestion-card-icon--amber {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.suggestion-card-icon--blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.suggestion-card-icon--violet {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.suggestion-card-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #374151;
+}
+
+.landing-footer {
+  margin-top: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.landing-footer-icon {
+  color: #c4c4c4;
   flex-shrink: 0;
 }
 
-.quick-action-label {
-  font-size: 14px;
-  color: #374151;
-  font-weight: 500;
+/* 对话线程底部输入区 */
+.input-area {
+  flex-shrink: 0;
+}
+
+.input-area--thread {
+  padding: 12px 20px 20px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.input-area--thread .composer-card--thread {
+  max-width: min(720px, 100%);
+  margin: 0 auto;
 }
 
 /* Message Wrapper */
@@ -426,130 +700,40 @@ async function send() {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
-/* Input Area */
-.input-area {
-  padding: 12px 20px 20px;
+.send-btn-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 18px;
+  height: 18px;
+}
+
+.send-btn-dots > span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
   background: #fff;
-  border-top: 1px solid #f3f4f6;
-  flex-shrink: 0;
+  animation: sendDotBounce 0.85s ease-in-out infinite;
 }
 
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 8px 8px 14px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 24px;
-  transition: all 0.2s ease;
+.send-btn-dots > span:nth-child(2) {
+  animation-delay: 0.14s;
 }
 
-.input-wrapper:focus-within {
-  border-color: #c084fc;
-  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.1);
+.send-btn-dots > span:nth-child(3) {
+  animation-delay: 0.28s;
 }
 
-.input-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: #9ca3af;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.input-btn:hover {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.message-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  resize: none;
-  font-size: 15px;
-  line-height: 24px;
-  max-height: 160px;
-  background: transparent;
-  font-family: inherit;
-  color: #374151;
-  padding: 6px 0;
-}
-
-.message-input::placeholder {
-  color: #9ca3af;
-}
-
-.message-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #ff6b9d 0%, #c084fc 100%);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.send-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-}
-
-.send-btn:disabled {
-  background: #d1d5db;
-  cursor: not-allowed;
-}
-
-.send-loading {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.input-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.footer-tags {
-  display: flex;
-  gap: 8px;
-}
-
-.footer-tag {
-  padding: 4px 10px;
-  background: #f3f4f6;
-  border-radius: 12px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.footer-text {
-  font-size: 12px;
-  color: #9ca3af;
+@keyframes sendDotBounce {
+  0%, 70%, 100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  35% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
 }
 
 /* Scrollbar */

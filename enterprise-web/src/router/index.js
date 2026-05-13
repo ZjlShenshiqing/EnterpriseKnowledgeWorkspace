@@ -15,7 +15,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', name: 'Dashboard', component: () => import('../pages/Dashboard.vue'), meta: { title: '工作台' } },
-      { path: 'chat', name: 'Chat', component: () => import('../pages/Chat.vue'), meta: { title: '智能对话' } },
+      { path: 'chat', name: 'Chat', component: () => import('../pages/Chat.vue'), meta: { title: '智能知识问答' } },
       { path: 'documents', name: 'Documents', component: () => import('../pages/Documents.vue'), meta: { title: '文档协作' } },
       { path: 'chats', name: 'Chats', component: () => import('../pages/Chats.vue'), meta: { title: '即时通讯' } },
       { path: 'contacts', name: 'Contacts', component: () => import('../pages/Contacts.vue'), meta: { title: '通讯录' } },

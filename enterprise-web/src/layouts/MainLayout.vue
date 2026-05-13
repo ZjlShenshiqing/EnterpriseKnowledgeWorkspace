@@ -114,7 +114,7 @@ const mainContentWrapStyle = computed(() => {
       minHeight: '0',
       overflow: 'hidden',
       padding: '0',
-      background: '#fafafa',
+      background: '#fff',
       display: 'flex',
       flexDirection: 'column',
     }
