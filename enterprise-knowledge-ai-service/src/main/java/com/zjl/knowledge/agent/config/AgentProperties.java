@@ -16,6 +16,9 @@ public class AgentProperties {
     /** 会话配置 */
     private Session session = new Session();
 
+    /** 联网搜索配置 */
+    private WebSearch webSearch = new WebSearch();
+
     @Data
     public static class Llm {
 
@@ -46,5 +49,24 @@ public class AgentProperties {
 
         /** N 天未活动自动归档 */
         private int archiveAfterDays = 30;
+    }
+
+    @Data
+    public static class WebSearch {
+
+        /** 是否启用联网搜索 */
+        private boolean enabled = true;
+
+        /** 博查 API Key */
+        private String apiKey = "";
+
+        /** 博查 API 地址 */
+        private String baseUrl = "https://api.bochaai.com/v1";
+
+        /** 每次搜索返回条数 */
+        private int count = 8;
+
+        /** 时间范围：noLimit / oneDay / oneWeek / oneMonth / oneYear */
+        private String freshness = "noLimit";
     }
 }
