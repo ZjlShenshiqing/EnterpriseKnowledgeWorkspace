@@ -13,3 +13,9 @@ server.port: 8084
 mybatis-plus.configuration.map-underscore-to-camel-case: true
 
 knowledge.service.url: http://localhost:8083
+
+spring.data.redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  timeout: 3000ms
+  lettuce.pool.max-active: 8

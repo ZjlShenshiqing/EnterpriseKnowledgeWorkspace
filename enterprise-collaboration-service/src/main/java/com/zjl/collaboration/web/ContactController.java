@@ -6,6 +6,7 @@ import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -18,6 +19,7 @@ public class ContactController {
     private final SysUserMapper sysUserMapper;
 
     @GetMapping("/users")
+    @Cacheable(value = "contacts_users", key = "#deptId != null ? #deptId : 'all'", unless = "#result.data.isEmpty()")
     public Result<List<Map<String,Object>>> listUsers(@RequestParam(required=false) Long deptId) {
         var q = Wrappers.lambdaQuery(SysUser.class).eq(SysUser::getEnabled, 1);
         if (deptId != null) q.eq(SysUser::getDeptId, deptId);

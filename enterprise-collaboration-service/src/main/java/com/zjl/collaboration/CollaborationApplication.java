@@ -3,7 +3,9 @@ package com.zjl.collaboration;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
+@EnableCaching
 @SpringBootApplication(scanBasePackages = {"com.zjl.collaboration", "com.zjl.common"})
 @MapperScan("com.zjl.collaboration.mapper")
 public class CollaborationApplication {

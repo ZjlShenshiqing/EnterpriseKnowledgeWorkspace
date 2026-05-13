@@ -20,6 +20,12 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
 
+spring.data.redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  timeout: 3000ms
+  lettuce.pool.max-active: 8
+
 auth:
   jwt:
     expiration: 86400000

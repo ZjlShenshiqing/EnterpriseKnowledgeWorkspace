@@ -4,6 +4,7 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,6 +26,7 @@ public class WorkbenchController {
     private static final String AD = "X-Is-Admin";
 
     @GetMapping("/overview")
+    @Cacheable(value = "wb_overview", key = "#userId", unless = "#result.data.isEmpty()")
     public Result<Map<String,Object>> overview(@RequestHeader(UA) Long userId, @RequestHeader(value=AD,defaultValue="false") String isAdmin) {
         Map<String,Object> data = new LinkedHashMap<>();
         var headers = Map.of(UA, String.valueOf(userId), AD, isAdmin);
@@ -68,6 +70,7 @@ public class WorkbenchController {
     }
 
     @GetMapping("/stats")
+    @Cacheable(value = "wb_stats", key = "'global'", unless = "#result.data.isEmpty()")
     public Result<Map<String,Object>> stats(@RequestHeader(UA) Long userId, @RequestHeader(value=AD,defaultValue="false") String isAdmin) {
         Map<String,Object> data = new LinkedHashMap<>();
         var headers = Map.of(UA, String.valueOf(userId), AD, isAdmin);

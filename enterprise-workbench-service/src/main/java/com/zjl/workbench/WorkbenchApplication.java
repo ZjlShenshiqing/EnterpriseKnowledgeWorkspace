@@ -2,7 +2,9 @@ package com.zjl.workbench;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
+@EnableCaching
 @SpringBootApplication(scanBasePackages = {"com.zjl.workbench", "com.zjl.common"})
 public class WorkbenchApplication {
     public static void main(String[] args) {

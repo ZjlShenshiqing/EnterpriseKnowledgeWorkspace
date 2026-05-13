@@ -9,6 +9,7 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class AnnouncementController {
     private final SysUserMapper userMapper;
 
     @GetMapping
+    @Cacheable(value = "announcements", key = "'list'", unless = "#result.data.isEmpty()")
     public Result<List<SysAnnouncement>> list() {
         return Results.success(announcementMapper.selectList(
             Wrappers.lambdaQuery(SysAnnouncement.class).orderByDesc(SysAnnouncement::getIsPinned).orderByDesc(SysAnnouncement::getCreatedAt)));
