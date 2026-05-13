@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="background:#fff;border-radius:12px;padding:20px;">
     <div style="display:flex;gap:16px;margin-bottom:20px">
       <div v-for="card in cards" :key="card.label" @click="$router.push(card.path)"
            style="flex:1;background:#fff;border-radius:10px;padding:20px;cursor:pointer;transition:box-shadow .3s"

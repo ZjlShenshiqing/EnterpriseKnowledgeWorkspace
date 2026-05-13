@@ -1,5 +1,5 @@
 <template>
-  <div style="height:calc(100vh - 140px);display:flex;gap:0;background:#fff;border-radius:10px;overflow:hidden">
+  <div style="min-height:min(560px,calc(100vh - 120px));display:flex;gap:0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
     <!-- Left: Doc List -->
     <div style="width:260px;background:#fafafa;border-right:1px solid #eee;display:flex;flex-direction:column;flex-shrink:0">
       <div style="padding:16px">
@@ -128,9 +128,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
+const docs = ref([])
 const searchText = ref('')
 const activeDoc = ref(null)
 const shareVisible = ref(false)
@@ -155,8 +157,6 @@ const comments = ref([
   {id:2,user:'王五',color:'#e6a23c',text:'已补充数据来源，请再次确认',time:'10:45'},
 ])
 
-onMounted(loadDocs)
-
 const mockDocs = [
   {id:1,title:'Q2项目评审报告',type:'doc',content:'<h2>Q2项目评审报告</h2><p>本报告总结了2026年第二季度的项目进展情况。</p><h3>一、项目概况</h3><p>Q2共完成5个重点项目，其中<strong>知识库微服务</strong>为核心交付。</p>',updatedByName:'张三',updatedAt:'10:45'},
   {id:2,title:'技术架构设计文档',type:'doc',content:'<h2>技术架构设计文档</h2><p>本文档描述企业智能工作平台的技术架构设计。</p><h3>微服务架构</h3><ul><li>Gateway 网关服务</li><li>Knowledge-AI 知识库服务</li><li>Collaboration 协同服务</li><li>Workbench 工作台服务</li></ul>',updatedByName:'张三',updatedAt:'09:30'},
@@ -164,12 +164,33 @@ const mockDocs = [
 
 const filteredDocs = computed(() => docs.value.filter(d => !searchText.value || d.title.includes(searchText.value)))
 
-function headers() { const u=JSON.parse(localStorage.getItem('user')||'{}'); return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false'),'Content-Type':'application/json'} }
+function readUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+function headers() {
+  const u = readUser()
+  return { 'X-User-Id': String(u.id || 1), 'X-Is-Admin': String(u.isAdmin ? 'true' : 'false'), 'Content-Type': 'application/json' }
+}
 
 async function loadDocs() {
   try { const r=await fetch('/api/docs',{headers:headers()}); docs.value=(await r.json()).data||[] }
   catch(e) { docs.value=mockDocs }
 }
+
+const route = useRoute()
+watch(
+  () => route.path,
+  (path) => {
+    if (path === '/documents') {
+      loadDocs()
+    }
+  },
+  { immediate: true }
+)
 
 async function createDoc() {
   try {

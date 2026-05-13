@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="background:#fff;border-radius:12px;padding:20px;">
     <span style="font-size:18px;font-weight:600;display:block;margin-bottom:20px">数据看板</span>
 
     <!-- Top Cards -->

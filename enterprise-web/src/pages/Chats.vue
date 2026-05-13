@@ -1,5 +1,5 @@
 <template>
-  <div style="height:calc(100vh - 140px);display:flex;background:#fff;border-radius:12px;overflow:hidden">
+  <div style="min-height:min(560px,calc(100vh - 120px));display:flex;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
     <!-- Conv List -->
     <div style="width:280px;border-right:1px solid var(--border-default);display:flex;flex-direction:column;flex-shrink:0">
       <div style="padding:16px;border-bottom:1px solid var(--border-light)">
@@ -75,7 +75,14 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 
-const userId = ref(JSON.parse(localStorage.getItem('user')||'{}').id||1)
+function readUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+const userId = ref(readUser().id || 1)
 const conversations = ref([])
 const activeConv = ref(null)
 const msgs = ref([])
@@ -104,18 +111,28 @@ async function loadUsers() {
 }
 
 function authHeaders() {
-  const u = JSON.parse(localStorage.getItem('user')||'{}')
-  return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false'),'Content-Type':'application/json'}
+  const u = readUser()
+  return { 'X-User-Id': String(u.id || 1), 'X-Is-Admin': String(u.isAdmin ? 'true' : 'false'), 'Content-Type': 'application/json' }
 }
 
 function connectWs() {
-  const token = localStorage.getItem('token') || ''
-  ws = new WebSocket(`ws://localhost:8090/ws/chat?token=${token}`)
-  ws.onmessage = (e) => {
-    const d = JSON.parse(e.data)
-    if (d.type === 'message' && activeConv.value && d.conversationId === activeConv.value.id) {
-      msgs.value.push(d); scrollBottom()
+  try {
+    const token = localStorage.getItem('token') || ''
+    ws = new WebSocket(`ws://localhost:8090/ws/chat?token=${encodeURIComponent(token)}`)
+    ws.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data)
+        if (d.type === 'message' && activeConv.value && d.conversationId === activeConv.value.id) {
+          msgs.value.push(d)
+          scrollBottom()
+        }
+      } catch {
+        /* ignore malformed ws payload */
+      }
     }
+    ws.onerror = () => { /* 后端未启动时不阻塞页面 */ }
+  } catch {
+    ws = null
   }
 }
 

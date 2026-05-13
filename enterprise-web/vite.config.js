@@ -7,9 +7,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api/workbench': 'http://localhost:8084',
+      '/api/kb': 'http://localhost:8081',
       '/api/auth': 'http://localhost:8090',
       '/api': 'http://localhost:8090',
-      '/api/kb': 'http://localhost:8083',
       '/mcp': 'http://localhost:8083',
     }
   }

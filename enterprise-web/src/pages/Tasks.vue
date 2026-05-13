@@ -1,5 +1,5 @@
 <template>
-  <div style="height:calc(100vh - 140px);display:flex;flex-direction:column">
+  <div style="height:calc(100vh - 132px);display:flex;flex-direction:column">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <span style="font-size:18px;font-weight:600">任务看板</span>
       <el-button type="primary" @click="showCreate=true">新建任务</el-button>
