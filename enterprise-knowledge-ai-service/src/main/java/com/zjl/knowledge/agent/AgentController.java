@@ -21,6 +21,19 @@ import java.util.Map;
 
 /**
  * Agent 对话与会话管理接口
+ *
+ * <p>提供 AI Agent 对话交互和会话管理功能，支持流式响应和多轮对话</p>
+ *
+ * <p>主要功能：</p>
+ * <ul>
+ *   <li>流式对话接口 - SSE 实时推送响应</li>
+ *   <li>会话列表管理 - 获取用户的所有对话会话</li>
+ *   <li>会话历史查询 - 获取指定会话的历史消息</li>
+ *   <li>会话归档 - 删除/归档会话</li>
+ * </ul>
+ *
+ * @see AgentLoop
+ * @see AgentSessionService
  */
 @Slf4j
 @RestController
@@ -28,27 +41,58 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AgentController {
 
+    /**
+     * Agent 核心循环组件，负责执行对话逻辑和工具调用
+     */
     private final AgentLoop agentLoop;
+
+    /**
+     * 会话服务，管理会话的创建、查询和消息存储
+     */
     private final AgentSessionService sessionService;
 
     /**
-     * 对话接口（SSE 流式）
+     * 对话接口（SSE 流式响应）
+     *
+     * <p>接收用户消息，触发 Agent 循环，通过 SSE 流式返回响应。
+     * 支持多轮对话，通过 sessionId 关联上下文。</p>
+     *
+     * <p>请求示例：</p>
+     * <pre>
+     * POST /api/kb/agent/chat
+     * {
+     *   "sessionId": 123,      // 可选，不传则创建新会话
+     *   "message": "你好"      // 用户输入
+     * }
+     * </pre>
+     *
+     * <p>SSE 响应事件：</p>
+     * <ul>
+     *   <li>event: text - 文本片段，实时推送</li>
+     *   <li>event: tool_call - 工具调用通知</li>
+     *   <li>event: done - 对话结束标记</li>
+     * </ul>
+     *
+     * @param request 对话请求，包含会话ID和消息内容
+     * @return SSE 流式响应
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(@RequestBody ChatRequest request) {
         UserContext user = UserContextHolder.get();
         AgentSseEmitter emitter = new AgentSseEmitter();
 
-        // 异步执行 Agent 循环
+        // 异步执行 Agent 循环，避免阻塞 HTTP 线程
         new Thread(() -> {
             try {
-                // 保存用户消息
+                // 获取或创建会话，使用消息前100字符作为标题
                 KbAgentSession session = sessionService.getOrCreateSession(
                         request.getSessionId(), user.getUserId(),
                         truncate(request.getMessage(), 100));
+                
+                // 保存用户消息到历史记录
                 sessionService.saveUserMessage(session.getId(), request.getMessage());
 
-                // 执行 Agent 循环
+                // 执行 Agent 核心循环（LLM 调用 + 工具调用）
                 agentLoop.run(session, user, emitter);
             } catch (Exception e) {
                 log.error("Agent 对话异常", e);
@@ -60,7 +104,27 @@ public class AgentController {
     }
 
     /**
-     * 我的会话列表
+     * 获取当前用户的会话列表
+     *
+     * <p>按更新时间倒序返回用户的所有对话会话，用于会话列表展示。</p>
+     *
+     * <p>响应示例：</p>
+     * <pre>
+     * {
+     *   "code": 0,
+     *   "data": [
+     *     {
+     *       "id": 123,
+     *       "title": "关于 Spring Boot 的问题",
+     *       "status": "ACTIVE",
+     *       "createdAt": "2024-01-01T10:00:00",
+     *       "updatedAt": "2024-01-01T10:05:00"
+     *     }
+     *   ]
+     * }
+     * </pre>
+     *
+     * @return 会话列表
      */
     @GetMapping("/sessions")
     public Result<java.util.List<KbAgentSession>> listSessions() {
@@ -69,7 +133,34 @@ public class AgentController {
     }
 
     /**
-     * 会话历史消息
+     * 获取会话历史消息
+     *
+     * <p>获取指定会话的历史消息记录，最多返回最近 200 条消息。</p>
+     *
+     * <p>路径参数：</p>
+     * <ul>
+     *   <li>id - 会话 ID</li>
+     * </ul>
+     *
+     * <p>响应示例：</p>
+     * <pre>
+     * {
+     *   "code": 0,
+     *   "data": [
+     *     {
+     *       "role": "user",
+     *       "content": "你好"
+     *     },
+     *     {
+     *       "role": "assistant",
+     *       "content": "您好！我是您的智能助手。"
+     *     }
+     *   ]
+     * }
+     * </pre>
+     *
+     * @param id 会话 ID
+     * @return 历史消息列表
      */
     @GetMapping("/sessions/{id}")
     public Result<java.util.List<com.zjl.knowledge.agent.model.ChatMessage>> getSessionHistory(
@@ -80,7 +171,17 @@ public class AgentController {
     }
 
     /**
-     * 归档会话
+     * 归档（删除）会话
+     *
+     * <p>将指定会话标记为已归档状态，会话及其历史消息将被保留但不再显示在会话列表中。</p>
+     *
+     * <p>路径参数：</p>
+     * <ul>
+     *   <li>id - 会话 ID</li>
+     * </ul>
+     *
+     * @param id 会话 ID
+     * @return 操作成功结果
      */
     @DeleteMapping("/sessions/{id}")
     public Result<Void> archiveSession(@PathVariable("id") Long id) {
@@ -89,17 +190,34 @@ public class AgentController {
         return Results.success();
     }
 
+    /**
+     * 截断文本到指定长度
+     *
+     * @param text 原始文本
+     * @param maxLen 最大长度
+     * @return 截断后的文本
+     */
     private String truncate(String text, int maxLen) {
         if (text == null) return null;
         return text.length() <= maxLen ? text : text.substring(0, maxLen);
     }
 
     /**
-     * 对话请求
+     * 对话请求 DTO
+     *
+     * <p>封装用户发送给 Agent 的对话请求参数。</p>
      */
     @lombok.Data
     public static class ChatRequest {
+        /**
+         * 会话 ID（可选）
+         * <p>不传则创建新会话，传则继续该会话</p>
+         */
         private Long sessionId;
+
+        /**
+         * 用户消息内容
+         */
         private String message;
     }
 }

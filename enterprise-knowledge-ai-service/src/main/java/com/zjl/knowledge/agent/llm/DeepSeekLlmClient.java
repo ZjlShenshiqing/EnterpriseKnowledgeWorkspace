@@ -50,7 +50,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(value = "app.agent.llm.provider", havingValue = "deepseek")
+@ConditionalOnProperty(value = "app.agent.llm.provider", havingValue = "deepseek-legacy")
 public class DeepSeekLlmClient implements LlmClient {
 
     /**

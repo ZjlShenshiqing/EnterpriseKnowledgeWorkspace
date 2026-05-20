@@ -55,7 +55,7 @@ app:
       archive-after-days: 30
     web-search:
       enabled: true
-      api-key: ${BOCHA_API_KEY:}
+      api-key: sk-0d6ebe5d5f9d4746ad3d3cd4a36a7e53
       base-url: https://api.bochaai.com/v1
       count: 8
       freshness: noLimit

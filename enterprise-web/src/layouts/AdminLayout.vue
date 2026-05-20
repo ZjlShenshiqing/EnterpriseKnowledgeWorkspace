@@ -9,6 +9,7 @@
         <el-menu :default-active="route.path" router style="border-right:none">
           <el-menu-item index="/admin/documents"><el-icon><Document /></el-icon> 文档管理</el-menu-item>
           <el-menu-item index="/admin/bases"><el-icon><Folder /></el-icon> 知识库管理</el-menu-item>
+          <el-menu-item index="/admin/analytics"><el-icon><DataAnalysis /></el-icon> 数据看板</el-menu-item>
           <el-menu-item index="/admin/users"><el-icon><User /></el-icon> 用户管理</el-menu-item>
           <el-menu-item index="/admin/roles"><el-icon><Lock /></el-icon> 角色管理</el-menu-item>
           <el-menu-item index="/admin/logs"><el-icon><Tickets /></el-icon> 操作日志</el-menu-item>

@@ -13,7 +13,7 @@
     <artifactId>enterprise-collaboration-service</artifactId>
 
     <properties>
-        <spring.boot.version>3.3.5</spring.boot.version>
+        <spring.boot.version>3.4.4</spring.boot.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
     </properties>
 
