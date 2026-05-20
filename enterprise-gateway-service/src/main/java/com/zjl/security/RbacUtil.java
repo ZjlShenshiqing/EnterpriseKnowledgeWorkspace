@@ -29,9 +29,12 @@ public class RbacUtil {
      * </ul>
      */
     public Mono<AbstractAuthenticationToken> toAuthentication(Claims claims) {
+        // 从 JWT 取 userId（sub 字段）
         String userId = claims.getSubject();
+        // 从 JWT 取用户名
         String username = Objects.toString(claims.get("username"), "");
 
+        // 从 JWT 取权限列表，映射为 GrantedAuthority 集合
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
         Object raw = claims.get("authorities");
         if (raw instanceof List<?> list) {
@@ -42,10 +45,14 @@ public class RbacUtil {
             }
         }
 
+        // 构建 Spring Security 认证令牌
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(userId, username, authorities);
+        // 附加完整 claims 信息，供后续过滤器使用
         auth.setDetails(claims);
+        // 标记为已认证
         auth.setAuthenticated(true);
+        // 以 Mono 形式返回，适配 WebFlux 响应式链路
         return Mono.just(auth);
     }
 }

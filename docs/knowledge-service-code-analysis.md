@@ -32,6 +32,8 @@
 
 ## 1. 系统架构总览
 
+![ChatGPT Image 2026年5月16日 18_29_48](assets/ChatGPT Image 2026年5月16日 18_29_48.png)
+
 ### 1.1 微服务全景图
 
 ```mermaid
@@ -76,7 +78,8 @@ graph TB
             AGENT_SESSION[AgentSessionService<br/>会话持久化]
             MCP_SERVER[McpServerController<br/>MCP SSE 端点]
             TOOL_REG[ToolRegistry<br/>Tool 注册表]
-            AGENT_TOOLS[5 个 Tool<br/>search/list/detail/bases/rag_qa]
+            AGENT_TOOLS[6 个 Tool<br/>search/list/detail/bases/rag_qa/web_search]
+            BOCHA[博查 API<br/>Web Search]
             LLM_CLIENT[LlmClient<br/>LLM 调用抽象]
         end
 
@@ -115,6 +118,7 @@ graph TB
     AGENT_LOOP --> AGENT_SESSION
     AGENT_LOOP --> DOC_SVC & KB_SVC
     TOOL_REG --> AGENT_TOOLS
+    AGENT_TOOLS --> BOCHA
     LLM_CLIENT --> LLM[大模型 API<br/>Anthropic / OpenAI]
     MCP_SERVER --> TOOL_REG
     AGENT_SESSION --> MYSQL
@@ -3807,6 +3811,13 @@ graph TB
             LIST[ListDocumentsTool]
             DETAIL[GetDocumentDetailTool]
             KB_LIST[ListKnowledgeBasesTool]
+            RAG[RagQaTool]
+            WEB[WebSearchTool]
+        end
+
+        subgraph "联网搜索"
+            BOCHA[BochaWebSearchClient<br/>博查 API 调用] -->
+            WEB
         end
 
         subgraph "数据模型层"
@@ -3839,9 +3850,10 @@ graph TB
     ANTHROPIC --> LLM_API
     LLM_CLIENT --> STREAM_LISTENER
 
-    TOOL_REG --> SEARCH & LIST & DETAIL & KB_LIST
-    SEARCH & LIST & DETAIL --> DOC_SVC
+    TOOL_REG --> SEARCH & LIST & DETAIL & KB_LIST & RAG & WEB
+    SEARCH & LIST & DETAIL & RAG --> DOC_SVC
     KB_LIST --> KB_SVC
+    BOCHA --> BOCHA_API[博查 Web Search API]
 
     MCP_CTL --> TOOL_REG
     MCP_HOST --> MCP_CTL
@@ -3849,7 +3861,7 @@ graph TB
 
 ### 15.2 模块文件清单
 
-模块共 **24 个 Java 文件**，分 8 个子包：
+模块共 **27 个 Java 文件**，分 9 个子包：
 
 | 包 | 文件数 | 职责 |
 |----|--------|------|
@@ -3859,8 +3871,9 @@ graph TB
 | `agent/mapper/` | 2 | KbAgentSessionMapper, KbAgentMessageMapper |
 | `agent/model/` | 3 | ChatMessage, ToolCall, ChatUsage |
 | `agent/llm/` | 4 | LlmClient, StreamListener, DeepSeekLlmClient, AnthropicLlmClient |
-| `agent/mcp/` | 4 | McpTool, ToolRegistry, ToolDefinition, ToolResult, McpServerController |
-| `agent/tool/` | 5 | SearchDocumentsTool, ListDocumentsTool, GetDocumentDetailTool, ListKnowledgeBasesTool, RagQaTool |
+| `agent/mcp/` | 5 | McpTool, ToolRegistry, ToolDefinition, ToolResult, McpServerController |
+| `agent/tool/` | 6 | SearchDocumentsTool, ListDocumentsTool, GetDocumentDetailTool, ListKnowledgeBasesTool, RagQaTool, WebSearchTool |
+| `agent/search/` | 1 | BochaWebSearchClient — 博查 API 调用 |
 
 ### 15.3 AgentController — 对话与会话管理
 
@@ -3880,8 +3893,9 @@ graph TB
 ```java
 @Data
 public static class ChatRequest {
-    private Long sessionId;   // null = 新会话
-    private String message;   // 用户自然语言输入
+    private Long sessionId;    // null = 新会话
+    private String message;    // 用户自然语言输入
+    private boolean webSearch; // 是否开启联网搜索，默认 false
 }
 ```
 
@@ -3928,15 +3942,18 @@ public static class ChatRequest {
 ```
 你是企业知识库助手。你的职责是帮助员工查找和了解公司内部文档。
 
-可用工具：search_documents、list_documents、get_document_detail、list_knowledge_bases
+可用工具：search_documents、list_documents、get_document_detail、list_knowledge_bases、rag_qa、web_search
 
 规则：
-1. 只回答与知识库文档相关的问题
-2. 当用户询问文档内容时，先搜索再回答
-3. 回答时引用具体的文档标题和来源
-4. 不要编造信息，找不到就说找不到
-5. 不讨论文档上传、删除、分块等管理操作
+1. 优先使用内部知识库工具回答员工问题
+2. 当用户开启联网搜索时，可调用 web_search 获取互联网最新信息作为补充
+3. 当用户询问文档内容时，先搜索再回答
+4. 回答时引用具体的文档标题和来源
+5. 不要编造信息，找不到就说找不到
+6. 不讨论文档上传、删除、分块等管理操作
 ```
+
+**webSearch 参数**：`AgentLoop.run()` 接收 `boolean webSearch`，为 `true` 时将 `web_search` 加入工具列表。
 
 ### 15.5 AgentSessionService — 会话持久化
 
@@ -4022,7 +4039,7 @@ public interface McpTool {
 
 **新增 Tool 只需实现此接口并注册为 Spring Bean，无需修改 ToolRegistry。**
 
-### 15.10 4 个 MCP Tool 详解
+### 15.10 6 个 MCP Tool 详解
 
 ```mermaid
 classDiagram
@@ -4056,10 +4073,26 @@ classDiagram
         +execute(Map, UserContext) ToolResult
     }
 
+    class RagQaTool {
+        -VectorSyncService vectorSyncService
+        -KbDocumentMapper kbDocumentMapper
+        -KbDocumentChunkMapper kbDocumentChunkMapper
+        +getDefinition() ToolDefinition
+        +execute(Map, UserContext) ToolResult
+    }
+
+    class WebSearchTool {
+        -BochaWebSearchClient bochaWebSearchClient
+        +getDefinition() ToolDefinition
+        +execute(Map, UserContext) ToolResult
+    }
+
     McpTool <|.. SearchDocumentsTool
     McpTool <|.. ListDocumentsTool
     McpTool <|.. GetDocumentDetailTool
     McpTool <|.. ListKnowledgeBasesTool
+    McpTool <|.. RagQaTool
+    McpTool <|.. WebSearchTool
 ```
 
 #### 15.10.1 SearchDocumentsTool
@@ -4137,6 +4170,45 @@ sequenceDiagram
 **返回格式**：每个文档包含 `documentId, title, summary, fileType, fileName, fileSize, createdAt, metadata(Tika自动提取), filterTags, matchedChunks[{chunkIndex, text, score}]`
 
 **安全约束**：不返回 `content_text`、`file_url`；matchedChunks 只返回匹配片段非全文
+
+#### 15.10.6 WebSearchTool（联网搜索）
+
+**文件路径**：`agent/tool/WebSearchTool.java`  
+**依赖**：`BochaWebSearchClient`
+
+| Tool 名 | 参数 | 说明 |
+|---------|------|------|
+| `web_search` | `query`(必填, string) | 调用博查 Web Search API 搜索互联网 |
+
+**执行流程**：
+
+```mermaid
+sequenceDiagram
+    participant LLM as LLM
+    participant REG as ToolRegistry
+    participant WEB as WebSearchTool
+    participant BOCHA as BochaWebSearchClient
+    participant API as 博查 API
+
+    LLM->>REG: tool_call web_search
+    REG->>WEB: execute
+    WEB->>BOCHA: search(query)
+    BOCHA->>API: POST /v1/web-search
+    API-->>BOCHA: JSON response
+    BOCHA-->>WEB: List<WebSearchResult>
+    WEB-->>REG: ToolResult.success(formattedText)
+```
+
+**返回格式**：每个搜索结果包含 `title, url, snippet, summary, siteName, datePublished`
+
+**注册条件**：`AgentLoop` 仅在用户开启"联网搜索"时将 `web_search` 注册到工具列表；API Key 未配置时不注册。
+
+**BochaWebSearchClient**（`agent/search/BochaWebSearchClient.java`）：
+- 使用 JDK `HttpClient`
+- 端点：`POST https://api.bochaai.com/v1/web-search`
+- 认证：`Authorization: Bearer <api-key>`
+- 连接超时 10s，读取超时 30s
+- 搜索无结果返回空列表；网络异常 → `ToolResult.fail()`
 
 ### 15.11 LLM 客户端层
 
@@ -4289,15 +4361,58 @@ app:
     session:
       max-history: 50
       archive-after-days: 30
+    web-search:
+      enabled: true
+      api-key: ${BOCHA_API_KEY:}
+      base-url: https://api.bochaai.com/v1
+      count: 8
+      freshness: noLimit
 ```
 
-### 15.15 安全约束
+### 15.15 联网搜索数据流
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant V as Chat.vue
+    participant CTL as AgentController
+    participant LOOP as AgentLoop
+    participant LLM as LLM
+    participant REG as ToolRegistry
+    participant WEB as WebSearchTool
+    participant BOCHA as BochaWebSearchClient
+    participant API as 博查 API
+
+    U->>V: 开启"联网搜索"并发送消息
+    V->>CTL: POST /api/kb/agent/chat { webSearch: true }
+    CTL->>LOOP: run(session, user, emitter, webSearch=true)
+    LOOP->>LOOP: webSearch=true → 注册 web_search 工具
+    LOOP->>LLM: 发送消息 + 工具列表(含 web_search)
+    LLM->>LOOP: tool_call: web_search
+    LOOP->>REG: execute("web_search", {query})
+    REG->>WEB: execute(args, user)
+    WEB->>BOCHA: search(query)
+    BOCHA->>API: POST /v1/web-search
+    API-->>BOCHA: { results: [...] }
+    BOCHA-->>WEB: List<WebSearchResult>
+    WEB-->>REG: ToolResult.success(text)
+    REG-->>LOOP: 结果回填
+    LOOP->>LLM: 回填 tool_result
+    LLM-->>LOOP: SSE 流式回答
+    LOOP-->>CTL: 发送 SSE 事件
+    CTL-->>V: SSE stream
+    V-->>U: 渲染回答
+```
+
+### 15.16 安全约束
 
 1. Tool 执行前走现有 `DocumentVisibilityService` 权限校验（复用 `KbDocumentService.getVisible()` / `pageVisible()`）
 2. Tool 参数校验：`limit` 不超过 50，`size` 不超过 50
 3. ToolResult 不返回 `content_text`、`file_url`、`chunk_text`、`vectorId` 等内部字段
 4. 不暴露管理操作（上传、分块、删除、Chunk CRUD）
 5. 依赖现有 `UserContextInterceptor` 做身份解析（X-User-Id 请求头）
+6. WebSearchTool 仅在用户主动开启时注册，未配置 API Key 时不注册
+7. 博查 API 调用超时 30s，异常不中断对话流程
 
 
 ---

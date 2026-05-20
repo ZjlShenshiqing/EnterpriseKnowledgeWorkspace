@@ -34,7 +34,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     /**
-     * Spring Security 过滤链。
+     * Spring Security 过滤链
      *
      * @param http 安全配置构造器
      * @param props 安全配置项
@@ -56,26 +56,36 @@ public class SecurityConfig {
         List<String> whitelist = props.getWhitelist().getPaths();
 
         return http
+                // 关闭 CSRF（前后端分离，无 Cookie-Session，无需 CSRF 防护）
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                // 使用默认 CORS 配置
                 .cors(withDefaults())
+                // 无状态模式，不依赖 Session 存储 SecurityContext
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                // 关闭表单登录 / HTTP Basic
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                // 请求结束后自动清理 UserContext，防止上下文泄漏
                 .addFilterAfter((exchange, chain) ->
                         chain.filter(exchange).doFinally(signalType -> UserContext.clear()),
                         SecurityWebFiltersOrder.AUTHENTICATION
                 )
+                // URL 鉴权规则
                 .authorizeExchange(exchanges ->
                         exchanges
+                                // 白名单路径直接放行（登录、注册等）
                                 .pathMatchers(whitelist.toArray(new String[0])).permitAll()
+                                // 其余所有请求需要认证
                                 .anyExchange().authenticated()
                 )
+                // 统一异常处理：401 未认证 / 403 无权限，返回 JSON
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((exchange, e) ->
                                 writer.writeFailure(exchange, ErrorCode.UNAUTHORIZED.getCode(), ErrorCode.UNAUTHORIZED.getMessage(), traceId()))
                         .accessDeniedHandler((exchange, e) ->
                                 writer.writeFailure(exchange, ErrorCode.FORBIDDEN.getCode(), ErrorCode.FORBIDDEN.getMessage(), traceId()))
                 )
+                // 在认证位置插入 JWT 过滤器，替换默认的表单认证
                 .addFilterAt(new JwtAuthenticationWebFilter(
                                 jwtAuthenticationConverter(jwtService, tokenBlacklistService, rbacService),
                                 jwtFailureHandler(writer)
@@ -100,15 +110,19 @@ public class SecurityConfig {
     ) {
         return exchange -> {
             String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            // 无 Authorization 头或非 Bearer 格式，交给后续处理
             if (!StringUtils.hasText(auth) || !auth.startsWith("Bearer ")) {
                 return Mono.empty();
             }
+            // 截取 "Bearer " 之后的 token 字符串
             String token = auth.substring(7);
             return tokenBlacklistService.isBlacklisted(token)
                     .flatMap(blacklisted -> {
+                        // token 已被撤销（如登出后拉黑），直接拒绝
                         if (blacklisted) {
                             return Mono.error(new RuntimeException("token revoked"));
                         }
+                        // 解析 JWT → 提取权限 → 构建 Authentication
                         return Mono.fromCallable(() -> jwtService.parse(token))
                                 .flatMap(claims -> rbacService.toAuthentication(claims).cast(AbstractAuthenticationToken.class));
                     });

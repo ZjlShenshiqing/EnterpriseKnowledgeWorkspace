@@ -47,13 +47,20 @@ public class JwtUtil {
      */
     public String issueToken(Long userId, String username, Map<String, Object> extraClaims) {
         Instant now = Instant.now();
+        // 过期时间 = 当前时间 + 配置的有效期
         Instant exp = now.plusSeconds(ttlSeconds);
         return Jwts.builder()
+                // sub 存放用户 id
                 .subject(String.valueOf(userId))
+                // 签发时间
                 .issuedAt(Date.from(now))
+                // 过期时间
                 .expiration(Date.from(exp))
+                // 自定义 claim：用户名
                 .claim("username", username)
+                // 额外 claims（如角色、权限等）
                 .claims(extraClaims)
+                // HS256 签名
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
     }
@@ -66,9 +73,12 @@ public class JwtUtil {
      */
     public Claims parse(String token) {
         return Jwts.parser()
+                // 设置签名密钥用于验签
                 .verifyWith(secretKey)
                 .build()
+                // 解析并校验签名与过期时间
                 .parseSignedClaims(token)
+                // 获取 claims 体
                 .getPayload();
     }
 }
