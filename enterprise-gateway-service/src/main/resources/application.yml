@@ -1,100 +1,75 @@
 spring:
-  # 服务名
   application:
     name: enterprise-gateway-service
-
-  # 网关自身使用的数据库
-  # 用于 RBAC 用户部门角色权限 操作日志 token 黑名单
-  # 当前为 MySQL 连接配置
-  datasource:
-    url: jdbc:mysql://localhost:3306/enterprise_gateway?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-
-  # JPA 自动建表配置
-  jpa:
-    hibernate:
-      # 关闭自动建表与自动更新表结构
-      # 依赖手工执行 docs/sql/enterprise-gateway-schema-mysql.sql
-      ddl-auto: none
-    # 关闭 OpenSessionInView
-    open-in-view: false
-    properties:
-      hibernate:
-        # 格式化 SQL 便于阅读
-        format_sql: true
-
-  # Spring Cloud Gateway 路由配置
   cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        fail-fast: false
+        shared-configs:
+          - data-id: common-config.yaml
+            group: DEFAULT_GROUP
+            refresh: true
     gateway:
       default-filters:
-        # 转发时保留原始 Host 头
         - PreserveHostHeader
       routes:
-        # 知识库与问答服务
         - id: knowledge-ai
-          uri: http://localhost:8081
+          uri: lb://enterprise-knowledge-ai-service
           predicates:
             - Path=/api/kb/**,/api/ai-qa/**
-        # 协同业务服务
         - id: collaboration
-          uri: http://localhost:8090
+          uri: lb://enterprise-collaboration-service
           predicates:
             - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**
-        # 工作台聚合服务
         - id: workbench
-          uri: http://localhost:8083
+          uri: lb://enterprise-workbench-service
           predicates:
             - Path=/api/workbench/**
 
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
 server:
-  # 网关端口
   port: 8086
 
 management:
-  # Actuator 端点暴露配置
   endpoints:
     web:
       exposure:
-        # 仅暴露健康检查与信息端点
-        include: health,info
+        include: health,info,gateway
   endpoint:
     health:
-      # 不展示健康检查细节
-      show-details: never
+      show-details: always
 
 logging:
   pattern:
-    # 控制台日志格式 包含 traceId
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger - %msg%n"
 
 app:
-  # 自定义业务配置段
   security:
     jwt:
-      # JWT 签名密钥 生产环境应改为安全存储
       secret: "dev-secret-change-me-dev-secret-change-me-32bytes"
-      # token 有效期 秒
       ttl-seconds: 7200
     whitelist:
       paths:
-        # 白名单路径 这些路径不需要 token
         - /api/system/health
         - /api/auth/login
         - /actuator/health
         - /actuator/info
   gateway:
     ip:
-      # IP 黑名单 命中直接拒绝
       blacklist: []
-      # IP 白名单 若非空则只允许白名单 IP 访问
       whitelist: []
     rateLimit:
-      # 是否启用基础限流
       enabled: true
-      # 每个 IP 在一个窗口内允许的最大请求数
       requests: 120
-      # 固定窗口大小 秒
       windowSeconds: 60
