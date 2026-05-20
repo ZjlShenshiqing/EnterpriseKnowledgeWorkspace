@@ -3,15 +3,22 @@ spring:
     import: optional:classpath:application-secrets.yml
   application:
     name: enterprise-knowledge-ai-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        fail-fast: false
+        shared-configs:
+          - data-id: common-config.yaml
+            group: DEFAULT_GROUP
+            refresh: true
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 55MB
-  datasource:
-    url: jdbc:mysql://127.0.0.1:3306/enterprise_knowledge_ai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: ${DB_PASSWORD:123456}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
       mode: always
@@ -33,32 +40,6 @@ mybatis-plus:
 app:
   kb:
     upload-dir: ./data/kb-uploads
-  knowledge:
-    embedding-model: deepseek-chat
-    vector-write-enabled: true    # 全局向量写入开关
-  milvus:
-    uri: http://localhost:19530
-    collection: kb_chunk_embedding
-    vector-dimension: 4096
-    # 为 true 时：启动必须完成 Milvus 建表与 load。当 embedding-model 为空且仅使用文档分块功能时，可设为 false 允许无 Milvus 启动
-    fail-on-init: false
-  agent:
-    llm:
-      provider: deepseek
-      api-key: ${DEEPSEEK_API_KEY:}
-      base-url: https://api.deepseek.com
-      model: deepseek-chat
-      max-tokens: 4096
-      temperature: 0.3
-    session:
-      max-history: 50
-      archive-after-days: 30
-    web-search:
-      enabled: true
-      api-key: ${BOCHA_API_KEY:}
-      base-url: https://api.bochaai.com/v1
-      count: 8
-      freshness: noLimit
 
 logging:
   pattern:
