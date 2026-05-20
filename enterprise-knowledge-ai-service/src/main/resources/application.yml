@@ -3,15 +3,22 @@ spring:
     import: optional:classpath:application-secrets.yml
   application:
     name: enterprise-knowledge-ai-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        fail-fast: false
+        shared-configs:
+          - data-id: common-config.yaml
+            group: DEFAULT_GROUP
+            refresh: true
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 55MB
-  datasource:
-    url: jdbc:mysql://127.0.0.1:3306/enterprise_knowledge_ai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: ${DB_PASSWORD:123456}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
       mode: always

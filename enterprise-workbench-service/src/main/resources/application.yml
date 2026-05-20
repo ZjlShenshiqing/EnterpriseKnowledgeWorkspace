@@ -1,21 +1,24 @@
 spring:
   config:
     import: optional:classpath:application-secrets.yml
-  application.name: enterprise-workbench-service
-  datasource:
-    url: jdbc:mysql://127.0.0.1:3306/enterprise_collaboration?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: ${DB_PASSWORD:123456}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  application:
+    name: enterprise-workbench-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        fail-fast: false
+        shared-configs:
+          - data-id: common-config.yaml
+            group: DEFAULT_GROUP
+            refresh: true
 
-server.port: 8084
+server:
+  port: 8084
 
-mybatis-plus.configuration.map-underscore-to-camel-case: true
-
-knowledge.service.url: http://localhost:8083
-
-spring.data.redis:
-  host: ${REDIS_HOST:localhost}
-  port: ${REDIS_PORT:6379}
-  timeout: 3000ms
-  lettuce.pool.max-active: 8
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true

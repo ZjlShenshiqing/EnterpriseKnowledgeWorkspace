@@ -2,7 +2,6 @@ package com.zjl.workbench.web;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +13,17 @@ import java.util.*;
 @RequestMapping("/api/workbench")
 public class WorkbenchController {
 
-    private final RestTemplate rt = new RestTemplate();
+    private final RestTemplate rt;
 
-    @Value("${collab.service.url:http://localhost:8090}")
+    @Value("${collab.service.url:http://enterprise-collaboration-service}")
     private String collabUrl;
 
-    @Value("${knowledge.service.url:http://localhost:8083}")
+    @Value("${knowledge.service.url:http://enterprise-knowledge-ai-service}")
     private String knowledgeUrl;
+
+    public WorkbenchController(RestTemplate restTemplate) {
+        this.rt = restTemplate;
+    }
 
     private static final String UA = "X-User-Id";
     private static final String AD = "X-Is-Admin";
