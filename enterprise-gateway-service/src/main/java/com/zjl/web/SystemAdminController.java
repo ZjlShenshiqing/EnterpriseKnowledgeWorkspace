@@ -67,9 +67,9 @@ public class SystemAdminController {
      */
     @GetMapping("/users")
     public Mono<Result<PageResult<SysUser>>> users(
-            @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size
     ) {
         return Mono.fromCallable(() -> Results.success(userService.listUsers(keyword, page, size)))
                 .subscribeOn(Schedulers.boundedElastic());
