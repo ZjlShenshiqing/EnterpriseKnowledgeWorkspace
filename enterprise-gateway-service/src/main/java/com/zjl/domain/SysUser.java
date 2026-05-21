@@ -39,6 +39,12 @@ public class SysUser {
     private String passwordHash;
 
     /**
+     * 真实姓名
+     */
+    @Column(length = 64)
+    private String realName;
+
+    /**
      * 所属部门
      */
     @ManyToOne(fetch = FetchType.LAZY)
