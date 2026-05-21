@@ -1,6 +1,7 @@
 package com.zjl.web;
 
 import com.zjl.common.exception.BizException;
+import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import com.zjl.domain.SysDept;
@@ -65,7 +66,7 @@ public class SystemAdminController {
      * 查询用户列表（分页 + 搜索）
      */
     @GetMapping("/users")
-    public Mono<Result<?>> users(
+    public Mono<Result<PageResult<SysUser>>> users(
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size

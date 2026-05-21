@@ -60,6 +60,11 @@ public class UserService {
         } else {
             result = userRepository.searchUsers(keyword, pr);
         }
+        result.getContent().forEach(u -> {
+            if (u.getDept() != null) {
+                u.getDept().getName();
+            }
+        });
         return PageResult.of(page, size, result.getTotalElements(), result.getContent());
     }
 
@@ -71,8 +76,12 @@ public class UserService {
      * @throws BizException(40400) 用户不存在
      */
     public SysUser getUser(Long id) {
-        return userRepository.findById(id)
+        SysUser u = userRepository.findById(id)
                 .orElseThrow(() -> new BizException(40400, "用户不存在"));
+        if (u.getDept() != null) {
+            u.getDept().getName();
+        }
+        return u;
     }
 
     /**
@@ -117,7 +126,7 @@ public class UserService {
             Set<SysRole> roles = resolveRoles(roleCodes);
             u.setRoles(roles);
         }
-        return userRepository.save(u);
+        return getUser(userRepository.save(u).getId());
     }
 
     /**

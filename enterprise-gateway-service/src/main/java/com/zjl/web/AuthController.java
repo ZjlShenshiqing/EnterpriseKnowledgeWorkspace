@@ -79,11 +79,23 @@ public class AuthController {
     public record LoginRequest(@NotBlank String username, @NotBlank String password) {}
 
     /**
-     * 登录响应
+     * 登录响应（供前端写入 localStorage）
      *
-     * @param token JWT
+     * @param token 访问令牌
+     * @param userId 用户 ID
+     * @param username 用户名
+     * @param realName 姓名
+     * @param deptId 部门 ID
+     * @param isAdmin 是否具备管理员角色（角色 code 为 admin，不区分大小写）
      */
-    public record LoginResponse(String token) {}
+    public record LoginResponse(
+            String token,
+            Long userId,
+            String username,
+            String realName,
+            Long deptId,
+            boolean isAdmin
+    ) {}
 
     /**
      * 登录接口：校验用户名密码并签发 JWT
@@ -110,7 +122,17 @@ public class AuthController {
                     claims.put("authorities", authoritiesOf(user));
                     // 签发 JWT
                     String token = jwt.issueToken(user.getId(), user.getUsername(), claims);
-                    return Mono.just(Results.success(new LoginResponse(token)));
+                    Long deptId = user.getDept() != null ? user.getDept().getId() : null;
+                    boolean isAdmin = user.getRoles().stream()
+                            .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode()));
+                    return Mono.just(Results.success(new LoginResponse(
+                            token,
+                            user.getId(),
+                            user.getUsername(),
+                            user.getRealName(),
+                            deptId,
+                            isAdmin
+                    )));
                 });
     }
 
@@ -154,8 +176,8 @@ public class AuthController {
     private static List<String> authoritiesOf(SysUser user) {
         List<String> result = new ArrayList<>();
         for (SysRole role : user.getRoles()) {
-            // 角色编码加 ROLE_ 前缀，如 ROLE_admin
-            result.add("ROLE_" + role.getCode());
+            // 角色编码转大写并加 ROLE_ 前缀，与 @PreAuthorize("hasRole('ADMIN')") 一致
+            result.add("ROLE_" + role.getCode().toUpperCase());
             // 角色下的每个权限直接放入列表，如 PERM_doc_delete
             role.getPermissions().forEach(p -> result.add(p.getCode()));
         }

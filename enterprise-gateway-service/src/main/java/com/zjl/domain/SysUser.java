@@ -1,5 +1,6 @@
 package com.zjl.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,6 +36,7 @@ public class SysUser {
     /**
      * 密码哈希（BCrypt）
      */
+    @JsonIgnore
     @Column(nullable = false, length = 200)
     private String passwordHash;
 
