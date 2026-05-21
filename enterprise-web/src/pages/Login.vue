@@ -44,19 +44,15 @@
 
       <div class="demo-link">
         <el-button v-if="showRegister" link @click="showRegister=false">← 返回登录</el-button>
-        <template v-else>
-          <el-button link @click="showRegister = true">注册账号</el-button>
-          <span class="dot">·</span>
-          <el-button link @click="demoLogin">演示登录</el-button>
-        </template>
+        <el-button v-else link @click="showRegister = true">注册账号</el-button>
       </div>
-      <div class="footer-text">Demo · Enterprise Knowledge Workspace</div>
+      <div class="footer-text">Enterprise Knowledge Workspace</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -85,8 +81,14 @@ const shapes = Array.from({length:6}, (_,i) => ({
 }))
 
 function saveAuth(user) {
-  localStorage.setItem('token', user.token || 'demo-token')
-  localStorage.setItem('user', JSON.stringify(user))
+  const token = user.token || ''
+  const payload = { ...user, token }
+  if (token) {
+    localStorage.setItem('token', token)
+  } else {
+    localStorage.removeItem('token')
+  }
+  localStorage.setItem('user', JSON.stringify(payload))
 }
 
 async function login() {
@@ -99,19 +101,26 @@ async function login() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: form.username, password: form.password })
     })
-    if (resp.ok) {
-      const result = await resp.json()
+    const result = await resp.json()
+    if (resp.ok && (result.code === 200 || result.code === '200')) {
       const data = result.data || {}
-      saveAuth({ id: data.userId, username: data.username, realName: data.realName || data.username, isAdmin: data.isAdmin, departmentId: data.deptId, token: data.accessToken || data.token })
+      saveAuth({
+        id: data.userId,
+        username: data.username,
+        realName: data.realName || data.username,
+        isAdmin: !!data.isAdmin,
+        departmentId: data.deptId,
+        token: data.token || data.accessToken
+      })
       ElMessage.success('登录成功')
       cardRef.value?.classList.add('card-out')
       setTimeout(() => router.push('/'), 300)
     } else {
       shakeCard()
-      ElMessage.error('用户名或密码错误')
+      ElMessage.error(result.message || '用户名或密码错误')
     }
   } catch (e) {
-    demoLogin()
+    ElMessage.error('无法连接登录服务，请确认网关已启动（端口 8086）')
   }
   loading.value = false
 }
@@ -138,14 +147,10 @@ async function doRegister() {
       const err = await resp.json()
       ElMessage.error(err.message || '注册失败')
     }
-  } catch (e) { ElMessage.warning('注册服务未启动，使用演示模式'); demoLogin() }
+  } catch (e) {
+    ElMessage.error('无法连接注册服务，请确认网关已启动（端口 8086）')
+  }
   regLoading.value = false
-}
-
-function demoLogin() {
-  saveAuth({ id: 1, username: 'admin', realName: '管理员', isAdmin: true, departmentId: 1, token: '' })
-  cardRef.value?.classList.add('card-out')
-  setTimeout(() => router.push('/'), 300)
 }
 </script>
 

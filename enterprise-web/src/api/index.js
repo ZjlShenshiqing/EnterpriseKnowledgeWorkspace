@@ -1,14 +1,66 @@
 import axios from 'axios'
 
-function getAuthHeaders() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+/**
+ * 是否为合法 JWT 紧凑格式（三段 Base64，用两个 '.' 分隔）。
+ */
+function isJwtFormat(token) {
+  const t = (token || '').trim()
+  if (!t) return false
+  const parts = t.split('.')
+  return parts.length === 3 && parts.every((p) => p.length > 0)
+}
+
+/**
+ * 读取本地登录态。token 优先 user.token，其次 localStorage.token（与 Login.saveAuth 双写一致）。
+ * 非 JWT 字符串（如历史的 demo-token）会被丢弃，避免网关 MalformedJwtException。
+ */
+export function readStoredAuth() {
+  let user = {}
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{}')
+  } catch {
+    user = {}
+  }
+  const rawToken = user.token || localStorage.getItem('token') || ''
+  const token = isJwtFormat(rawToken) ? rawToken.trim() : ''
+  if (rawToken && !token) {
+    localStorage.removeItem('token')
+    if (user.token) {
+      const cleaned = { ...user }
+      delete cleaned.token
+      localStorage.setItem('user', JSON.stringify(cleaned))
+    }
+  }
+  return { user, token, hasValidToken: !!token }
+}
+
+export function getAuthHeaders() {
+  const { user, token } = readStoredAuth()
   const headers = {
     'X-User-Id': String(user.id || '1'),
     'X-Department-Id': String(user.departmentId || '1'),
     'X-Is-Admin': String(user.isAdmin ? 'true' : 'false')
   }
-  if (user.token) headers['Authorization'] = 'Bearer ' + user.token
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token
+  }
   return headers
+}
+
+function attachResponseInterceptor(api) {
+  api.interceptors.response.use(
+    response => {
+      const data = response.data
+      if (data && (data.code === 40100 || data.code === '40100')) {
+        return Promise.reject({
+          response: { status: 401, data },
+          message: data.message || '未登录或登录已过期'
+        })
+      }
+      return response
+    },
+    error => Promise.reject(error)
+  )
 }
 
 const kbApi = axios.create({ baseURL: '/api/kb' })
@@ -23,6 +75,9 @@ systemApi.interceptors.request.use(config => {
   config.headers = { ...config.headers, ...getAuthHeaders() }
   return config
 })
+
+attachResponseInterceptor(systemApi)
+attachResponseInterceptor(kbApi)
 
 // ---- Knowledge Base ----
 

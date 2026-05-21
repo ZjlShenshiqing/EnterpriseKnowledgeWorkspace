@@ -34,18 +34,34 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getAuthHeaders } from '../api/index.js'
 
 const meetings = ref([]); const dlg = ref(false); const editId = ref(null)
 const f = ref({ title:'',room:'',date:'',timeRange:[],attendees:'' })
 
 function headers() {
-  const u = JSON.parse(localStorage.getItem('user')||'{}')
-  return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false'),'Content-Type':'application/json'}
+  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
+}
+
+function isSuccess(result) {
+  return result && (result.code === 200 || result.code === '200')
 }
 
 async function load() {
-  try { const r = await fetch('/api/meetings',{headers:headers()}); meetings.value = (await r.json()).data||[] }
-  catch(e) { meetings.value = mockMeetings }
+  try {
+    const r = await fetch('/api/meetings', { headers: headers() })
+    const result = await r.json()
+    if (isSuccess(result)) {
+      meetings.value = result.data || []
+    } else {
+      meetings.value = []
+      if (result.code === 40100 || result.code === '40100') {
+        ElMessage.error('登录已过期，请重新登录')
+      }
+    }
+  } catch (e) {
+    meetings.value = []
+  }
 }
 
 function openCreate() { editId.value = null; f.value = { title:'',room:'A301 (20人)',date:'',timeRange:[],attendees:'' }; dlg.value = true }
@@ -60,9 +76,15 @@ async function save() {
   const body = { title:f.value.title, room:f.value.room, date:formatDate(f.value.date), startTime:f.value.timeRange[0]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', endTime:f.value.timeRange[1]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', attendees:f.value.attendees }
   const url = editId.value ? `/api/meetings/${editId.value}` : '/api/meetings'
   const method = editId.value ? 'PUT' : 'POST'
-  const r = await fetch(url,{method,headers:headers(),body:JSON.stringify(body)})
+  const r = await fetch(url, { method, headers: headers(), body: JSON.stringify(body) })
   const result = await r.json()
-  dlg.value = false; ElMessage.success(editId.value?'已更新':'已创建'); await load()
+  if (!isSuccess(result)) {
+    ElMessage.error(result.message || '操作失败')
+    return
+  }
+  dlg.value = false
+  ElMessage.success(editId.value ? '已更新' : '已创建')
+  await load()
   
   if (!editId.value && f.value.room === '线上-Zoom') {
     setTimeout(() => {
@@ -88,9 +110,4 @@ async function doDelete(row) {
 }
 
 onMounted(load)
-
-const mockMeetings = [
-  {id:1,title:'Q2项目评审会',room:'A301',date:'2026-05-12',start_time:'14:00',end_time:'16:00',attendees:'张三,李四,王五',status:'confirmed'},
-  {id:2,title:'技术方案讨论',room:'B102',date:'2026-05-12',start_time:'10:00',end_time:'11:00',attendees:'张三,赵六',status:'confirmed'},
-]
 </script>

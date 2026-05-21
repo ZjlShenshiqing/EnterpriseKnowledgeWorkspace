@@ -101,8 +101,11 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getUsers, getUserStats, createUser, updateUser, deleteUser, getRoles, getDepts } from '../../api/index.js'
+import { getUsers, getUserStats, createUser, updateUser, deleteUser, getRoles, getDepts, readStoredAuth } from '../../api/index.js'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const router = useRouter()
 
 const users = ref([])
 const loading = ref(false)
@@ -125,23 +128,54 @@ function onSearch() {
   timer = setTimeout(() => { currentPage.value = 1; loadUsers() }, 300)
 }
 
+function handleAuthError(e, fallback) {
+  const status = e.response?.status
+  const msg = e.response?.data?.message || e.message
+  if (status === 401 || status === 403 || msg?.includes('未登录')) {
+    ElMessage.error(msg || '未登录或登录已过期，请重新登录')
+    setTimeout(() => router.push('/login'), 800)
+    return true
+  }
+  ElMessage.error(msg || fallback)
+  return false
+}
+
 async function loadUsers() {
+  if (!readStoredAuth().hasValidToken) {
+    ElMessage.warning('请先登录后再访问用户管理')
+    router.push('/login')
+    return
+  }
   loading.value = true
   try {
     const { data: res } = await getUsers({ keyword: keyword.value, page: currentPage.value, size: pageSize.value })
-    if (res.code == 200) {
-      users.value = res.data.records
-      total.value = res.data.total
+    if (res.code == 200 || res.code === '200') {
+      users.value = res.data?.records || []
+      total.value = res.data?.total || 0
+    } else {
+      users.value = []
+      total.value = 0
+      if (res.code === 40100 || res.code === '40100') {
+        handleAuthError({ response: { status: 401, data: res } }, '加载用户列表失败')
+      } else {
+        ElMessage.error(res.message || '加载用户列表失败')
+      }
     }
   } catch (e) {
-    ElMessage.error('加载用户列表失败')
+    users.value = []
+    total.value = 0
+    handleAuthError(e, '加载用户列表失败')
   } finally { loading.value = false }
 }
 
 async function loadStats() {
   try {
     const { data: res } = await getUserStats()
-    if (res.code == 200) _stats.value = res.data
+    if (res.code == 200) {
+      _stats.value = res.data
+    } else {
+      ElMessage.error(res.message || '加载用户统计失败')
+    }
   } catch { /* ignore */ }
 }
 
@@ -151,8 +185,16 @@ const allRoles = ref([])
 async function loadOptions() {
   try {
     const [deptRes, roleRes] = await Promise.all([getDepts(), getRoles()])
-    if (deptRes.data.code == 200) depts.value = deptRes.data.data
-    if (roleRes.data.code == 200) allRoles.value = roleRes.data.data
+    if (deptRes.data.code == 200) {
+      depts.value = deptRes.data.data || []
+    } else {
+      ElMessage.error(deptRes.data.message || '加载部门列表失败')
+    }
+    if (roleRes.data.code == 200) {
+      allRoles.value = roleRes.data.data || []
+    } else {
+      ElMessage.error(roleRes.data.message || '加载角色列表失败')
+    }
   } catch { /* ignore */ }
 }
 
@@ -201,7 +243,11 @@ async function handleSubmit() {
       body.enabled = form.value.enabled
       delete body.username
       delete body.password
-      await updateUser(editingId.value, body)
+      const { data: res } = await updateUser(editingId.value, body)
+      if (res.code != 200) {
+        ElMessage.error(res.message || '更新失败')
+        return
+      }
       ElMessage.success('更新成功')
     } else {
       if (!form.value.username || !form.value.password) {
@@ -209,24 +255,39 @@ async function handleSubmit() {
         submitting.value = false
         return
       }
-      await createUser(body)
+      const { data: res } = await createUser(body)
+      if (res.code != 200) {
+        ElMessage.error(res.message || '创建失败')
+        return
+      }
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
-    loadUsers()
-    loadStats()
+    await loadUsers()
+    await loadStats()
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || '操作失败')
+    const msg = e.response?.data?.message || e.message
+    if (e.response?.status === 401) {
+      ElMessage.error('未登录或登录已过期，请重新登录')
+    } else if (e.response?.status === 403) {
+      ElMessage.error('无权限：请使用管理员账号登录')
+    } else {
+      ElMessage.error(msg || '操作失败')
+    }
   } finally { submitting.value = false }
 }
 
 async function handleDelete(row) {
   try {
     await ElMessageBox.confirm(`确定删除用户「${row.username}」吗？`, '提示', { type: 'warning' })
-    await deleteUser(row.id)
+    const { data: res } = await deleteUser(row.id)
+    if (res.code != 200) {
+      ElMessage.error(res.message || '删除失败')
+      return
+    }
     ElMessage.success('删除成功')
-    loadUsers()
-    loadStats()
+    await loadUsers()
+    await loadStats()
   } catch { /* cancelled */ }
 }
 
