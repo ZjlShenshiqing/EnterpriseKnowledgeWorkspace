@@ -54,7 +54,7 @@ async function loadRoles() {
   loading.value = true
   try {
     const { data: res } = await getRoles()
-    if (res.code === 0) roles.value = res.data
+    if (res.code == 200) roles.value = res.data
   } catch { ElMessage.error('加载角色列表失败') }
   finally { loading.value = false }
 }
@@ -64,7 +64,7 @@ const permissions = ref([])
 async function loadPermissions() {
   try {
     const { data: res } = await getPermissions()
-    if (res.code === 0) permissions.value = res.data
+    if (res.code == 200) permissions.value = res.data
   } catch { /* ignore */ }
 }
 

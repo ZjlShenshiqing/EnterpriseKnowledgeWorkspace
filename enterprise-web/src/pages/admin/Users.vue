@@ -129,7 +129,7 @@ async function loadUsers() {
   loading.value = true
   try {
     const { data: res } = await getUsers({ keyword: keyword.value, page: currentPage.value, size: pageSize.value })
-    if (res.code === 0) {
+    if (res.code == 200) {
       users.value = res.data.records
       total.value = res.data.total
     }
@@ -141,7 +141,7 @@ async function loadUsers() {
 async function loadStats() {
   try {
     const { data: res } = await getUserStats()
-    if (res.code === 0) _stats.value = res.data
+    if (res.code == 200) _stats.value = res.data
   } catch { /* ignore */ }
 }
 
@@ -151,8 +151,8 @@ const allRoles = ref([])
 async function loadOptions() {
   try {
     const [deptRes, roleRes] = await Promise.all([getDepts(), getRoles()])
-    if (deptRes.data.code === 0) depts.value = deptRes.data.data
-    if (roleRes.data.code === 0) allRoles.value = roleRes.data.data
+    if (deptRes.data.code == 200) depts.value = deptRes.data.data
+    if (roleRes.data.code == 200) allRoles.value = roleRes.data.data
   } catch { /* ignore */ }
 }
 
