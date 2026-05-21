@@ -78,6 +78,52 @@ export function getRoles() {
   return systemApi.get('/roles')
 }
 
+export function getUser(id) {
+  return systemApi.get(`/users/${id}`)
+}
+
+export function createUser(body) {
+  return systemApi.post('/users', body)
+}
+
+export function updateUser(id, body) {
+  return systemApi.put(`/users/${id}`, body)
+}
+
+export function deleteUser(id) {
+  return systemApi.delete(`/users/${id}`)
+}
+
+export function getUserStats() {
+  return systemApi.get('/users/stats')
+}
+
+// ---- Roles ----
+
+export function getRole(id) {
+  return systemApi.get(`/roles/${id}`)
+}
+
+export function createRole(body) {
+  return systemApi.post('/roles', body)
+}
+
+export function updateRole(id, body) {
+  return systemApi.put(`/roles/${id}`, body)
+}
+
+export function deleteRole(id) {
+  return systemApi.delete(`/roles/${id}`)
+}
+
+export function getPermissions() {
+  return systemApi.get('/permissions')
+}
+
+export function getDepts() {
+  return systemApi.get('/depts')
+}
+
 // ---- Helpers ----
 
 export function isApiAvailable() {
