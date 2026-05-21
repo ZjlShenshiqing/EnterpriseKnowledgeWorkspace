@@ -29,6 +29,15 @@ public class JwtAuthFilter implements Filter {
             return;
         }
 
+        /**
+         * 经网关鉴权后，前端会携带 X-User-Id 等身份头；下游不再重复校验网关签发的 JWT。
+         */
+        String userIdHeader = request.getHeader("X-User-Id");
+        if (userIdHeader != null && !userIdHeader.isBlank()) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
