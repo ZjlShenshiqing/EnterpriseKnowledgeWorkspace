@@ -45,13 +45,11 @@ public class RbacUtil {
             }
         }
 
-        // 构建 Spring Security 认证令牌
+        // 构建 Spring Security 认证令牌（3参构造已自动标记为已认证）
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(userId, username, authorities);
         // 附加完整 claims 信息，供后续过滤器使用
         auth.setDetails(claims);
-        // 标记为已认证
-        auth.setAuthenticated(true);
         // 以 Mono 形式返回，适配 WebFlux 响应式链路
         return Mono.just(auth);
     }
