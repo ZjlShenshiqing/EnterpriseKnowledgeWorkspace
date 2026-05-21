@@ -68,6 +68,9 @@ app:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger - %msg%n"
+  level:
+    com.alibaba.nacos.client.config.impl.ClientWorker: warn
+    com.alibaba.nacos: warn
 
 management:
   endpoints:
