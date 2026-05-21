@@ -1,6 +1,6 @@
 spring:
   config:
-    import: optional:classpath:application-secrets.yml
+    import: "optional:classpath:application-secrets.yml,optional:nacos:enterprise-knowledge-ai-service.yaml,optional:nacos:common-config.yaml?group=DEFAULT_GROUP&refreshEnabled=true"
   application:
     name: enterprise-knowledge-ai-service
   cloud:
@@ -11,10 +11,8 @@ spring:
         server-addr: localhost:8848
         file-extension: yaml
         fail-fast: false
-        shared-configs:
-          - data-id: common-config.yaml
-            group: DEFAULT_GROUP
-            refresh: true
+    compatibility-verifier:
+      enabled: false
   servlet:
     multipart:
       max-file-size: 50MB

@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "optional:classpath:application-secrets.yml,optional:nacos:enterprise-gateway-service.yaml,optional:nacos:common-config.yaml?group=DEFAULT_GROUP&refreshEnabled=true"
   application:
     name: enterprise-gateway-service
   cloud:
@@ -9,10 +11,8 @@ spring:
         server-addr: localhost:8848
         file-extension: yaml
         fail-fast: false
-        shared-configs:
-          - data-id: common-config.yaml
-            group: DEFAULT_GROUP
-            refresh: true
+    compatibility-verifier:
+      enabled: false
     gateway:
       default-filters:
         - PreserveHostHeader
