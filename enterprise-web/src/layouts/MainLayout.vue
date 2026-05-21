@@ -24,14 +24,16 @@
           <span>{{ item.label }}</span>
         </div>
         
-        <div style="margin:12px 0;border-top:1px solid #f3f4f6;"></div>
-        
-        <div @click="$router.push('/admin')" 
-          class="nav-item"
-          :class="{ 'nav-item-active': isAdminActive }">
-          <el-icon :size="18"><Setting /></el-icon>
-          <span>管理后台</span>
-        </div>
+        <template v-if="canAccessAdmin">
+          <div style="margin:12px 0;border-top:1px solid #f3f4f6;"></div>
+
+          <div @click="$router.push('/admin')"
+            class="nav-item"
+            :class="{ 'nav-item-active': isAdminActive }">
+            <el-icon :size="18"><Setting /></el-icon>
+            <span>管理后台</span>
+          </div>
+        </template>
       </div>
 
       <!-- User Area -->
@@ -43,7 +45,7 @@
             </div>
             <div style="flex:1;display:flex;flex-direction:column;">
               <span style="font-size:13px;color:#1f2937;font-weight:500;">{{ userName }}</span>
-              <span style="font-size:12px;color:#9ca3af;">管理员</span>
+              <span style="font-size:12px;color:#9ca3af;">{{ userRoleLabel }}</span>
             </div>
           </div>
           <template #dropdown><el-dropdown-menu><el-dropdown-item command="logout">退出登录</el-dropdown-item></el-dropdown-menu></template>
@@ -99,6 +101,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
+import { isAdminUser, readStoredAuth } from '../api/index.js'
 const route = useRoute()
 const router = useRouter()
 const unread = ref(3)
@@ -128,12 +131,15 @@ const mainContentWrapStyle = computed(() => {
 })
 const userName = computed(() => {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const user = readStoredAuth().user
     return user.realName || user.username || '用户'
   } catch {
     return '用户'
   }
 })
+
+const canAccessAdmin = computed(() => isAdminUser())
+const userRoleLabel = computed(() => (canAccessAdmin.value ? '管理员' : '普通用户'))
 
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '工作台' },

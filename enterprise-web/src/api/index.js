@@ -34,6 +34,13 @@ export function readStoredAuth() {
   return { user, token, hasValidToken: !!token }
 }
 
+/**
+ * 是否具备管理后台访问权限（登录时由网关根据 admin 角色写入 isAdmin）。
+ */
+export function isAdminUser() {
+  return !!readStoredAuth().user.isAdmin
+}
+
 export function getAuthHeaders() {
   const { user, token } = readStoredAuth()
   const headers = {
