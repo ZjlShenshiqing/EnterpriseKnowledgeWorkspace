@@ -109,12 +109,6 @@
             <span>返回聊天</span>
           </button>
 
-          <button class="admin-pill-btn">
-            <el-icon><Star /></el-icon>
-            <span>Star</span>
-            <span class="admin-pill-count">748</span>
-          </button>
-
           <div class="admin-profile">
             <div class="admin-avatar">{{ initials }}</div>
             <span class="admin-profile-name">{{ displayName }}</span>
@@ -162,81 +156,84 @@ const openedMenus = ['intent-group', 'pipeline-group']
 
 <style scoped>
 .admin-shell {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  background:
-    radial-gradient(circle at top left, rgba(63, 81, 181, 0.14), transparent 24%),
-    linear-gradient(180deg, #eff2f8 0%, #f6f8fc 100%);
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  background: #f5f6f8;
 }
 
 .admin-sidebar {
-  width: 286px;
-  padding: 22px 18px 24px;
+  width: 230px;
+  flex-shrink: 0;
+  padding: 12px 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 12px;
   background: linear-gradient(180deg, rgba(17, 20, 31, 0.98) 0%, rgba(27, 32, 47, 0.98) 100%);
   color: #fff;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
 }
 
 .admin-sidebar.collapsed {
-  width: 94px;
-  padding-inline: 12px;
+  width: 64px;
+  padding-inline: 8px;
 }
 
 .admin-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 4px 4px 8px;
 }
 
 .admin-brand-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 16px;
   color: #fff;
   background: linear-gradient(135deg, #6b4cff 0%, #4731d8 100%);
-  box-shadow: 0 16px 30px rgba(84, 67, 229, 0.25);
+  box-shadow: 0 8px 18px rgba(84, 67, 229, 0.2);
+  flex-shrink: 0;
 }
 
 .admin-brand-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
 .admin-brand-subtitle {
-  margin-top: 4px;
+  margin-top: 2px;
   color: #8f99b1;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .admin-sidebar-groups {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .admin-nav-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .admin-nav-label {
-  padding: 0 14px;
-  font-size: 12px;
+  padding: 0 12px;
+  font-size: 11px;
   color: #666f88;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 }
 
 :deep(.admin-menu) {
@@ -245,10 +242,13 @@ const openedMenus = ['intent-group', 'pipeline-group']
 
 :deep(.admin-menu .el-menu-item),
 :deep(.admin-menu .el-sub-menu__title) {
-  margin-bottom: 8px;
-  min-height: 44px;
-  border-radius: 12px;
-  font-size: 15px;
+  margin-bottom: 4px;
+  min-height: 36px;
+  height: 36px;
+  line-height: 36px;
+  border-radius: 10px;
+  font-size: 14px;
+  padding-inline: 12px !important;
 }
 
 :deep(.admin-menu .el-menu-item.is-active) {
@@ -263,8 +263,11 @@ const openedMenus = ['intent-group', 'pipeline-group']
 
 :deep(.admin-menu .el-sub-menu .el-menu-item) {
   min-width: auto;
-  margin-left: 12px;
-  font-size: 14px;
+  margin-left: 8px;
+  font-size: 13px;
+  min-height: 34px;
+  height: 34px;
+  line-height: 34px;
 }
 
 :deep(.admin-menu .el-sub-menu .el-menu) {
@@ -273,17 +276,19 @@ const openedMenus = ['intent-group', 'pipeline-group']
 
 .admin-collapse {
   width: 100%;
-  height: 40px;
+  height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
   color: #9ba6bd;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
+  font-size: 12px;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .admin-collapse:hover {
@@ -292,35 +297,39 @@ const openedMenus = ['intent-group', 'pipeline-group']
 }
 
 .admin-main {
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.04);
 }
 
 .admin-topbar {
-  min-height: 94px;
+  height: 52px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 22px 34px;
-  background: rgba(255, 255, 255, 0.76);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(207, 214, 226, 0.7);
+  gap: 12px;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .admin-search {
   flex: 1;
-  max-width: 400px;
-  height: 52px;
+  max-width: 320px;
+  height: 36px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-  border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid #dfe6f2;
-  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.06);
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .admin-search input {
@@ -328,99 +337,99 @@ const openedMenus = ['intent-group', 'pipeline-group']
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
-  color: #4a556d;
+  font-size: 13px;
+  color: #374151;
 }
 
 .admin-search-kbd {
-  padding: 4px 10px;
-  border-radius: 10px;
-  background: #f4f7fb;
-  border: 1px solid #d9e1ef;
-  color: #8a94aa;
-  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #9ca3af;
+  font-size: 11px;
 }
 
 .admin-search-icon {
-  color: #75829a;
+  color: #9ca3af;
 }
 
 .admin-top-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
-.admin-ghost-btn,
-.admin-pill-btn {
-  height: 48px;
-  border-radius: 16px;
-  border: 1px solid #d7dfed;
-  background: rgba(255, 255, 255, 0.95);
+.admin-ghost-btn {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 18px;
-  color: #344054;
-  font-size: 15px;
-  cursor: pointer;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-}
-
-.admin-pill-count {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #eef2f8;
-  color: #667085;
+  gap: 6px;
+  padding: 0 12px;
+  color: #374151;
   font-size: 13px;
+  cursor: pointer;
+  box-shadow: none;
 }
 
 .admin-profile {
-  min-width: 132px;
-  height: 48px;
-  border-radius: 999px;
-  padding: 0 16px 0 10px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #d7dfed;
+  min-width: auto;
+  height: 32px;
+  border-radius: 8px;
+  padding: 0 10px 0 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
-  gap: 10px;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  gap: 8px;
+  box-shadow: none;
 }
 
 .admin-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #ffcf7d 0%, #ff9f46 100%);
-  color: #36210a;
-  font-weight: 700;
+  background: linear-gradient(135deg, #ff6b9d 0%, #c084fc 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .admin-profile-name {
   flex: 1;
-  color: #344054;
-  font-weight: 600;
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .admin-content {
-  padding: 26px 28px 32px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f5f6f8;
 }
 
 @media (max-width: 1180px) {
   .admin-topbar {
-    padding: 18px 22px;
-    flex-direction: column;
-    align-items: stretch;
+    height: auto;
+    min-height: 52px;
+    padding: 10px 20px;
+    flex-wrap: wrap;
   }
 
   .admin-search {
     max-width: none;
+    width: 100%;
   }
 
   .admin-top-actions {
+    width: 100%;
     justify-content: flex-end;
     flex-wrap: wrap;
   }
