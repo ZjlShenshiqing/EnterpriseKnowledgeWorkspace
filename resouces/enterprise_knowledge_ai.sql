@@ -188,6 +188,7 @@ CREATE TABLE sys_user (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
     username VARCHAR(64) NOT NULL COMMENT '用户名（唯一）',
     password_hash VARCHAR(200) NOT NULL COMMENT '密码哈希（BCrypt）',
+    real_name VARCHAR(64) NULL COMMENT '真实姓名',
     dept_id BIGINT NULL COMMENT '所属部门ID',
     enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用 0-禁用 1-启用',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -261,6 +262,47 @@ CREATE TABLE sys_token_blacklist (
     UNIQUE KEY idx_sys_token_blacklist_token_hash (token_hash),
     KEY idx_sys_token_blacklist_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='JWT Token黑名单表';
+
+-- -------------------- Gateway 种子数据 --------------------
+INSERT INTO sys_dept (id, name, parent_id) VALUES
+(1, '技术部', NULL),
+(2, '产品部', NULL),
+(3, '设计部', NULL);
+
+INSERT INTO sys_user (id, username, password_hash, real_name, dept_id, enabled) VALUES
+(1, 'admin',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 1, 1),
+(2, 'zhangsan', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '张三',     1, 1),
+(3, 'lisi',     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李四',     2, 1),
+(4, 'wangwu',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '王五',     1, 0),
+(5, 'zhaoliu',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '赵六',     3, 1);
+
+INSERT INTO sys_role (id, code, name) VALUES
+(1, 'admin',   '系统管理员'),
+(2, 'manager', '部门主管'),
+(3, 'user',    '普通员工');
+
+INSERT INTO sys_permission (id, code, name) VALUES
+(1, 'system:user:read',   '查看用户'),
+(2, 'system:user:write',  '管理用户'),
+(3, 'system:role:read',   '查看角色'),
+(4, 'system:role:write',  '管理角色'),
+(5, 'system:dept:read',   '查看部门'),
+(6, 'system:dept:write',  '管理部门'),
+(7, 'system:log:read',    '查看日志'),
+(8, 'kb:document:read',   '查看文档'),
+(9, 'kb:document:write',  '管理文档');
+
+INSERT INTO sys_role_permission (role_id, permission_id) VALUES
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9),
+(2, 1), (2, 3), (2, 5), (2, 8), (2, 9),
+(3, 1), (3, 5), (3, 8);
+
+INSERT INTO sys_user_role (user_id, role_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 3),
+(5, 3);
 
 -- ============================================================
 -- 数据库 enterprise_collaboration（协同服务）
