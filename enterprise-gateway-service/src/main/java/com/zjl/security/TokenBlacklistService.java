@@ -47,7 +47,8 @@ public class TokenBlacklistService {
      */
     public Mono<Boolean> isBlacklisted(String token) {
         return Mono.fromCallable(() -> repository.findByTokenHash(sha256Hex(token)).isPresent())
-                .subscribeOn(Schedulers.boundedElastic());
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorReturn(false);
     }
 
     /**

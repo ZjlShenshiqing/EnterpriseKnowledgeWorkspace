@@ -5,8 +5,8 @@ import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
-import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
 import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
 import reactor.core.publisher.Mono;
 
 /**
@@ -89,13 +89,12 @@ public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
          *    继续执行 Spring Security 默认的认证成功处理流程，
          *    让请求继续向后传递。
          */
-        setAuthenticationSuccessHandler((webFilterExchange, authentication) ->
-                setUserContext(authentication)
-                        .then(
-                                new WebFilterChainServerAuthenticationSuccessHandler()
-                                        .onAuthenticationSuccess(webFilterExchange, authentication)
-                        )
-        );
+        setAuthenticationSuccessHandler((webFilterExchange, authentication) -> {
+            webFilterExchange.getExchange().getAttributes().put("AUTHENTICATION", authentication);
+            return setUserContext(authentication)
+                    .then(new WebFilterChainServerAuthenticationSuccessHandler()
+                            .onAuthenticationSuccess(webFilterExchange, authentication));
+        });
     }
 
     /**

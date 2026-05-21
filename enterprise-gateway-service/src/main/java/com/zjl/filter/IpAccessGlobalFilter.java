@@ -1,6 +1,6 @@
 package com.zjl.filter;
 
-import com.zjl.common.response.ApiResponseWriter;
+import com.zjl.gateway.response.ApiResponseWriter;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.trace.TraceIdHolder;
 import com.zjl.config.AppGatewayProperties;

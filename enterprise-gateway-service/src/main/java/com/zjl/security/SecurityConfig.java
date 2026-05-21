@@ -2,7 +2,7 @@ package com.zjl.security;
 
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.trace.TraceIdHolder;
-import com.zjl.common.response.ApiResponseWriter;
+import com.zjl.gateway.response.ApiResponseWriter;
 import com.zjl.filter.JwtAuthenticationWebFilter;
 import com.zjl.config.AppSecurityProperties;
 import org.slf4j.MDC;
@@ -10,7 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -20,6 +21,7 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 
@@ -109,24 +111,45 @@ public class SecurityConfig {
             RbacUtil rbacService
     ) {
         return exchange -> {
-            String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            String authorization = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
             // 无 Authorization 头或非 Bearer 格式，交给后续处理
-            if (!StringUtils.hasText(auth) || !auth.startsWith("Bearer ")) {
+            if (!StringUtils.hasText(authorization) || !authorization.startsWith("Bearer ")) {
                 return Mono.empty();
             }
-            // 截取 "Bearer " 之后的 token 字符串
-            String token = auth.substring(7);
+            String token = authorization.substring(7).trim();
+            if (!isCompactJws(token)) {
+                return Mono.error(new BadCredentialsException("无效的访问令牌"));
+            }
             return tokenBlacklistService.isBlacklisted(token)
                     .flatMap(blacklisted -> {
-                        // token 已被撤销（如登出后拉黑），直接拒绝
-                        if (blacklisted) {
-                            return Mono.error(new RuntimeException("token revoked"));
+                        if (Boolean.TRUE.equals(blacklisted)) {
+                            return Mono.error(new BadCredentialsException("token revoked"));
                         }
-                        // 解析 JWT → 提取权限 → 构建 Authentication
                         return Mono.fromCallable(() -> jwtService.parse(token))
-                                .flatMap(claims -> rbacService.toAuthentication(claims).cast(AbstractAuthenticationToken.class));
-                    });
+                                .subscribeOn(Schedulers.boundedElastic());
+                    })
+                    .flatMap(claims -> rbacService.toAuthentication(claims))
+                    .map(authentication -> (Authentication) authentication)
+                    .onErrorMap(ex -> ex instanceof BadCredentialsException
+                            ? ex
+                            : new BadCredentialsException("无效的访问令牌", ex));
         };
+    }
+
+    /**
+     * 判断是否为紧凑 JWS（header.payload.signature，恰好两个 '.'）。
+     */
+    private static boolean isCompactJws(String token) {
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
+        int dots = 0;
+        for (int i = 0; i < token.length(); i++) {
+            if (token.charAt(i) == '.') {
+                dots++;
+            }
+        }
+        return dots == 2;
     }
 
     /**

@@ -1,7 +1,9 @@
-package com.zjl.common.response;
+package com.zjl.gateway.response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zjl.common.response.Result;
+import com.zjl.common.response.Results;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
