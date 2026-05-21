@@ -113,23 +113,13 @@ public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
      * @return ReactiveAuthenticationManager 响应式认证管理器
      */
     private static ReactiveAuthenticationManager noopAuthenticationManager() {
-        return authentication -> {
-
-            /*
-             * 将 Authentication 标记为已认证。
-             *
-             * Spring Security 会通过 isAuthenticated() 判断当前用户是否已经登录。
-             * 设置为 true 后，后续授权流程就可以识别该用户已经认证成功。
-             */
-            authentication.setAuthenticated(true);
-
-            /*
-             * 将认证对象包装成 Mono 返回。
-             *
-             * WebFlux 是响应式编程模型，很多返回值都需要用 Mono / Flux 包装。这里表示异步返回一个认证成功的 Authentication 对象。
-             */
-            return reactor.core.publisher.Mono.just(authentication);
-        };
+        return authentication ->
+                /*
+                 * 直接透传。converter（RbacUtil）返回的 Authentication 已经是已认证状态
+                 *（3 参构造函数内部已调用 super.setAuthenticated(true)），
+                 * 此处不需要再次标记，否则会触发 IllegalArgumentException。
+                 */
+                reactor.core.publisher.Mono.just(authentication);
     }
 
     /**
