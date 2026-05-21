@@ -1,5 +1,6 @@
 package com.zjl.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,6 +16,7 @@ import java.time.Instant;
 @Table(name = "sys_dept", indexes = {
         @Index(name = "idx_sys_dept_name", columnList = "name", unique = true)
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class SysDept {
 
     /**
