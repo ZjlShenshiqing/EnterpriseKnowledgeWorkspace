@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
+import { isAdminUser } from '../api/index.js'
 
 const routes = [
   {
@@ -29,7 +30,7 @@ const routes = [
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
     children: [
       { path: '', name: 'AdminDashboard', component: () => import('../pages/Analytics.vue'), meta: { title: 'Dashboard' } },
       { path: 'knowledge', name: 'AdminKnowledge', component: () => import('../pages/admin/KnowledgeHub.vue'), meta: { title: '知识库管理' } },
@@ -57,6 +58,8 @@ router.beforeEach((to, from, next) => {
   const user = localStorage.getItem('user')
   if (to.meta.requiresAuth && !user) {
     next('/login')
+  } else if (to.meta.requiresAdmin && !isAdminUser()) {
+    next('/')
   } else if (to.path === '/login' && user) {
     next('/')
   } else {
