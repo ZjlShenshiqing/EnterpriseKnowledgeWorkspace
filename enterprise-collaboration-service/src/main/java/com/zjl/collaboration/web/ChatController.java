@@ -81,9 +81,24 @@ public class ChatController {
 
     @GetMapping("/members/{convId}")
     public Result<List<Map<String,Object>>> members(@PathVariable Long convId) {
-        List<Long> userIds = memberMapper.selectList(Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getConversationId, convId)).stream().map(ImConversationMember::getUserId).toList();
-        List<SysUser> users = userMapper.selectBatchIds(userIds);
-        return Results.success(users.stream().map(u -> { Map<String,Object> m = new LinkedHashMap<>(); m.put("id",u.getId()); m.put("username",u.getUsername()); m.put("realName",u.getRealName()); return m; }).collect(Collectors.toList()));
+        List<Long> userIds = memberMapper.selectList(
+                Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getConversationId, convId))
+                .stream().map(ImConversationMember::getUserId).toList();
+        List<SysUser> users = userIds.isEmpty() ? List.of() : userMapper.selectBatchIds(userIds);
+        Map<Long, SysUser> userMap = users.stream().collect(Collectors.toMap(SysUser::getId, u -> u, (a, b) -> a));
+        return Results.success(userIds.stream().map(uid -> {
+            Map<String,Object> m = new LinkedHashMap<>();
+            m.put("id", uid);
+            SysUser u = userMap.get(uid);
+            if (u != null) {
+                m.put("username", u.getUsername());
+                m.put("realName", u.getRealName());
+            } else {
+                m.put("username", "user" + uid);
+                m.put("realName", "用户" + uid);
+            }
+            return m;
+        }).collect(Collectors.toList()));
     }
 
     @Data public static class CreateConvReq { private String name; private String type; private List<Long> memberIds; }
