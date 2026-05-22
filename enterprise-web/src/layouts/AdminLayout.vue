@@ -4,7 +4,7 @@
       <div class="admin-brand">
         <div class="admin-brand-mark">R</div>
         <div v-if="!collapsed" class="admin-brand-copy">
-          <div class="admin-brand-title">Ragent 管理后台</div>
+          <div class="admin-brand-title">管理后台</div>
           <div class="admin-brand-subtitle">Knowledge Console</div>
         </div>
       </div>
