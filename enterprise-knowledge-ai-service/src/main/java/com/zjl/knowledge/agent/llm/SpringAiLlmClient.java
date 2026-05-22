@@ -55,14 +55,50 @@ public class SpringAiLlmClient implements LlmClient {
         this.agentProperties = agentProperties;
         AgentProperties.Llm config = agentProperties.getLlm();
 
-        String baseUrl = config.getBaseUrl().replaceAll("/$", "") + "/v1";
+        String baseUrl = normalizeOpenAiBaseUrl(config.getBaseUrl());
+        String apiKey = resolveApiKey(config);
+
+        if (apiKey.isEmpty()) {
+            log.warn("DeepSeek API Key 未配置：请在 application-secrets.yml 设置 app.agent.llm.api-key，"
+                    + "或设置环境变量 DEEPSEEK_API_KEY。智能对话将无法调用 LLM。");
+        }
 
         this.openAiApi = OpenAiApi.builder()
                 .baseUrl(baseUrl)
-                .apiKey(config.getApiKey())
+                .apiKey(apiKey)
                 .build();
 
-        log.info("SpringAiLlmClient 初始化完成, baseUrl={}, model={}", baseUrl, config.getModel());
+        log.info("SpringAiLlmClient 初始化完成, baseUrl={}, model={}, apiKey={}",
+                baseUrl, config.getModel(),
+                apiKey.isEmpty() ? "<empty>" : apiKey.substring(0, Math.min(8, apiKey.length())) + "***");
+    }
+
+    /**
+     * Spring AI OpenAiApi 会自动追加 {@code /v1/chat/completions}，base-url 只需主机根路径。
+     */
+    private static String normalizeOpenAiBaseUrl(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "https://api.deepseek.com";
+        }
+        String url = raw.trim().replaceAll("/+$", "");
+        if (url.endsWith("/v1")) {
+            url = url.substring(0, url.length() - 3);
+        }
+        return url;
+    }
+
+    /**
+     * 解析 DeepSeek API Key：优先配置文件，其次环境变量。
+     */
+    private static String resolveApiKey(AgentProperties.Llm config) {
+        if (config.getApiKey() != null && !config.getApiKey().isBlank()) {
+            return config.getApiKey().trim();
+        }
+        String envKey = System.getenv("DEEPSEEK_API_KEY");
+        if (envKey != null && !envKey.isBlank()) {
+            return envKey.trim();
+        }
+        return "";
     }
 
     @Override
@@ -70,6 +106,12 @@ public class SpringAiLlmClient implements LlmClient {
         AgentProperties.Llm config = agentProperties.getLlm();
 
         try {
+            String apiKey = resolveApiKey(config);
+            if (apiKey.isEmpty()) {
+                listener.onError(new IllegalStateException("DeepSeek API Key 未配置，请检查 application-secrets.yml 或 DEEPSEEK_API_KEY"));
+                return;
+            }
+
             OpenAiApi.ChatCompletionRequest request = buildRequest(messages, tools, config);
 
             CountDownLatch latch = new CountDownLatch(1);
@@ -144,7 +186,7 @@ public class SpringAiLlmClient implements LlmClient {
                 null,
                 config.getTemperature(),
                 null,
-                apiTools,
+                apiTools.isEmpty() ? null : apiTools,
                 null,
                 null,
                 null,
@@ -236,8 +278,9 @@ public class SpringAiLlmClient implements LlmClient {
         for (ToolDefinition td : tools) {
             Map<String, Object> parameters = buildParameters(td.getInputSchema());
             result.add(new OpenAiApi.FunctionTool(
+                    OpenAiApi.FunctionTool.Type.FUNCTION,
                     new OpenAiApi.FunctionTool.Function(
-                            td.getName(), td.getDescription(), parameters, null)));
+                            td.getDescription(), td.getName(), parameters, null)));
         }
         return result;
     }
@@ -300,6 +343,8 @@ public class SpringAiLlmClient implements LlmClient {
             // 处理文本内容
             if (delta.rawContent() instanceof String text && !text.isEmpty()) {
                 listener.onTextDelta(text);
+            } else if (delta.content() != null && !delta.content().isEmpty()) {
+                listener.onTextDelta(delta.content());
             }
 
             // 处理工具调用
