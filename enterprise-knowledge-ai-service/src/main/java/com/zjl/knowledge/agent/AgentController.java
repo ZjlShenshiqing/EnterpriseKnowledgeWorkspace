@@ -93,7 +93,7 @@ public class AgentController {
                 sessionService.saveUserMessage(session.getId(), request.getMessage());
 
                 // 执行 Agent 核心循环（LLM 调用 + 工具调用）
-                agentLoop.run(session, user, emitter);
+                agentLoop.run(session, user, emitter, request.isWebSearch());
             } catch (Exception e) {
                 log.error("Agent 对话异常", e);
                 emitter.error("对话处理失败: " + e.getMessage());
@@ -219,5 +219,11 @@ public class AgentController {
          * 用户消息内容
          */
         private String message;
+
+        /**
+         * 是否启用联网搜索
+         * <p>为 true 时 Agent 可使用 web_search 工具检索互联网内容</p>
+         */
+        private boolean webSearch;
     }
 }

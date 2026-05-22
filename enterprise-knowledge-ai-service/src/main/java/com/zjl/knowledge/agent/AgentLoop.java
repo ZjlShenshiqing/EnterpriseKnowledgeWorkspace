@@ -53,9 +53,9 @@ public class AgentLoop {
     private static final int MAX_TURNS = 10;
 
     /**
-     * 系统提示词，定义 Agent 的角色和行为规则
+     * 系统提示词（基础版，不包含联网搜索）
      */
-    private static final String SYSTEM_PROMPT = """
+    private static final String SYSTEM_PROMPT_BASE = """
             你是企业知识库助手。你的职责是帮助员工查找和了解公司内部文档。
 
             可用工具：search_documents、list_documents、get_document_detail、list_knowledge_bases
@@ -64,6 +64,22 @@ public class AgentLoop {
             1. 只回答与知识库文档相关的问题
             2. 当用户询问文档内容时，先搜索再回答
             3. 回答时引用具体的文档标题和来源
+            4. 不要编造信息，找不到就说找不到
+            5. 不讨论文档上传、删除、分块等管理操作
+            """;
+
+    /**
+     * 系统提示词（联网搜索版，额外包含 web_search 工具）
+     */
+    private static final String SYSTEM_PROMPT_WITH_SEARCH = """
+            你是企业知识库助手。你的职责是帮助员工查找和了解公司内部文档。
+
+            可用工具：search_documents、list_documents、get_document_detail、list_knowledge_bases、web_search
+
+            规则：
+            1. 优先使用知识库工具回答与公司文档相关的问题
+            2. 当用户询问最新资讯、外部信息或知识库中找不到的内容时，使用 web_search 搜索互联网
+            3. 回答时引用具体的文档标题和来源（知识库）或网页来源（联网搜索）
             4. 不要编造信息，找不到就说找不到
             5. 不讨论文档上传、删除、分块等管理操作
             """;
@@ -96,10 +112,11 @@ public class AgentLoop {
      * @param session   会话实体
      * @param user      当前用户上下文
      * @param emitter   SSE 事件发射器，用于向客户端推送消息
+     * @param webSearchEnabled 是否启用联网搜索
      */
-    public void run(KbAgentSession session, UserContext user, AgentSseEmitter emitter) {
+    public void run(KbAgentSession session, UserContext user, AgentSseEmitter emitter, boolean webSearchEnabled) {
         try {
-            agentLoop(session, user, emitter);
+            agentLoop(session, user, emitter, webSearchEnabled);
         } catch (Exception e) {
             log.error("Agent 循环异常, sessionId={}", session.getId(), e);
             emitter.error(e.getMessage());
@@ -123,12 +140,13 @@ public class AgentLoop {
      * @param user      当前用户上下文
      * @param emitter   SSE 事件发射器
      */
-    private void agentLoop(KbAgentSession session, UserContext user, AgentSseEmitter emitter) {
+    private void agentLoop(KbAgentSession session, UserContext user, AgentSseEmitter emitter, boolean webSearchEnabled) {
         // ① 构建消息列表
         List<ChatMessage> messages = new ArrayList<>();
-        
-        // 添加系统提示词，定义 Agent 的角色和行为规则
-        messages.add(ChatMessage.builder().role("system").content(SYSTEM_PROMPT).build());
+
+        // 根据是否开启联网搜索选择不同的系统提示词
+        String systemPrompt = webSearchEnabled ? SYSTEM_PROMPT_WITH_SEARCH : SYSTEM_PROMPT_BASE;
+        messages.add(ChatMessage.builder().role("system").content(systemPrompt).build());
 
         // 加载历史消息（最近 N 条），用于上下文理解
         List<ChatMessage> history = sessionService.loadHistory(
@@ -138,12 +156,15 @@ public class AgentLoop {
         // 当前用户消息由 AgentController 传入前已保存到 DB，不需要加到 messages 中
         // （AgentController.saveUserMessage 已在调用前执行）
 
-        // ② 获取所有可用工具定义
-        List<ToolDefinition> tools = toolRegistry.getAllDefinitions();
+        // ② 获取可用工具定义（未开启联网搜索时排除 web_search）
+        List<ToolDefinition> tools = toolRegistry.getAllDefinitions().stream()
+                .filter(t -> webSearchEnabled || !"web_search".equals(t.getName()))
+                .toList();
 
         // ③ LLM 循环：调用 LLM → 检查工具调用 → 执行工具 → 回填结果
         int turn = 0;
         StringBuilder fullResponse = new StringBuilder();  // 累积最终响应
+        final boolean[] llmError = {false};                 // LLM 调用是否出错
 
         while (turn < MAX_TURNS) {
             turn++;
@@ -176,10 +197,15 @@ public class AgentLoop {
 
                 @Override
                 public void onError(Throwable error) {
-                    // 错误回调：发送错误消息到客户端
+                    // 错误回调：发送错误消息到客户端并标记错误
+                    llmError[0] = true;
                     emitter.error("LLM 调用失败: " + error.getMessage());
                 }
             });
+
+            if (llmError[0]) {
+                return;
+            }
 
             // 如果没有工具调用，说明 LLM 直接回答了问题，结束循环
             if (!hasToolCalls[0]) {

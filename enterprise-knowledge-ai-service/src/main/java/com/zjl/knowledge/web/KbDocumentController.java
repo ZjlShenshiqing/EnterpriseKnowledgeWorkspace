@@ -2,6 +2,7 @@ package com.zjl.knowledge.web;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjl.common.enums.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
@@ -37,6 +38,7 @@ import java.util.List;
 /**
  * 知识文档接口
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/kb")
 @RequiredArgsConstructor
@@ -91,7 +93,10 @@ public class KbDocumentController {
             @RequestPart("file") MultipartFile file
     ) {
         UserContext user = UserContextHolder.get();
+        log.info("收到上传请求: userId={}, title={}, fileName={}, fileSize={}",
+                user.getUserId(), meta.getTitle(), file.getOriginalFilename(), file.getSize());
         Long id = kbDocumentService.upload(user, meta, file);
+        log.info("上传完成: docId={}", id);
         return Results.success(id);
     }
 
@@ -159,7 +164,7 @@ public class KbDocumentController {
         UserContext user = UserContextHolder.get();
         KbDocument doc = kbDocumentService.getVisible(id, user);
         try {
-            InputStream is = fileStorageService.read(doc.getId());
+            InputStream is = fileStorageService.read(doc.getFileUrl());
             org.springframework.core.io.InputStreamResource resource =
                     new org.springframework.core.io.InputStreamResource(is);
             return ResponseEntity.ok()

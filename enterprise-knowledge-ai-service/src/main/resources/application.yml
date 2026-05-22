@@ -37,7 +37,15 @@ mybatis-plus:
 
 app:
   kb:
-    upload-dir: ./data/kb-uploads
+    storage:
+      type: s3
+      upload-dir: ./data/kb-uploads
+      s3:
+        endpoint: https://oss-cn-shenzhen.aliyuncs.com
+        region: oss-cn-shenzhen
+        access-key:            # 在 application-secrets.yml 中配置
+        secret-key:            # 在 application-secrets.yml 中配置
+        bucket: kb-documents
   knowledge:
     embedding-model: deepseek-chat
     vector-write-enabled: true    # 全局向量写入开关
@@ -50,7 +58,6 @@ app:
   agent:
     llm:
       provider: deepseek
-      api-key: ${DEEPSEEK_API_KEY:}
       base-url: https://api.deepseek.com
       model: deepseek-chat
       max-tokens: 4096

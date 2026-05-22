@@ -57,7 +57,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getDocuments, getCategories, getKnowledgeBases } from '../../api'
+import { getDocuments, getCategories, getKnowledgeBases, readStoredAuth } from '../../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const docs = ref([]); const loading = ref(false); const page = ref(1); const total = ref(0)
@@ -66,6 +66,15 @@ const categories = ref([]); const bases = ref([])
 const selectedFile = ref(null); const uploadRef = ref(null)
 
 const form = ref({ title:'', categoryId:null, kbId:null, permissionType:'ALL', tags:'' })
+
+function authHeaders() {
+  const { user } = readStoredAuth()
+  return {
+    'X-User-Id': String(user.id || '1'),
+    'X-Department-Id': String(user.departmentId || '1'),
+    'X-Is-Admin': String(user.isAdmin ? 'true' : 'false')
+  }
+}
 
 function resetForm() { form.value = { title:'', categoryId:null, kbId:null, permissionType:'ALL', tags:'' }; selectedFile.value = null; uploadRef.value?.clearFiles() }
 
@@ -115,7 +124,7 @@ async function doUpload() {
 
     const resp = await fetch('/api/kb/documents/upload', {
       method: 'POST',
-      headers: { 'X-User-Id':'1', 'X-Department-Id':'1', 'X-Is-Admin':'true' },
+      headers: authHeaders(),
       body: fd
     })
     if (resp.ok) {
@@ -137,7 +146,7 @@ async function startChunk(row) {
   try {
     await fetch('/api/kb/documents/' + row.id + '/start-chunk', {
       method: 'POST',
-      headers: { 'X-User-Id':'1', 'X-Department-Id':'1', 'X-Is-Admin':'true' }
+      headers: authHeaders()
     })
     ElMessage.success('分块任务已提交'); await load()
   } catch(e) { ElMessage.error('提交失败') }
@@ -148,7 +157,7 @@ async function deleteDoc(row) {
     await ElMessageBox.confirm('确定删除该文档？', '确认', { type: 'warning' })
     await fetch('/api/kb/documents/' + row.id, {
       method: 'DELETE',
-      headers: { 'X-User-Id':'1', 'X-Department-Id':'1', 'X-Is-Admin':'true' }
+      headers: authHeaders()
     })
     ElMessage.success('已删除'); await load()
   } catch(e) {}
@@ -159,7 +168,7 @@ async function toggleEnabled(row) {
     const on = row.enabled === 1 ? 'false' : 'true'
     await fetch('/api/kb/documents/' + row.id + '/enabled?on=' + on, {
       method: 'PATCH',
-      headers: { 'X-User-Id':'1', 'X-Department-Id':'1', 'X-Is-Admin':'true' }
+      headers: authHeaders()
     })
     ElMessage.success('操作成功'); await load()
   } catch(e) { ElMessage.error('操作失败') }

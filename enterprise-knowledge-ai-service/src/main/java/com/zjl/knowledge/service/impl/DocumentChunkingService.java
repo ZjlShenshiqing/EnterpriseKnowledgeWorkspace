@@ -22,6 +22,7 @@ import com.zjl.knowledge.mapper.KbDocumentChunkLogMapper;
 import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.milvus.VectorDocChunk;
+import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.service.TikaDocumentParser;
 import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.token.TokenCounterService;
@@ -39,8 +40,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +65,7 @@ public class DocumentChunkingService {
     private final TransactionTemplate transactionTemplate;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
+    private final FileStorageService fileStorageService;
 
     /**
      * 提交异步分块：CAS 更新 status→RUNNING，事务提交后由监听器异步执行
@@ -150,7 +150,7 @@ public class DocumentChunkingService {
             long extractStart = System.currentTimeMillis();
             String text;
             java.util.Map<String, String> docMetadata = java.util.Map.of();
-            try (InputStream is = Files.newInputStream(Paths.get(document.getFileUrl()))) {
+            try (InputStream is = fileStorageService.read(document.getFileUrl())) {
                 TikaDocumentParser.ParseResult parseResult = tikaDocumentParser.extractWithMetadata(
                         is, document.getFileName(), document.getFileType());
                 text = parseResult.text();

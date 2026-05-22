@@ -45,7 +45,7 @@
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
               </button>
-              <span class="pill-web">
+              <span class="pill-web" :class="{ 'pill-web--active': webSearchEnabled }" @click="webSearchEnabled = !webSearchEnabled">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/>
                 </svg>
@@ -162,7 +162,7 @@
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
             </button>
-            <span class="pill-web">
+            <span class="pill-web" :class="{ 'pill-web--active': webSearchEnabled }" @click="webSearchEnabled = !webSearchEnabled">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/>
               </svg>
@@ -202,6 +202,7 @@ import { agentChat } from '../api'
 const input = ref('')
 const messages = ref([])
 const sending = ref(false)
+const webSearchEnabled = ref(false)
 const box = ref(null)
 const bottom = ref(null)
 const textarea = ref(null)
@@ -267,7 +268,7 @@ async function send() {
   await scrollBottom()
   
   try {
-    const resp = await agentChat(null, text)
+    const resp = await agentChat(null, text, webSearchEnabled.value)
     if (!resp.ok) throw new Error('HTTP ' + resp.status)
     const reader = resp.body.getReader()
     const decoder = new TextDecoder()
@@ -275,6 +276,7 @@ async function send() {
     msg.typing = false
     
     let buffer = ''
+    let currentEvent = ''
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -283,12 +285,21 @@ async function send() {
       buffer = lines.pop() || ''
       for (const line of lines) {
         const trimmed = line.trim()
-        if (!trimmed || !trimmed.startsWith('data:')) continue
+        if (!trimmed) { currentEvent = ''; continue }
+        if (trimmed.startsWith('event:')) {
+          currentEvent = trimmed.substring(6).trim()
+          continue
+        }
+        if (!trimmed.startsWith('data:')) continue
         const json = trimmed.substring(5).trim()
         if (!json) continue
-        try { 
+        try {
           const d = JSON.parse(json)
-          if (d.delta) msg.content += d.delta 
+          if (currentEvent === 'error') {
+            msg.content = d.message || '对话处理异常，请重试。'
+          } else if (d.delta) {
+            msg.content += d.delta
+          }
         } catch(e) {}
       }
       await scrollBottom()
@@ -467,6 +478,24 @@ async function send() {
   font-size: 13px;
   color: #4b5563;
   user-select: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill-web:hover {
+  background: #f0f0f0;
+  border-color: #d0d0d0;
+}
+
+.pill-web--active {
+  background: #eff6ff;
+  border-color: #6366f1;
+  color: #4f46e5;
+}
+
+.pill-web--active:hover {
+  background: #e0eeff;
+  border-color: #4f46e5;
 }
 
 .send-btn-circle {

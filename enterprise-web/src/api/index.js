@@ -114,11 +114,11 @@ export function getKnowledgeBase(id) {
 
 // ---- Agent Chat (SSE) ----
 
-export function agentChat(sessionId, message) {
+export function agentChat(sessionId, message, webSearch = false) {
   return fetch('/api/kb/agent/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ sessionId, message })
+    body: JSON.stringify({ sessionId, message, webSearch })
   })
 }
 

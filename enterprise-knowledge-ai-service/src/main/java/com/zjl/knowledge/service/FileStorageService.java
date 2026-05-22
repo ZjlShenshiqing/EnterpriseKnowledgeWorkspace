@@ -22,17 +22,17 @@ public interface FileStorageService {
     /**
      * 读取文件
      *
-     * @param docId 文档 ID
+     * @param key 存储路径（由 store 返回）
      * @return 文件流
      * @throws IOException IO 异常
      */
-    InputStream read(Long docId) throws IOException;
+    InputStream read(String key) throws IOException;
 
     /**
-     * 删除文档目录下所有文件
+     * 删除文件
      *
-     * @param docId 文档 ID
+     * @param key 存储路径（由 store 返回）
      * @throws IOException IO 异常
      */
-    void delete(Long docId) throws IOException;
+    void delete(String key) throws IOException;
 }

@@ -187,8 +187,9 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
 
     @Override
     public IPage<KbKnowledgeBaseVO> pageQuery(KbKnowledgeBasePageRequest request, UserContext user) {
+        String name = request.getName();
         LambdaQueryWrapper<KbKnowledgeBase> q = Wrappers.lambdaQuery(KbKnowledgeBase.class)
-                .like(StringUtils.hasText(request.getName()), KbKnowledgeBase::getName, request.getName().trim())
+                .like(StringUtils.hasText(name), KbKnowledgeBase::getName, name != null ? name.trim() : null)
                 .orderByDesc(KbKnowledgeBase::getUpdatedAt);
         if (!user.isAdmin()) {
             q.eq(KbKnowledgeBase::getOwnerId, user.getUserId());

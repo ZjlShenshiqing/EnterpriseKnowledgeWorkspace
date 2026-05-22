@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
-import com.zjl.knowledge.config.KbStorageProperties;
 import com.zjl.knowledge.domain.ChunkingMode;
 import com.zjl.knowledge.domain.DocumentPermissionType;
 import com.zjl.knowledge.domain.DocumentStatus;
@@ -29,22 +28,39 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * 文档上传服务：元数据校验 → 落盘 → 权限行写入
+ * 文档上传服务：校验 → 魔数检测 → INSERT kb_document (PENDING) → 落盘 → 权限行写入
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DocumentUploadService {
+
+    /**
+     * 支持的 MIME 大类
+     */
+    private static final Set<String> SUPPORTED_MIME_TYPES = Set.of(
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "text/plain",
+            "text/csv",
+            "text/markdown",
+            "text/html",
+            "image/png",
+            "image/jpeg"
+    );
 
     private final KbDocumentMapper kbDocumentMapper;
     private final KbCategoryService kbCategoryService;
@@ -55,7 +71,7 @@ public class DocumentUploadService {
     private final ObjectMapper objectMapper;
 
     /**
-     * 上传文档：校验 → INSERT kb_document (PENDING) → 落盘 → Tika 探测 MIME → 权限行
+     * 上传文档：魔数检测 → INSERT kb_document (PENDING) → 落盘 → 权限行
      */
     @Transactional(rollbackFor = Exception.class)
     public Long upload(UserContext user, KbDocumentUploadRequest meta, MultipartFile file) {
@@ -95,6 +111,26 @@ public class DocumentUploadService {
         ChunkingMode chunkingMode = ChunkingMode.fromValue(meta.getChunkStrategy());
         String chunkConfigJson = normalizeChunkConfigJson(chunkingMode, meta.getChunkConfig());
 
+        /** ① 读取文件字节，做魔数检测 */
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (Exception e) {
+            throw new BizException(ErrorCode.SYSTEM_ERROR, "读取文件失败: " + e.getMessage());
+        }
+
+        String detectedType = tikaDocumentParser.detectMime(
+                fileBytes.length > 512 ? java.util.Arrays.copyOf(fileBytes, 512) : fileBytes,
+                file.getOriginalFilename());
+        if (!StringUtils.hasText(detectedType)) {
+            detectedType = file.getContentType();
+        }
+        if (!SUPPORTED_MIME_TYPES.contains(detectedType)) {
+            throw new BizException(ErrorCode.PARAM_INVALID,
+                    "不支持的文件类型: " + detectedType + "（支持 PDF、Word、Excel、PPT、文本、图片）");
+        }
+
+        /** ② INSERT kb_document (PENDING) */
         KbDocument doc = new KbDocument();
         doc.setTitle(meta.getTitle().trim());
         doc.setCategoryId(meta.getCategoryId());
@@ -102,8 +138,8 @@ public class DocumentUploadService {
         doc.setOwnerId(user.getUserId());
         doc.setDepartmentId(user.getDepartmentId());
         doc.setFileName(file.getOriginalFilename());
-        doc.setFileType(file.getContentType());
-        doc.setFileSize(file.getSize());
+        doc.setFileType(detectedType);
+        doc.setFileSize((long) fileBytes.length);
         doc.setTags(meta.getTags());
         doc.setPermissionType(permType.name());
         doc.setStatus(DocumentStatus.PENDING.name());
@@ -122,23 +158,15 @@ public class DocumentUploadService {
         doc.setCreatedAt(LocalDateTime.now());
         doc.setUpdatedAt(LocalDateTime.now());
         kbDocumentMapper.insert(doc);
+        log.info("文档记录已插入: docId={}, ownerId={}, status={}, fileType={}",
+                doc.getId(), doc.getOwnerId(), doc.getStatus(), doc.getFileType());
 
-        try (InputStream in = file.getInputStream()) {
+        /** ③ 落盘 */
+        try (InputStream in = new ByteArrayInputStream(fileBytes)) {
             String storedPath = fileStorageService.store(doc.getId(),
                     Objects.requireNonNullElse(file.getOriginalFilename(), "upload.bin"), in);
+            log.info("文件已存储: docId={}, path={}", doc.getId(), storedPath);
             doc.setFileUrl(storedPath);
-
-            try (InputStream probeIn = fileStorageService.read(doc.getId())) {
-                byte[] probe = new byte[8192];
-                int probeLen = probeIn.read(probe);
-                if (probeLen > 0) {
-                    String detected = tikaDocumentParser.detectMime(
-                            java.util.Arrays.copyOf(probe, probeLen), file.getOriginalFilename());
-                    if (StringUtils.hasText(detected)) {
-                        doc.setFileType(detected);
-                    }
-                }
-            }
             doc.setUpdatedAt(LocalDateTime.now());
             kbDocumentMapper.updateById(doc);
 
@@ -147,6 +175,7 @@ public class DocumentUploadService {
         } catch (BizException ex) {
             throw ex;
         } catch (Exception ex) {
+            log.error("文件存储失败: docId={}, error={}", doc.getId(), ex.getMessage(), ex);
             markUploadFailed(doc.getId(), ex.getMessage());
             throw new BizException(ErrorCode.SYSTEM_ERROR, "文件保存失败: " + ex.getMessage());
         }
