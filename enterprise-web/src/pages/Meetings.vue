@@ -1,113 +1,322 @@
 <template>
-  <div style="background:#fff;border-radius:12px;padding:20px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:16px">
-      <span style="font-size:18px;font-weight:600">会议预约</span>
-      <el-button type="primary" @click="openCreate">新建会议</el-button>
+  <div class="meetings-page">
+    <!-- 统计栏 -->
+    <div class="stats-row">
+      <div v-for="s in stats" :key="s.label" class="stat-card">
+        <div class="stat-value">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
     </div>
-    <el-table :data="meetings" stripe>
-      <el-table-column prop="title" label="会议标题" min-width="160" />
-      <el-table-column prop="room" label="会议室" width="140" />
-      <el-table-column prop="date" label="日期" width="110" />
-      <el-table-column label="时间" width="140"><template #default="{row}">{{ row.start_time }} - {{ row.end_time }}</template></el-table-column>
-      <el-table-column prop="attendees" label="参会人" width="200" />
-      <el-table-column label="状态" width="90"><template #default="{row}"><el-tag :type="row.status==='confirmed'?'success':'warning'" size="small">{{ row.status==='confirmed'?'已确认':'待确认' }}</el-tag></template></el-table-column>
-      <el-table-column label="入会" width="120"><template #default="{row}">
-        <el-button v-if="row.join_url" size="small" type="primary" @click="openMeeting(row)" style="padding:4px 12px">立即入会</el-button>
-        <span v-else style="color:var(--text-tertiary);font-size:12px">—</span>
-      </template></el-table-column>
-      <el-table-column label="操作" width="80"><template #default="{row}"><el-button size="small" type="danger" @click="doDelete(row)">取消</el-button></template></el-table-column>
-    </el-table>
 
-    <el-dialog v-model="dlg" :title="editId?'编辑会议':'新建会议'" width="480px">
-      <el-form :model="f" label-width="70px">
-        <el-form-item label="标题"><el-input v-model="f.title" /></el-form-item>
-        <el-form-item label="会议室"><el-select v-model="f.room" style="width:100%"><el-option label="A301 (20人)" value="A301 (20人)" /><el-option label="B102 (10人)" value="B102 (10人)" /><el-option label="C501 (50人)" value="C501 (50人)" /><el-option label="线上-Zoom" value="线上-Zoom" /></el-select></el-form-item>
-        <el-form-item label="日期"><el-date-picker v-model="f.date" style="width:100%" /></el-form-item>
-        <el-form-item label="时间"><el-time-picker v-model="f.timeRange" is-range style="width:100%" format="HH:mm" /></el-form-item>
-        <el-form-item label="参会人"><el-input v-model="f.attendees" placeholder="姓名用逗号分隔" /></el-form-item>
+    <!-- 操作栏 -->
+    <div class="toolbar">
+      <el-button type="primary" @click="openCreate">新建会议</el-button>
+      <div class="toolbar-right">
+        <el-input v-model="keyword" placeholder="搜索会议标题" clearable style="width:200px" />
+        <el-date-picker v-model="dateFilter" type="date" placeholder="筛选日期" clearable style="width:160px" value-format="YYYY-MM-DD" />
+      </div>
+    </div>
+
+    <!-- 列表区域 -->
+    <div v-loading="loading" class="meeting-list">
+      <div v-if="!loading && myMeetings.length === 0" class="empty-state">
+        <div class="empty-text">暂无会议</div>
+        <div class="empty-sub">点击「新建会议」开始预约吧</div>
+        <el-button type="primary" @click="openCreate">新建会议</el-button>
+      </div>
+
+      <div v-for="group in groupedMeetings" :key="group.date" class="date-group">
+        <div class="date-header">{{ group.label }}</div>
+        <div v-for="m in group.items" :key="m.id" class="meeting-card">
+          <div class="card-bar" :style="{ background: statusColor(m.status) }" />
+          <div class="card-body">
+            <div class="card-row1">
+              <span class="card-time">{{ m.start_time || '--' }} - {{ m.end_time || '--' }}</span>
+              <el-tag v-if="m.room === '线上-Zoom'" size="small" type="info">线上</el-tag>
+            </div>
+            <div class="card-title">{{ m.title }}</div>
+            <div class="card-meta">{{ m.room }}  ·  {{ attendeeDisplay(m) }}</div>
+            <div class="card-footer">
+              <span class="card-creator">{{ creatorLabel(m) }}</span>
+              <span class="card-status" :style="{ color: statusColor(m.status) }">· {{ statusText(m.status) }}</span>
+              <span class="card-actions">
+                <el-button v-if="m.join_url" size="small" type="primary" @click="joinMeeting(m)">入会</el-button>
+                <el-button size="small" @click="openEdit(m)">编辑</el-button>
+                <el-button size="small" type="danger" @click="handleDelete(m)">取消</el-button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗 -->
+    <el-dialog v-model="dlgVisible" :title="editId ? '编辑会议' : '新建会议'" width="520px" @closed="editId=null">
+      <el-form :model="form" label-position="top">
+        <el-form-item label="会议标题" required>
+          <el-input v-model="form.title" placeholder="请输入会议主题" maxlength="100" show-word-limit />
+        </el-form-item>
+        <div class="form-row-2col">
+          <div class="form-col">
+            <el-form-item label="日期" required>
+              <el-date-picker v-model="form.date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" />
+            </el-form-item>
+            <div class="form-row-2col">
+              <el-form-item label="开始时间" required>
+                <el-time-picker v-model="form.startTime" format="HH:mm" value-format="HH:mm" placeholder="开始" style="width:100%" />
+              </el-form-item>
+              <el-form-item label="结束时间" required>
+                <el-time-picker v-model="form.endTime" format="HH:mm" value-format="HH:mm" placeholder="结束" style="width:100%" />
+              </el-form-item>
+            </div>
+          </div>
+          <div class="form-col">
+            <el-form-item label="地点" required>
+              <el-select v-model="form.room" style="width:100%">
+                <el-option label="A301 (20人)" value="A301 (20人)" />
+                <el-option label="B102 (10人)" value="B102 (10人)" />
+                <el-option label="C501 (50人)" value="C501 (50人)" />
+                <el-option label="线上-Zoom" value="线上-Zoom" />
+              </el-select>
+            </el-form-item>
+          </div>
+        </div>
+        <el-form-item label="参会人">
+          <div class="attendee-tags">
+            <el-tag v-for="name in form.attendees" :key="name" closable @close="removeAttendee(name)" style="margin-right:4px;margin-bottom:4px">
+              {{ name }}
+            </el-tag>
+            <el-input v-model="attendeeInput" placeholder="输入姓名后回车添加" style="width:180px" @keyup.enter="addAttendee" @blur="addAttendee" />
+          </div>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="会议议程、准备事项等" maxlength="500" show-word-limit />
+        </el-form-item>
       </el-form>
-      <template #footer><el-button @click="dlg=false">取消</el-button><el-button type="primary" @click="save">{{ editId?'更新':'创建' }}</el-button></template>
+      <template #footer>
+        <el-button @click="dlgVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+          {{ editId ? '保存修改' : '创建会议' }}
+        </el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getAuthHeaders } from '../api/index.js'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMyMeetings, createMeeting, updateMeeting, deleteMeeting, readStoredAuth } from '../api/index.js'
 
-const meetings = ref([]); const dlg = ref(false); const editId = ref(null)
-const f = ref({ title:'',room:'',date:'',timeRange:[],attendees:'' })
+const meetings = ref([])
+const loading = ref(false)
+const keyword = ref('')
+const dateFilter = ref('')
+const dlgVisible = ref(false)
+const submitting = ref(false)
+const editId = ref(null)
+const form = ref({
+  title: '', date: '', startTime: '', endTime: '',
+  room: 'A301 (20人)', attendees: [], description: ''
+})
+const attendeeInput = ref('')
 
-function headers() {
-  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
+const { user } = readStoredAuth()
+const currentUserName = user.realName || user.username || ''
+
+const todayStr = computed(() => new Date().toISOString().split('T')[0])
+const weekStart = computed(() => {
+  const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1)
+  return d.toISOString().split('T')[0]
+})
+const tomorrowStr = computed(() => {
+  const d = new Date(); d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+})
+
+const myMeetings = computed(() => {
+  return meetings.value.filter(m => {
+    const kw = keyword.value.toLowerCase()
+    const matchKeyword = !kw || (m.title || '').toLowerCase().includes(kw)
+    const matchDate = !dateFilter.value || m.date === dateFilter.value
+    return matchKeyword && matchDate
+  })
+})
+
+const todayMeetings = computed(() => myMeetings.value.filter(m => m.date === todayStr.value))
+const weekMeetings = computed(() =>
+  myMeetings.value.filter(m => m.date >= weekStart.value)
+)
+const pendingCount = computed(() => myMeetings.value.filter(m => m.status !== 'confirmed').length)
+
+const stats = computed(() => [
+  { label: '今日会议', value: todayMeetings.value.length },
+  { label: '本周会议', value: weekMeetings.value.length },
+  { label: '待确认', value: pendingCount.value }
+])
+
+const groupedMeetings = computed(() => {
+  const groups = {}
+  for (const m of myMeetings.value) {
+    const d = m.date || ''
+    if (!groups[d]) groups[d] = []
+    groups[d].push(m)
+  }
+  const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+  return sorted.map(([date, items]) => {
+    const d = new Date(date + 'T00:00:00')
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    let label
+    if (date === todayStr.value) label = '今天'
+    else if (date === tomorrowStr.value) label = '明天'
+    else label = `${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`
+    return { date, label, items }
+  })
+})
+
+function creatorLabel(m) {
+  if (m.creatorId === user.id) return '我创建的'
+  const names = (m.attendees || '').split(',').map(s => s.trim()).filter(Boolean)
+  return names.length ? names[0] + '邀请我' : '他人邀请我'
 }
 
-function isSuccess(result) {
-  return result && (result.code === 200 || result.code === '200')
+function attendeeDisplay(m) {
+  const names = (m.attendees || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (names.length === 0) return ''
+  if (names.length <= 3) return names.join(', ') + ' 共' + names.length + '人'
+  return names.slice(0, 3).join(', ') + ' 等' + names.length + '人'
 }
 
 async function load() {
+  loading.value = true
   try {
-    const r = await fetch('/api/meetings', { headers: headers() })
-    const result = await r.json()
-    if (isSuccess(result)) {
-      meetings.value = result.data || []
-    } else {
-      meetings.value = []
-      if (result.code === 40100 || result.code === '40100') {
-        ElMessage.error('登录已过期，请重新登录')
-      }
-    }
-  } catch (e) {
-    meetings.value = []
-  }
+    const resp = await getMyMeetings()
+    const result = await resp.json()
+    if (result.code == 200) meetings.value = result.data || []
+    else meetings.value = []
+  } catch { meetings.value = [] }
+  finally { loading.value = false }
 }
 
-function openCreate() { editId.value = null; f.value = { title:'',room:'A301 (20人)',date:'',timeRange:[],attendees:'' }; dlg.value = true }
+function openCreate() {
+  editId.value = null
+  form.value = { title: '', date: '', startTime: '', endTime: '', room: 'A301 (20人)', attendees: [], description: '' }
+  attendeeInput.value = ''
+  dlgVisible.value = true
+}
 
-async function save() {
-  if (!f.value.title) return
-  const formatDate = (d) => {
-    if (!d) return ''
-    const date = new Date(d)
-    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+function openEdit(row) {
+  editId.value = row.id
+  form.value = {
+    title: row.title || '',
+    date: row.date || '',
+    startTime: row.start_time || '',
+    endTime: row.end_time || '',
+    room: row.room || 'A301 (20人)',
+    attendees: (row.attendees || '').split(',').map(s => s.trim()).filter(Boolean),
+    description: row.description || ''
   }
-  const body = { title:f.value.title, room:f.value.room, date:formatDate(f.value.date), startTime:f.value.timeRange[0]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', endTime:f.value.timeRange[1]?.toLocaleTimeString?.('zh',{hour:'2-digit',minute:'2-digit'})||'', attendees:f.value.attendees }
-  const url = editId.value ? `/api/meetings/${editId.value}` : '/api/meetings'
-  const method = editId.value ? 'PUT' : 'POST'
-  const r = await fetch(url, { method, headers: headers(), body: JSON.stringify(body) })
-  const result = await r.json()
-  if (!isSuccess(result)) {
-    ElMessage.error(result.message || '操作失败')
+  attendeeInput.value = ''
+  dlgVisible.value = true
+}
+
+function addAttendee() {
+  const name = attendeeInput.value.trim()
+  if (name && !form.value.attendees.includes(name)) form.value.attendees.push(name)
+  attendeeInput.value = ''
+}
+
+function removeAttendee(name) {
+  form.value.attendees = form.value.attendees.filter(a => a !== name)
+}
+
+async function handleSubmit() {
+  if (!form.value.title || !form.value.date || !form.value.startTime || !form.value.endTime) {
+    ElMessage.warning('请填写会议标题、日期和时间')
     return
   }
-  dlg.value = false
-  ElMessage.success(editId.value ? '已更新' : '已创建')
-  await load()
-  
-  if (!editId.value && f.value.room === '线上-Zoom') {
-    setTimeout(() => {
-      const newMeeting = meetings.value.find(m => m.title === f.value.title && m.date === formatDate(f.value.date))
-      if (newMeeting && newMeeting.join_url) {
-        if (confirm('Zoom会议已创建，是否立即加入会议？')) {
-          window.open(newMeeting.join_url, '_blank')
-        }
-      }
-    }, 500)
-  }
+  submitting.value = true
+  try {
+    const body = {
+      title: form.value.title, room: form.value.room, date: form.value.date,
+      startTime: form.value.startTime, endTime: form.value.endTime,
+      attendees: form.value.attendees.join(','),
+      description: form.value.description
+    }
+    const resp = editId.value ? await updateMeeting(editId.value, body) : await createMeeting(body)
+    const result = await resp.json()
+    if (result.code == 200) {
+      dlgVisible.value = false
+      ElMessage.success(editId.value ? '已更新' : '已创建')
+      await load()
+    } else {
+      ElMessage.error(result.message || '操作失败')
+    }
+  } catch (e) {
+    ElMessage.error('操作失败，请确认协作服务已启动')
+  } finally { submitting.value = false }
 }
 
-function openMeeting(row) {
-  if (row.join_url) {
-    window.open(row.join_url, '_blank')
-  }
+async function handleDelete(row) {
+  try {
+    await ElMessageBox.confirm(`确定取消会议「${row.title}」吗？`, '提示', { type: 'warning' })
+    const resp = await deleteMeeting(row.id)
+    const result = await resp.json()
+    if (result.code == 200) {
+      ElMessage.success('已取消')
+      await load()
+    } else {
+      ElMessage.error(result.message || '取消失败')
+    }
+  } catch { /* cancelled */ }
 }
 
-async function doDelete(row) {
-  await fetch(`/api/meetings/${row.id}`,{method:'DELETE',headers:headers()})
-  ElMessage.success('已取消'); await load()
+function joinMeeting(row) {
+  if (row.join_url) window.open(row.join_url, '_blank')
+}
+
+function statusColor(status) {
+  if (status === 'confirmed') return '#22c55e'
+  if (status === 'cancelled') return '#9ca3af'
+  return '#f59e0b'
+}
+
+function statusText(status) {
+  if (status === 'confirmed') return '已确认'
+  if (status === 'cancelled') return '已取消'
+  return '待确认'
 }
 
 onMounted(load)
 </script>
+
+<style scoped>
+.meetings-page { display:flex; flex-direction:column; gap:20px; }
+.stats-row { display:flex; gap:16px; }
+.stat-card { flex:1; background:#fff; border-radius:12px; padding:20px 24px; border:1px solid #f3f4f6; }
+.stat-value { font-size:28px; font-weight:700; color:#1f2937; }
+.stat-label { font-size:13px; color:#9ca3af; margin-top:4px; }
+.toolbar { display:flex; justify-content:space-between; align-items:center; }
+.toolbar-right { display:flex; gap:12px; align-items:center; }
+.meeting-list { display:flex; flex-direction:column; gap:16px; min-height:200px; }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 0; gap:12px; }
+.empty-text { font-size:16px; color:#9ca3af; }
+.empty-sub { font-size:13px; color:#d1d5db; }
+.date-group { display:flex; flex-direction:column; gap:8px; }
+.date-header { font-size:14px; font-weight:600; color:#6b7280; padding:4px 0; }
+.meeting-card { display:flex; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #f3f4f6; transition: box-shadow .2s; }
+.meeting-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.card-bar { width:4px; flex-shrink:0; }
+.card-body { flex:1; padding:16px 20px; display:flex; flex-direction:column; gap:6px; }
+.card-row1 { display:flex; align-items:center; gap:8px; }
+.card-time { font-size:14px; font-weight:600; color:#374151; }
+.card-title { font-size:16px; font-weight:600; color:#1f2937; }
+.card-meta { font-size:13px; color:#6b7280; }
+.card-footer { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.card-creator { font-size:12px; color:#9ca3af; }
+.card-status { font-size:12px; }
+.card-actions { margin-left:auto; display:flex; gap:6px; }
+.form-row-2col { display:flex; gap:16px; }
+.form-col { flex:1; display:flex; flex-direction:column; }
+.attendee-tags { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+</style>
