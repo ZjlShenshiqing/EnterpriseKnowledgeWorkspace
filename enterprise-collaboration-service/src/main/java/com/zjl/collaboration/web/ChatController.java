@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/chat")
-@RequiredArgsConstructor
 public class ChatController {
 
     private final ImConversationMapper convMapper;
@@ -29,6 +28,20 @@ public class ChatController {
     private final SysUserMapper userMapper;
     private final ImReadService readService;
     private final ImFileService fileService;
+
+    public ChatController(ImConversationMapper convMapper,
+                           ImConversationMemberMapper memberMapper,
+                           ImMessageMapper msgMapper,
+                           SysUserMapper userMapper,
+                           ImReadService readService,
+                           @org.springframework.beans.factory.annotation.Autowired(required = false) ImFileService fileService) {
+        this.convMapper = convMapper;
+        this.memberMapper = memberMapper;
+        this.msgMapper = msgMapper;
+        this.userMapper = userMapper;
+        this.readService = readService;
+        this.fileService = fileService;
+    }
 
     @GetMapping("/conversations")
     public Result<List<Map<String, Object>>> conversations(@RequestHeader("X-User-Id") Long userId) {
@@ -132,6 +145,10 @@ public class ChatController {
     @PostMapping("/files/upload")
     public Result<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file)
             throws IOException {
+        if (fileService == null) {
+            throw new com.zjl.common.exception.BizException(
+                    com.zjl.common.enums.ErrorCode.SYSTEM_ERROR, "OSS 未配置，文件上传不可用");
+        }
         return Results.success(fileService.upload(file));
     }
 

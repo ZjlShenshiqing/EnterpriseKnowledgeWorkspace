@@ -4,6 +4,7 @@ import com.zjl.collaboration.config.ImOssProperties;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,15 +26,13 @@ import java.util.UUID;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "app.im.oss.access-key")
 public class ImFileService {
 
     private final S3Client s3Client;
     private final String bucket;
 
     public ImFileService(ImOssProperties props) {
-        if (!StringUtils.hasText(props.getEndpoint())) {
-            throw new IllegalStateException("OSS endpoint 不能为空");
-        }
         this.bucket = props.getBucket();
         this.s3Client = S3Client.builder()
                 .endpointOverride(URI.create(props.getEndpoint()))
