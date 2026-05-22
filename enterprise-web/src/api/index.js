@@ -118,7 +118,11 @@ export function agentChat(sessionId, message, webSearch = false) {
   return fetch('/api/kb/agent/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ sessionId, message, webSearch })
+    body: JSON.stringify({
+      sessionId: sessionId != null && sessionId !== '' ? String(sessionId) : null,
+      message,
+      webSearch
+    })
   })
 }
 
@@ -127,7 +131,7 @@ export function getAgentSessions() {
 }
 
 export function getAgentSessionHistory(id) {
-  return kbApi.get(`/agent/sessions/${id}`)
+  return kbApi.get(`/agent/sessions/${String(id)}`)
 }
 
 // ---- System Admin ----

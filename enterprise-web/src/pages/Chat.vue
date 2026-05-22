@@ -1,5 +1,70 @@
 <template>
   <div class="chat-fullpage">
+    <!-- 历史侧栏 -->
+    <aside class="history-panel" :class="{ 'history-panel--open': historyOpen }">
+      <div class="history-panel-head">
+        <button type="button" class="toolbar-btn" @click="historyOpen = false" title="收起侧栏">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M14 9l3 3-3 3"/>
+          </svg>
+        </button>
+        <span class="history-panel-title">智能知识问答</span>
+      </div>
+
+      <button type="button" class="history-nav-item" @click="startNewChat">
+        <span class="history-nav-icon history-nav-icon--new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </span>
+        新对话
+      </button>
+
+      <div class="history-section">
+        <div class="history-section-head">
+          <span>历史对话</span>
+          <button type="button" class="history-search-btn" @click="showHistorySearch = !showHistorySearch" title="搜索历史">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/>
+            </svg>
+          </button>
+        </div>
+        <div v-if="showHistorySearch" class="history-search-box">
+          <input v-model="historySearch" placeholder="搜索历史对话" class="history-search-input" />
+        </div>
+        <div class="history-list">
+          <div v-if="loadingSessions" class="history-empty">加载中...</div>
+          <div v-else-if="filteredSessions.length === 0" class="history-empty">暂无历史对话</div>
+          <button
+            v-for="s in filteredSessions"
+            :key="s.id"
+            type="button"
+            class="history-item"
+            :class="{ 'history-item--active': sessionId === s.id }"
+            @click="openSession(s)"
+          >
+            {{ sessionTitle(s) }}
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div v-if="historyOpen" class="history-backdrop" @click="historyOpen = false" />
+
+    <div class="chat-main">
+      <div v-if="!historyOpen" class="chat-toolbar">
+        <button type="button" class="toolbar-btn" @click="openHistoryPanel" title="历史对话">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>
+          </svg>
+        </button>
+        <button type="button" class="toolbar-btn" @click="startNewChat" title="新对话">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 8v8M8 12h8"/><rect x="3" y="3" width="18" height="18" rx="2"/>
+          </svg>
+        </button>
+      </div>
+
     <!-- Messages Area -->
     <div
       class="messages-container"
@@ -192,17 +257,26 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { agentChat } from '../api'
+import { ref, nextTick, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { agentChat, getAgentSessions, getAgentSessionHistory } from '../api'
 
 const input = ref('')
 const messages = ref([])
 const sending = ref(false)
 const webSearchEnabled = ref(false)
+const sessionId = ref(null)
+const historyOpen = ref(false)
+const sessions = ref([])
+const historySearch = ref('')
+const showHistorySearch = ref(false)
+const loadingSessions = ref(false)
+const loadingHistory = ref(false)
 const box = ref(null)
 const bottom = ref(null)
 const textarea = ref(null)
@@ -227,6 +301,88 @@ const suggestionCards = [
       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>',
   },
 ]
+
+const filteredSessions = computed(() => {
+  const kw = historySearch.value.trim().toLowerCase()
+  if (!kw) return sessions.value
+  return sessions.value.filter(s => (s.title || '').toLowerCase().includes(kw))
+})
+
+function sessionTitle(s) {
+  const t = (s.title || '新对话').trim()
+  return t.length > 32 ? `${t.slice(0, 32)}…` : t
+}
+
+function normalizeSession(session) {
+  return { ...session, id: String(session.id) }
+}
+
+function isApiSuccess(body) {
+  return body && String(body.code) === '200'
+}
+
+async function loadSessions() {
+  loadingSessions.value = true
+  try {
+    const res = await getAgentSessions()
+    const body = res.data
+    if (!isApiSuccess(body)) {
+      sessions.value = []
+      return
+    }
+    sessions.value = (body.data || []).map(normalizeSession)
+  } catch {
+    sessions.value = []
+  } finally {
+    loadingSessions.value = false
+  }
+}
+
+async function openHistoryPanel() {
+  historyOpen.value = true
+  await loadSessions()
+}
+
+function startNewChat() {
+  if (sending.value) return
+  sessionId.value = null
+  messages.value = []
+  input.value = ''
+  historyOpen.value = false
+  if (textarea.value) textarea.value.style.height = 'auto'
+}
+
+async function openSession(session) {
+  if (sending.value || loadingHistory.value) return
+  loadingHistory.value = true
+  const sid = String(session.id)
+  try {
+    const res = await getAgentSessionHistory(sid)
+    const body = res.data
+    if (!isApiSuccess(body)) {
+      ElMessage.error(body?.message || '加载历史失败')
+      return
+    }
+    const history = body.data || []
+    sessionId.value = sid
+    messages.value = history
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({ role: m.role, content: m.content || '' }))
+    historyOpen.value = false
+    if (messages.value.length === 0) {
+      ElMessage.info('该会话暂无消息')
+    }
+    await scrollBottom()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || e.message || '加载历史失败')
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+onMounted(() => {
+  loadSessions()
+})
 
 function sendQuick(q) { 
   input.value = q 
@@ -268,7 +424,7 @@ async function send() {
   await scrollBottom()
   
   try {
-    const resp = await agentChat(null, text, webSearchEnabled.value)
+    const resp = await agentChat(sessionId.value, text, webSearchEnabled.value)
     if (!resp.ok) throw new Error('HTTP ' + resp.status)
     const reader = resp.body.getReader()
     const decoder = new TextDecoder()
@@ -297,6 +453,9 @@ async function send() {
           const d = JSON.parse(json)
           if (currentEvent === 'error') {
             msg.content = d.message || '对话处理异常，请重试。'
+          } else if (currentEvent === 'done' && d.sessionId != null) {
+            sessionId.value = String(d.sessionId)
+            loadSessions()
           } else if (d.delta) {
             msg.content += d.delta
           }
@@ -327,19 +486,243 @@ async function send() {
  */
 .chat-fullpage {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
   min-height: 0;
   width: 100%;
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
+}
+
+.chat-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.chat-toolbar {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.history-panel {
+  width: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+  border-right: 1px solid transparent;
+  transition: width 0.22s ease, border-color 0.22s ease;
+}
+
+.history-panel--open {
+  width: 260px;
+  border-right-color: #e5e7eb;
+}
+
+.history-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  flex-shrink: 0;
+}
+
+.history-panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2329;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 10px 8px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  color: #1f2329;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.history-nav-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.history-nav-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.history-nav-icon--new {
+  background: #eff6ff;
+  color: #3370ff;
+}
+
+.history-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px 12px;
+}
+
+.history-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px 10px;
+  font-size: 12px;
+  color: #8f959e;
+  flex-shrink: 0;
+}
+
+.history-search-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #8f959e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.history-search-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #646a73;
+}
+
+.history-search-box {
+  padding: 0 4px 10px;
+  flex-shrink: 0;
+}
+
+.history-search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: #eef0f3;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #1f2329;
+}
+
+.history-search-input::placeholder {
+  color: #8f959e;
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-item {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #1f2329;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.history-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.history-item--active {
+  background: #e8f3ff;
+  color: #3370ff;
+}
+
+.history-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #bbb;
+}
+
+.history-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .history-panel--open {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .history-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    background: rgba(15, 23, 42, 0.18);
+  }
 }
 
 /* Messages Container */
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 56px 20px 20px;
   background: #fafafa;
 }
 
@@ -348,7 +731,7 @@ async function send() {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  padding: 20px 24px 40px;
+  padding: 56px 24px 40px;
   background: #fff;
 }
 
