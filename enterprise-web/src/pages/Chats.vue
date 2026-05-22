@@ -53,8 +53,8 @@
         </div>
         <!-- Messages -->
         <div style="flex:1;overflow-y:auto;padding:16px 20px" ref="msgBox">
-          <div v-for="msg in msgs" :key="msg.id" :style="{display:'flex',justifyContent:msg.senderId===userId?'flex-end':'flex-start',marginBottom:'14px'}">
-            <div v-if="msg.senderId!==userId" style="display:flex;gap:10px;align-items:flex-start;max-width:70%">
+          <div v-for="msg in msgs" :key="msg.id" :style="{display:'flex',justifyContent:sameUserId(msg.senderId, userId)?'flex-end':'flex-start',marginBottom:'14px'}">
+            <div v-if="!sameUserId(msg.senderId, userId)" style="display:flex;gap:10px;align-items:flex-start;max-width:70%">
               <div :style="{width:'32px',height:'32px',borderRadius:'6px',background:avatarColor(msg.senderId),color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',flexShrink:'0'}">
                 {{ (msg.senderName||'?').charAt(0) }}
               </div>
@@ -141,17 +141,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getAuthHeaders, readStoredAuth } from '../api'
 
 const route = useRoute()
 const router = useRouter()
 
-function readUser() {
-  try { return JSON.parse(localStorage.getItem('user')||'{}')||{} } catch { return {} }
-}
-const userId = ref(readUser().id||1)
+const userId = ref(readStoredAuth().user.id || 1)
 const conversations = ref([])
 const activeConv = ref(null)
 const msgs = ref([])
@@ -175,8 +173,15 @@ const memberSearch = ref('')
 const selectedMembers = ref([])
 
 function authHeaders() {
-  const u = readUser()
-  return { 'X-User-Id': String(u.id||1), 'X-Is-Admin': String(u.isAdmin?'true':'false'), 'Content-Type': 'application/json' }
+  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
+}
+
+function isApiSuccess(body) {
+  return body && String(body.code) === '200'
+}
+
+function sameUserId(a, b) {
+  return String(a) === String(b)
 }
 
 function avatarColor(id) { return avatarColors[Number(id) % avatarColors.length] }
@@ -200,17 +205,33 @@ onMounted(async () => {
   await loadConvs()
   await loadUsers()
   connectWs()
-  const targetUserId = route.query.userId
-  if (targetUserId) {
-    await openOrCreatePrivateChat(Number(targetUserId))
-    router.replace({ path: '/chats', query: {} })
-  }
+  await handleIncomingChatTarget(route.query.userId, route.query.userName)
 })
+
+watch(
+  () => [route.query.userId, route.query.userName],
+  async ([uid, name]) => {
+    if (uid) {
+      await handleIncomingChatTarget(uid, name)
+    }
+  }
+)
+
+async function handleIncomingChatTarget(rawUserId, rawUserName) {
+  if (!rawUserId) return
+  await openOrCreatePrivateChat(String(rawUserId), rawUserName ? String(rawUserName) : '')
+  router.replace({ path: '/chats', query: {} })
+}
 
 async function loadConvs() {
   try {
-    const r = await fetch('/api/chat/conversations',{headers:authHeaders()})
-    const data = (await r.json()).data||[]
+    const r = await fetch('/api/chat/conversations', { headers: authHeaders() })
+    const body = await r.json()
+    if (!r.ok || !isApiSuccess(body)) {
+      conversations.value = []
+      return
+    }
+    const data = body.data || []
     data.forEach(c => {
       c._pinned = false
       const t = c.last_msg_time || c.updatedAt
@@ -218,19 +239,26 @@ async function loadConvs() {
       c._unread = 0
     })
     conversations.value = data
-  } catch(e) {
-    const mock = [{id:1,name:'全员群',type:'group',last_msg:'欢迎加入'},{id:2,name:'张三',type:'private',last_msg:'好的'}]
-    mock.forEach(c => { c._pinned = false; c._time = ''; c._unread = 0 })
-    conversations.value = mock
+  } catch (e) {
+    conversations.value = []
   }
 }
 
 async function loadUsers() {
   try {
-    const r = await fetch('/api/contacts/users',{headers:authHeaders()})
-    allUsers.value = (await r.json()).data||[]
-  } catch(e) {
-    allUsers.value = [{id:2,realName:'张三',deptId:1},{id:3,realName:'李四',deptId:2},{id:4,realName:'王五',deptId:1},{id:5,realName:'赵六',deptId:3}]
+    const r = await fetch('/api/contacts/users', { headers: authHeaders() })
+    const body = await r.json()
+    if (!r.ok || !isApiSuccess(body)) {
+      allUsers.value = []
+      return
+    }
+    allUsers.value = (body.data || []).map(u => ({
+      ...u,
+      id: Number(u.id),
+      deptId: u.deptId != null ? Number(u.deptId) : null
+    }))
+  } catch (e) {
+    allUsers.value = []
   }
 }
 
@@ -268,33 +296,52 @@ async function openConv(c) {
   } catch(e) {}
 }
 
-async function openOrCreatePrivateChat(targetUserId) {
-  // Check ALL private conversations for this user pair
+async function openOrCreatePrivateChat(targetUserId, fallbackName = '') {
+  const targetId = String(targetUserId)
+  if (sameUserId(targetId, userId.value)) {
+    ElMessage.warning('不能与自己发起私聊')
+    return
+  }
+
   const privateConvs = conversations.value.filter(c => c.type === 'private')
   for (const conv of privateConvs) {
     try {
-      const r = await fetch(`/api/chat/members/${conv.id}`, {headers: authHeaders()})
-      const mems = (await r.json()).data || []
-      if (mems.some(m => m.id === targetUserId)) {
-        openConv(conv)
+      const r = await fetch(`/api/chat/members/${conv.id}`, { headers: authHeaders() })
+      const body = await r.json()
+      const mems = isApiSuccess(body) ? (body.data || []) : []
+      if (mems.some(m => sameUserId(m.id, targetId))) {
+        await openConv(conv)
         return
       }
-    } catch(e) {}
+    } catch (e) {}
   }
-  // No existing private chat found — create one (backend dedup handles races)
+
   try {
-    const targetUser = allUsers.value.find(u => u.id === targetUserId)
-    const targetName = targetUser ? (targetUser.realName || targetUser.username) : ('用户' + targetUserId)
+    const targetUser = allUsers.value.find(u => sameUserId(u.id, targetId))
+    const targetName = fallbackName
+      || (targetUser ? (targetUser.realName || targetUser.username) : '')
+      || (`用户${targetId}`)
     const r = await fetch('/api/chat/conversations', {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ name: targetName, type: 'private', memberIds: [targetUserId] })
+      body: JSON.stringify({ name: targetName, type: 'private', memberIds: [Number(targetId)] })
     })
-    const newId = (await r.json()).data
+    const body = await r.json()
+    if (!r.ok || !isApiSuccess(body)) {
+      ElMessage.error(body?.message || '创建私聊失败，请确认协作服务已启动')
+      return
+    }
+    const newId = body.data
     await loadConvs()
-    const created = conversations.value.find(c => c.id === newId)
-    if (created) openConv(created)
-  } catch(e) {}
+    const created = conversations.value.find(c => sameUserId(c.id, newId))
+    if (created) {
+      await openConv(created)
+      return
+    }
+    await openConv({ id: newId, name: targetName, type: 'private' })
+  } catch (e) {
+    ElMessage.error('无法连接协作服务，请确认端口 8090 已启动')
+  }
 }
 
 async function sendMsg() {
