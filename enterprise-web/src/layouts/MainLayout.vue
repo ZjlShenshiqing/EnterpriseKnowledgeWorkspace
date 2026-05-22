@@ -85,7 +85,7 @@
       <div
         :style="mainContentWrapStyle"
         class="main-content-wrap"
-        :class="{ 'main-content-chat': route.path === '/chat' }"
+        :class="{ 'main-content-chat': isFullBleedPage }"
       >
         <div class="main-content-inner">
           <router-view v-slot="{ Component }">
@@ -108,10 +108,12 @@ const unread = ref(3)
 const title = computed(() => route.meta?.title || '工作台')
 
 /**
- * 智能对话页铺满主内容区（无灰边）；其它页保持原有内边距。
+ * 智能对话、即时通讯等页铺满主内容区（无灰边）；其它页保持原有内边距。
  */
+const isFullBleedPage = computed(() => ['/chat', '/chats', '/contacts', '/documents'].includes(route.path))
+
 const mainContentWrapStyle = computed(() => {
-  if (route.path === '/chat') {
+  if (isFullBleedPage.value) {
     return {
       flex: '1',
       minHeight: '0',

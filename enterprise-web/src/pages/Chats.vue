@@ -1,5 +1,5 @@
 <template>
-  <div style="height:min(560px,calc(100vh - 120px));display:flex;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+  <div class="chats-fullpage">
     <!-- Left: Conversation list -->
     <div style="width:260px;border-right:1px solid #e5e6eb;display:flex;flex-direction:column;flex-shrink:0;background:#fafafa">
       <div style="padding:14px 16px">
@@ -366,3 +366,18 @@ onBeforeUnmount(() => {
   if (wsTimer) { clearTimeout(wsTimer); wsTimer = null }
 })
 </script>
+
+<style scoped>
+/**
+ * 在 MainLayout 主内容区内占满剩余高度与宽度。
+ */
+.chats-fullpage {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  overflow: hidden;
+}
+</style>

@@ -1,5 +1,5 @@
 <template>
-  <div style="min-height:min(560px,calc(100vh - 120px));display:flex;gap:0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+  <div class="documents-fullpage">
     <!-- Left: Doc List -->
     <div style="width:260px;background:#fafafa;border-right:1px solid #eee;display:flex;flex-direction:column;flex-shrink:0">
       <div style="padding:16px">
@@ -226,3 +226,18 @@ function addComment() {
 function copyLink() { navigator.clipboard.writeText(shareLink.value); ElMessage.success('链接已复制') }
 function handlePaste(e) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }
 </script>
+
+<style scoped>
+/**
+ * 在 MainLayout 主内容区内占满剩余高度与宽度。
+ */
+.documents-fullpage {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  overflow: hidden;
+}
+</style>
