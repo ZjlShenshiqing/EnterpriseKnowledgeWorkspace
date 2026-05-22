@@ -1,7 +1,9 @@
 package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.zjl.collaboration.entity.SysDept;
 import com.zjl.collaboration.entity.SysUser;
+import com.zjl.collaboration.mapper.SysDeptMapper;
 import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
@@ -17,6 +19,12 @@ import java.util.*;
 public class ContactController {
 
     private final SysUserMapper sysUserMapper;
+    private final SysDeptMapper sysDeptMapper;
+
+    @GetMapping("/departments")
+    public Result<List<SysDept>> listDepartments() {
+        return Results.success(sysDeptMapper.selectList(Wrappers.emptyWrapper()));
+    }
 
     @GetMapping("/users")
     @Cacheable(value = "contacts_users", key = "#deptId != null ? #deptId : 'all'", unless = "#result.data.isEmpty()")
