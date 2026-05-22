@@ -62,42 +62,35 @@
           <el-input v-model="form.title" placeholder="请输入会议主题" maxlength="100" show-word-limit />
         </el-form-item>
         <div class="form-row-2col">
-          <div class="form-col">
-            <el-form-item label="日期" required>
-              <el-date-picker v-model="form.date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" />
-            </el-form-item>
-            <div class="form-row-2col">
-              <el-form-item label="开始时间" required>
-                <el-time-picker v-model="form.startTime" format="HH:mm" value-format="HH:mm" placeholder="开始" style="width:100%" />
-              </el-form-item>
-              <el-form-item label="会议时长" required>
-                <el-select v-model="form.duration" style="width:100%">
-                  <el-option label="30 分钟" value="30" />
-                  <el-option label="1 小时" value="60" />
-                  <el-option label="1.5 小时" value="90" />
-                  <el-option label="2 小时" value="120" />
-                  <el-option label="3 小时" value="180" />
-                </el-select>
-              </el-form-item>
-            </div>
-          </div>
-          <div class="form-col">
-            <el-form-item label="地点" required>
-              <el-select v-model="form.room" style="width:100%">
-                <el-option-group label="线下会议室">
-                  <el-option label="A301 (20人)" value="A301 (20人)">
-                    <el-icon><Location /></el-icon>
-                    <span>A301 (20人)</span>
-                  </el-option>
-                  <el-option label="B102 (10人)" value="B102 (10人)" />
-                  <el-option label="C501 (50人)" value="C501 (50人)" />
-                </el-option-group>
-                <el-option-group label="线上会议">
-                  <el-option label="Zoom 视频会议" value="线上-Zoom" />
-                </el-option-group>
-              </el-select>
-            </el-form-item>
-          </div>
+          <el-form-item label="日期" required class="form-col">
+            <el-date-picker v-model="form.date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" />
+          </el-form-item>
+          <el-form-item label="地点" required class="form-col">
+            <el-select v-model="form.room" style="width:100%">
+              <el-option-group label="线下会议室">
+                <el-option label="A301 (20人)" value="A301 (20人)" />
+                <el-option label="B102 (10人)" value="B102 (10人)" />
+                <el-option label="C501 (50人)" value="C501 (50人)" />
+              </el-option-group>
+              <el-option-group label="线上会议">
+                <el-option label="Zoom 视频会议" value="线上-Zoom" />
+              </el-option-group>
+            </el-select>
+          </el-form-item>
+        </div>
+        <div class="form-row-2col">
+          <el-form-item label="开始时间" required class="form-col">
+            <el-time-picker v-model="form.startTime" format="HH:mm" value-format="HH:mm" placeholder="开始" style="width:100%" />
+          </el-form-item>
+          <el-form-item label="会议时长" required class="form-col">
+            <el-select v-model="form.duration" style="width:100%">
+              <el-option label="30 分钟" value="30" />
+              <el-option label="1 小时" value="60" />
+              <el-option label="1.5 小时" value="90" />
+              <el-option label="2 小时" value="120" />
+              <el-option label="3 小时" value="180" />
+            </el-select>
+          </el-form-item>
         </div>
         <el-form-item label="参会人">
           <div class="attendee-tags">
