@@ -21,6 +21,8 @@ public class SysMeeting {
     @JsonProperty("end_time")
     private String endTime;
     private String attendees;
+    /** 会议备注/议程 */
+    private String description;
     private String status;
     @TableField("join_url")
     @JsonProperty("join_url")
