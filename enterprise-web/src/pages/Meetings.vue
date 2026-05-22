@@ -276,7 +276,7 @@ async function handleSubmit() {
       ElMessage.error(result.message || '操作失败')
     }
   } catch (e) {
-    ElMessage.error('无法连接协作服务，请确认端口 8082 已启动')
+    ElMessage.error('无法连接协作服务，请确认 enterprise-collaboration-service 已启动（端口 8090）')
   } finally { submitting.value = false }
 }
 

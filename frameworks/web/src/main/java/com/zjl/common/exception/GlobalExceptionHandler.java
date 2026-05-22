@@ -4,6 +4,7 @@ import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * 全局异常处理器，将异常统一映射为 {@link Result}。
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
@@ -51,6 +53,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public Result<Void> handleUnknownException(Exception ex) {
+        log.error("Unhandled exception", ex);
         return Results.failure(String.valueOf(ErrorCode.SYSTEM_ERROR.getCode()), ErrorCode.SYSTEM_ERROR.getMessage());
     }
 }
