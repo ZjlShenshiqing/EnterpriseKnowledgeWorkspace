@@ -12,5 +12,7 @@ public class ImMessage {
     private String senderName;
     private String content;
     private String msgType;
+    private String status;
+    private String mqMsgId;
     private LocalDateTime createdAt;
 }

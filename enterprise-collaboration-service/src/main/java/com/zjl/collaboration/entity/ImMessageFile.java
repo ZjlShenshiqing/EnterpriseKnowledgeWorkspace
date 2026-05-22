@@ -7,17 +7,15 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("im_conversation")
-public class ImConversation {
+@TableName("im_message_file")
+public class ImMessageFile {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String name;
-    private String type;
-    private String avatar;
-    private Long createdBy;
-    private String lastMsgContent;
-    private String lastMsgSender;
-    private LocalDateTime lastMsgAt;
+    private Long messageId;
+    private String fileName;
+    private Long fileSize;
+    private String fileType;
+    private String ossKey;
+    private String thumbOssKey;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

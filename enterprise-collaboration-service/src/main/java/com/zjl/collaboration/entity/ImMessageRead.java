@@ -7,17 +7,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("im_conversation")
-public class ImConversation {
+@TableName("im_message_read")
+public class ImMessageRead {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String name;
-    private String type;
-    private String avatar;
-    private Long createdBy;
-    private String lastMsgContent;
-    private String lastMsgSender;
-    private LocalDateTime lastMsgAt;
-    private LocalDateTime createdAt;
+    private Long userId;
+    private Long conversationId;
+    private Long lastReadMsgId;
     private LocalDateTime updatedAt;
 }

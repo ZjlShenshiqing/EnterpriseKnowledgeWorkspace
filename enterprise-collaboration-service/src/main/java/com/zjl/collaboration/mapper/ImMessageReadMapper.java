@@ -1,0 +1,9 @@
+package com.zjl.collaboration.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zjl.collaboration.entity.ImMessageRead;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface ImMessageReadMapper extends BaseMapper<ImMessageRead> {
+}
