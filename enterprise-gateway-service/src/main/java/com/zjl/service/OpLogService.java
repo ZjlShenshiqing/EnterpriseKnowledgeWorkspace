@@ -3,6 +3,7 @@ package com.zjl.service;
 import com.zjl.domain.SysOpLog;
 import com.zjl.repository.SysOpLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -27,26 +28,30 @@ public class OpLogService {
      * @param userId   操作人 ID
      * @param username 操作人用户名
      * @param action   操作类型（如 login、create_doc、delete_meeting）
-     * @param request  原始请求体（预留，当前未序列化）
+     * @param request  原始请求（提取 method 和 path）
      * @param detail   操作详情描述
      * @return Mono<Void> 不阻塞主链路
      */
     public Mono<Void> log(Long userId, String username, String action, Object request, String detail) {
+        String method = "";
+        String path = "";
+        if (request instanceof ServerHttpRequest req) {
+            method = req.getMethod() != null ? req.getMethod().name() : "";
+            path = req.getPath().value();
+        }
+        final String finalMethod = method;
+        final String finalPath = path;
         return Mono.fromRunnable(() -> {
-                    // 构建日志实体
                     SysOpLog log = new SysOpLog();
                     log.setUserId(userId);
                     log.setUsername(username != null ? username : "");
                     log.setAction(action);
-                    // method 和 path 预留字段，当前由上层过滤器统一填充
-                    log.setMethod("");
-                    log.setPath("");
+                    log.setMethod(finalMethod);
+                    log.setPath(finalPath);
                     log.setDetail(detail);
                     log.setCreatedAt(Instant.now());
-                    // 写入数据库
                     opLogRepository.save(log);
                 })
-                // 提交到弹性线程池执行，不阻塞 Netty IO 线程
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
     }

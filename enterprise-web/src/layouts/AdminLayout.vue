@@ -77,6 +77,10 @@
               <el-icon><User /></el-icon>
               <span>用户管理</span>
             </el-menu-item>
+            <el-menu-item index="/admin/logs">
+              <el-icon><Tickets /></el-icon>
+              <span>操作日志</span>
+            </el-menu-item>
             <el-menu-item index="/admin/examples">
               <el-icon><Opportunity /></el-icon>
               <span>示例问题</span>
