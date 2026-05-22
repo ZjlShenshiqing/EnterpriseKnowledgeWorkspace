@@ -151,6 +151,7 @@ CREATE TABLE sys_meeting (
     start_time VARCHAR(8) NULL,
     end_time VARCHAR(8) NULL,
     attendees TEXT NULL,
+    description TEXT NULL,
     status VARCHAR(32) DEFAULT 'confirmed',
     join_url VARCHAR(1024) NULL,
     meeting_id VARCHAR(128) NULL,
