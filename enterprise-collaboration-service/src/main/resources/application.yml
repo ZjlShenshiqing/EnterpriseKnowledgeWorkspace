@@ -15,8 +15,7 @@ spring:
       enabled: false
   sql:
     init:
-      mode: always
-      schema-locations: classpath:db/schema.sql
+      mode: never
 
 server:
   port: 8090
@@ -28,6 +27,22 @@ mybatis-plus:
 auth:
   jwt:
     expiration: 86400000
+
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: im-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 1
+
+app:
+  im:
+    oss:
+      endpoint: ${OSS_ENDPOINT:https://oss-cn-shenzhen.aliyuncs.com}
+      region: ${OSS_REGION:oss-cn-shenzhen}
+      access-key: ${OSS_ACCESS_KEY:}
+      secret-key: ${OSS_SECRET_KEY:}
+      bucket: ${OSS_IM_BUCKET:im-files}
 
 logging:
   level:
