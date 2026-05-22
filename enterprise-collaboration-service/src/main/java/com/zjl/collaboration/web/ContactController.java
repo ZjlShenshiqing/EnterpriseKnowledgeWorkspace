@@ -23,7 +23,8 @@ public class ContactController {
 
     @GetMapping("/departments")
     public Result<List<SysDept>> listDepartments() {
-        return Results.success(sysDeptMapper.selectList(Wrappers.emptyWrapper()));
+        return Results.success(sysDeptMapper.selectList(
+            Wrappers.lambdaQuery(SysDept.class).orderByAsc(SysDept::getId)));
     }
 
     @GetMapping("/users")
