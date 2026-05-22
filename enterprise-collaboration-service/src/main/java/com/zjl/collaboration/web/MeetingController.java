@@ -31,6 +31,23 @@ public class MeetingController {
         return Results.success(meetingMapper.selectList(Wrappers.lambdaQuery(SysMeeting.class).orderByDesc(SysMeeting::getDate).orderByAsc(SysMeeting::getStartTime)));
     }
 
+    @GetMapping("/my")
+    public Result<List<SysMeeting>> listMy(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(defaultValue = "") String userName) {
+        List<SysMeeting> all = meetingMapper.selectList(
+                Wrappers.lambdaQuery(SysMeeting.class)
+                        .orderByDesc(SysMeeting::getDate)
+                        .orderByAsc(SysMeeting::getStartTime)
+        );
+        String name = userName.isBlank() ? String.valueOf(userId) : userName;
+        List<SysMeeting> mine = all.stream()
+                .filter(m -> m.getCreatorId().equals(userId)
+                        || (m.getAttendees() != null && m.getAttendees().contains(name)))
+                .collect(java.util.stream.Collectors.toList());
+        return Results.success(mine);
+    }
+
     @PostMapping
     public Result<Long> create(@RequestBody MeetingReq req, @RequestHeader("X-User-Id") Long userId) {
         SysMeeting m = new SysMeeting();
@@ -40,7 +57,8 @@ public class MeetingController {
         m.setDate(LocalDate.parse(req.getDate())); 
         m.setStartTime(req.getStartTime()); 
         m.setEndTime(req.getEndTime());
-        m.setAttendees(req.getAttendees()); 
+        m.setAttendees(req.getAttendees());
+        m.setDescription(req.getDescription());
         m.setStatus("confirmed");
 
         if ("线上-Zoom".equals(req.getRoom()) && zoomClient.isConfigured()) {
@@ -78,6 +96,7 @@ public class MeetingController {
         m.setStartTime(req.getStartTime()); 
         m.setEndTime(req.getEndTime()); 
         m.setAttendees(req.getAttendees());
+        m.setDescription(req.getDescription());
         meetingMapper.updateById(m);
         return Results.success();
     }
@@ -85,5 +104,5 @@ public class MeetingController {
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) { meetingMapper.deleteById(id); return Results.success(); }
 
-    @Data public static class MeetingReq { private String title; private String room; private String date; private String startTime; private String endTime; private String attendees; }
+    @Data public static class MeetingReq { private String title; private String room; private String date; private String startTime; private String endTime; private String attendees; private String description; }
 }
