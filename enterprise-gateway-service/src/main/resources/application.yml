@@ -24,7 +24,7 @@ spring:
         - id: collaboration
           uri: lb://enterprise-collaboration-service
           predicates:
-            - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**
+            - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**,/api/chat/**,/api/docs/**,/api/approvals/**,/api/announcements/**
         - id: workbench
           uri: lb://enterprise-workbench-service
           predicates:

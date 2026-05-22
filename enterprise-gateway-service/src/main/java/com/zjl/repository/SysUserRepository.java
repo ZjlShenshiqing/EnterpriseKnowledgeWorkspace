@@ -48,4 +48,14 @@ public interface SysUserRepository extends JpaRepository<SysUser, Long> {
      */
     @Query("SELECT COUNT(u) FROM SysUser u JOIN u.roles r WHERE r.code = 'admin'")
     long countAdmin();
+
+    /**
+     * 查询启用中的用户（通讯录），可按部门筛选。
+     */
+    @Query("""
+            SELECT u FROM SysUser u LEFT JOIN FETCH u.dept LEFT JOIN FETCH u.roles
+            WHERE u.enabled = true AND (:deptId IS NULL OR u.dept.id = :deptId)
+            ORDER BY u.id ASC
+            """)
+    java.util.List<SysUser> findDirectoryUsers(@Param("deptId") Long deptId);
 }

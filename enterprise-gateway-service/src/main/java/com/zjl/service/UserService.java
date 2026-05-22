@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -66,6 +69,26 @@ public class UserService {
             }
         });
         return PageResult.of(page, size, result.getTotalElements(), result.getContent());
+    }
+
+    /**
+     * 通讯录用户列表：仅返回启用用户，供 IM/通讯录等模块使用。
+     *
+     * @param deptId 部门 ID，为空则返回全部启用用户
+     * @return 用户摘要列表
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listDirectoryUsers(Long deptId) {
+        return userRepository.findDirectoryUsers(deptId).stream().map(u -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", u.getId());
+            row.put("username", u.getUsername());
+            row.put("realName", u.getRealName());
+            row.put("deptId", u.getDept() != null ? u.getDept().getId() : null);
+            row.put("isAdmin", u.getRoles().stream()
+                    .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode())));
+            return row;
+        }).toList();
     }
 
     /**
