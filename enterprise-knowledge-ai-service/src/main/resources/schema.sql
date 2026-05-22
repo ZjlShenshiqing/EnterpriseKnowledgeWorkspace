@@ -1,17 +1,11 @@
 -- enterprise-knowledge-ai-service 知识库数据库初始化
 -- MySQL 8+，库名由 JDBC URL 指定（如 enterprise_knowledge_ai）
 -- 请先执行：CREATE DATABASE IF NOT EXISTS enterprise_knowledge_ai DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+--
+-- 注意：禁止使用 DROP TABLE。spring.sql.init.mode=always 时每次启动都会执行本脚本，
+-- 若 DROP 会导致已上传文档、会话等业务数据在重启后被清空。
 
-DROP TABLE IF EXISTS kb_agent_message;
-DROP TABLE IF EXISTS kb_agent_session;
-DROP TABLE IF EXISTS kb_document_chunk_log;
-DROP TABLE IF EXISTS kb_document_chunk;
-DROP TABLE IF EXISTS kb_document_permission;
-DROP TABLE IF EXISTS kb_document;
-DROP TABLE IF EXISTS kb_knowledge_base;
-DROP TABLE IF EXISTS kb_category;
-
-CREATE TABLE kb_category (
+CREATE TABLE IF NOT EXISTS kb_category (
     id BIGINT NOT NULL PRIMARY KEY,
     parent_id BIGINT NULL,
     category_name VARCHAR(255) NOT NULL,
@@ -24,7 +18,7 @@ CREATE TABLE kb_category (
     deleted INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_knowledge_base (
+CREATE TABLE IF NOT EXISTS kb_knowledge_base (
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     embedding_model VARCHAR(128) NULL,
@@ -38,7 +32,7 @@ CREATE TABLE kb_knowledge_base (
     KEY idx_kb_base_collection (collection_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_document (
+CREATE TABLE IF NOT EXISTS kb_document (
     id BIGINT NOT NULL PRIMARY KEY,
     title VARCHAR(512) NOT NULL,
     category_id BIGINT NULL,
@@ -76,7 +70,7 @@ CREATE TABLE kb_document (
     KEY idx_kb_document_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_document_permission (
+CREATE TABLE IF NOT EXISTS kb_document_permission (
     id BIGINT NOT NULL PRIMARY KEY,
     document_id BIGINT NOT NULL,
     permission_target_type VARCHAR(64) NOT NULL,
@@ -87,7 +81,7 @@ CREATE TABLE kb_document_permission (
     KEY idx_kb_doc_perm_document (document_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_document_chunk (
+CREATE TABLE IF NOT EXISTS kb_document_chunk (
     id BIGINT NOT NULL PRIMARY KEY,
     document_id BIGINT NOT NULL,
     chunk_index INT NOT NULL,
@@ -105,7 +99,7 @@ CREATE TABLE kb_document_chunk (
     KEY idx_kb_chunk_document (document_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_document_chunk_log (
+CREATE TABLE IF NOT EXISTS kb_document_chunk_log (
     id BIGINT NOT NULL PRIMARY KEY,
     document_id BIGINT NOT NULL,
     status VARCHAR(64) NOT NULL,
@@ -124,7 +118,7 @@ CREATE TABLE kb_document_chunk_log (
     KEY idx_chunk_log_document (document_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_agent_session (
+CREATE TABLE IF NOT EXISTS kb_agent_session (
     id BIGINT NOT NULL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     title VARCHAR(256) NULL,
@@ -134,7 +128,7 @@ CREATE TABLE kb_agent_session (
     KEY idx_agent_session_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE kb_agent_message (
+CREATE TABLE IF NOT EXISTS kb_agent_message (
     id BIGINT NOT NULL PRIMARY KEY,
     session_id BIGINT NOT NULL,
     role VARCHAR(16) NOT NULL,
