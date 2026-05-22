@@ -14,8 +14,8 @@
       </div>
       <div style="flex:1;overflow-y:auto">
         <template v-for="(c, i) in filteredConvs" :key="c.id">
-          <div v-if="i===0 || (c._pinned && !filteredConvs[i-1]._pinned)" style="padding:6px 16px;font-size:11px;color:#8f959e;font-weight:500">置顶</div>
-          <div v-if="i>0 && !c._pinned && filteredConvs[i-1]._pinned" style="padding:6px 16px;font-size:11px;color:#8f959e;font-weight:500;margin-top:4px">最近</div>
+          <div v-if="(i===0 && c._pinned) || (c._pinned && !filteredConvs[i-1]._pinned)" style="padding:6px 16px;font-size:11px;color:#8f959e;font-weight:500">置顶</div>
+          <div v-if="i>0 && !c._pinned && filteredConvs[i-1]._pinned && filteredConvs.some(x=>x._pinned)" style="padding:6px 16px;font-size:11px;color:#8f959e;font-weight:500;margin-top:4px">最近</div>
           <div @click="openConv(c)"
             :style="{padding:'10px 16px',display:'flex',alignItems:'center',gap:'10px',cursor:'pointer',background:activeConv?.id===c.id?'#e8f3ff':'transparent'}">
             <div :style="{width:'36px',height:'36px',borderRadius:'8px',background:c.type==='group'?'#3370ff':avatarColor(c.id),color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',flexShrink:'0'}">
@@ -141,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -219,7 +219,9 @@ async function loadConvs() {
     })
     conversations.value = data
   } catch(e) {
-    conversations.value = [{id:1,name:'全员群',type:'group',last_msg:'欢迎加入',_pinned:false,_time:'',_unread:0},{id:2,name:'张三',type:'private',last_msg:'好的',_pinned:false,_time:'',_unread:0}]
+    const mock = [{id:1,name:'全员群',type:'group',last_msg:'欢迎加入'},{id:2,name:'张三',type:'private',last_msg:'好的'}]
+    mock.forEach(c => { c._pinned = false; c._time = ''; c._unread = 0 })
+    conversations.value = mock
   }
 }
 
@@ -233,6 +235,8 @@ async function loadUsers() {
 }
 
 function connectWs() {
+  if (ws) { ws.onclose = null; try { ws.close() } catch(e) {}; ws = null }
+  if (wsTimer) { clearTimeout(wsTimer); wsTimer = null }
   try {
     const token = localStorage.getItem('token')||''
     ws = new WebSocket(`ws://localhost:8090/ws/chat?token=${encodeURIComponent(token)}`)
@@ -264,21 +268,30 @@ async function openConv(c) {
 }
 
 async function openOrCreatePrivateChat(targetUserId) {
-  const existing = conversations.value.find(c => c.type==='private')
-  if (existing) {
+  // Check ALL private conversations for this user pair
+  const privateConvs = conversations.value.filter(c => c.type === 'private')
+  for (const conv of privateConvs) {
     try {
-      const r = await fetch(`/api/chat/members/${existing.id}`,{headers:authHeaders()})
-      const mems = (await r.json()).data||[]
-      if (mems.some(m=>m.id===targetUserId)) { openConv(existing); return }
+      const r = await fetch(`/api/chat/members/${conv.id}`, {headers: authHeaders()})
+      const mems = (await r.json()).data || []
+      if (mems.some(m => m.id === targetUserId)) {
+        openConv(conv)
+        return
+      }
     } catch(e) {}
   }
+  // No existing private chat found — create one (backend dedup handles races)
   try {
-    const targetUser = allUsers.value.find(u=>u.id===targetUserId)
-    const targetName = targetUser ? (targetUser.realName||targetUser.username) : ('用户'+targetUserId)
-    const r = await fetch('/api/chat/conversations',{method:'POST',headers:authHeaders(),body:JSON.stringify({name:targetName,type:'private',memberIds:[targetUserId]})})
+    const targetUser = allUsers.value.find(u => u.id === targetUserId)
+    const targetName = targetUser ? (targetUser.realName || targetUser.username) : ('用户' + targetUserId)
+    const r = await fetch('/api/chat/conversations', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ name: targetName, type: 'private', memberIds: [targetUserId] })
+    })
     const newId = (await r.json()).data
     await loadConvs()
-    const created = conversations.value.find(c=>c.id===newId)
+    const created = conversations.value.find(c => c.id === newId)
     if (created) openConv(created)
   } catch(e) {}
 }
@@ -286,10 +299,12 @@ async function openOrCreatePrivateChat(targetUserId) {
 async function sendMsg() {
   const content = input.value.trim()
   if (!content || !activeConv.value) return
-  if (ws && ws.readyState===WebSocket.OPEN) {
-    ws.send(JSON.stringify({conversationId:activeConv.value.id,content}))
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    ElMessage.warning('连接未建立，请刷新页面后重试')
+    return
   }
-  const temp = { id: Date.now(), senderId: userId.value, senderName: '我', content, createdAt: new Date().toISOString() }
+  ws.send(JSON.stringify({conversationId:activeConv.value.id,content}))
+  const temp = { id: 'msg-'+Date.now()+'-'+Math.random().toString(36).slice(2,8), senderId: userId.value, senderName: '我', content, createdAt: new Date().toISOString() }
   msgs.value.push(temp)
   input.value = ''
   await nextTick()
@@ -344,4 +359,9 @@ function scrollBottom() {
     if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
   })
 }
+
+onBeforeUnmount(() => {
+  if (ws) { ws.onclose = null; ws.close(); ws = null }
+  if (wsTimer) { clearTimeout(wsTimer); wsTimer = null }
+})
 </script>
