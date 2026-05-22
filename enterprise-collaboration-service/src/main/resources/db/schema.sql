@@ -62,6 +62,9 @@ CREATE TABLE im_conversation (
     type VARCHAR(16) NOT NULL DEFAULT 'group',
     avatar VARCHAR(256) NULL,
     created_by BIGINT NOT NULL,
+    last_msg_content VARCHAR(512) NULL,
+    last_msg_sender VARCHAR(64) NULL,
+    last_msg_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -83,8 +86,32 @@ CREATE TABLE im_message (
     sender_name VARCHAR(64) NULL,
     content TEXT NOT NULL,
     msg_type VARCHAR(16) DEFAULT 'text',
+    status VARCHAR(16) NOT NULL DEFAULT 'SENT',
+    mq_msg_id VARCHAR(64) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_msg_conv (conversation_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS im_message_read;
+CREATE TABLE im_message_read (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    conversation_id BIGINT NOT NULL,
+    last_read_msg_id BIGINT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_conv (user_id, conversation_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS im_message_file;
+CREATE TABLE im_message_file (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    message_id BIGINT NOT NULL,
+    file_name VARCHAR(256) NOT NULL,
+    file_size BIGINT NOT NULL,
+    file_type VARCHAR(64) NOT NULL,
+    oss_key VARCHAR(512) NOT NULL,
+    thumb_oss_key VARCHAR(512) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS sys_task;
