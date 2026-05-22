@@ -59,6 +59,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { getAuthHeaders } from '../api'
 
 const router = useRouter()
 const users = ref([])
@@ -67,12 +69,12 @@ const selectedDeptId = ref(null)
 const search = ref('')
 const avatarColors = ['#3370ff', '#34c759', '#ff9500', '#f54a45', '#af52de', '#5856d6', '#ff3b30', '#007aff']
 
-function readUser() {
-  try { return JSON.parse(localStorage.getItem('user') || '{}') || {} } catch { return {} }
+function isApiSuccess(body) {
+  return body && String(body.code) === '200'
 }
+
 function authHeaders() {
-  const u = readUser()
-  return { 'X-User-Id': String(u.id || 1), 'X-Is-Admin': String(u.isAdmin ? 'true' : 'false'), 'Content-Type': 'application/json' }
+  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
 }
 function avatarColor(id) { return avatarColors[Number(id) % avatarColors.length] }
 function getDeptName(id) { return depts.value.find(d => d.id === id)?.name || '' }
@@ -102,22 +104,38 @@ onMounted(async () => {
       fetch('/api/contacts/users', { headers: h }),
       fetch('/api/contacts/departments', { headers: h })
     ])
-    users.value = (await ur.json()).data || []
-    depts.value = (await dr.json()).data || []
+    const userBody = await ur.json()
+    const deptBody = await dr.json()
+    if (!ur.ok || !isApiSuccess(userBody)) {
+      ElMessage.error(userBody?.message || '加载联系人失败')
+      return
+    }
+    if (!dr.ok || !isApiSuccess(deptBody)) {
+      ElMessage.error(deptBody?.message || '加载部门失败')
+      return
+    }
+    users.value = (userBody.data || []).map(u => ({
+      ...u,
+      id: Number(u.id),
+      deptId: u.deptId != null ? Number(u.deptId) : null
+    }))
+    depts.value = (deptBody.data || []).map(d => ({
+      ...d,
+      id: Number(d.id)
+    }))
   } catch (e) {
-    depts.value = [{ id: 1, name: '技术部' }, { id: 2, name: '产品部' }, { id: 3, name: '设计部' }]
-    users.value = [
-      { id: 1, username: 'admin', realName: '系统管理员', deptId: 1 },
-      { id: 2, realName: '张三', deptId: 1 },
-      { id: 3, realName: '李四', deptId: 2 },
-      { id: 4, realName: '王五', deptId: 1 },
-      { id: 5, realName: '赵六', deptId: 3 }
-    ]
+    ElMessage.error('无法加载通讯录，请确认网关已启动（端口 8086）')
   }
 })
 
 function goChat(user) {
-  router.push({ path: '/chats', query: { userId: String(user.id) } })
+  router.push({
+    path: '/chats',
+    query: {
+      userId: String(user.id),
+      userName: user.realName || user.username || ''
+    }
+  })
 }
 </script>
 
