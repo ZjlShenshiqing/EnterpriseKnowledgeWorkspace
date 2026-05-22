@@ -64,6 +64,22 @@
                   <span style="font-size:10px;color:#bbb">{{ formatTime(msg.createdAt) }}</span>
                 </div>
                 <div style="background:#f2f3f5;padding:8px 12px;border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.5;word-break:break-word">{{ msg.content }}</div>
+                <div v-if="msg.files && msg.files.length" style="margin-top:6px">
+                  <template v-for="f in msg.files" :key="f.ossKey">
+                    <img v-if="f.fileType && f.fileType.startsWith('image/')"
+                      :src="'/api/chat/files/' + encodeURIComponent(f.ossKey)"
+                      style="max-width:240px;max-height:200px;border-radius:6px;cursor:pointer"
+                      @click="previewFile(f)" />
+                    <div v-else @click="previewFile(f)"
+                      style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #e5e6eb;border-radius:8px;cursor:pointer;margin-top:4px">
+                      <span style="font-size:20px">&#128196;</span>
+                      <div>
+                        <div style="font-size:12px;font-weight:500">{{ f.fileName }}</div>
+                        <div style="font-size:10px;color:#8f959e">{{ formatFileSize(f.fileSize) }}</div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
               </div>
             </div>
             <div v-else style="max-width:70%;display:flex;flex-direction:column;align-items:flex-end">
@@ -79,15 +95,37 @@
                 <span v-if="msg._failed" @click="retrySend(msg)"
                   style="color:#f54a45;cursor:pointer;font-size:16px;flex-shrink:0" title="重试">&#x27F3;</span>
               </div>
+              <div v-if="msg.files && msg.files.length" style="margin-top:6px;align-self:flex-start;width:100%">
+                <template v-for="f in msg.files" :key="f.ossKey">
+                  <img v-if="f.fileType && f.fileType.startsWith('image/')"
+                    :src="'/api/chat/files/' + encodeURIComponent(f.ossKey)"
+                    style="max-width:240px;max-height:200px;border-radius:6px;cursor:pointer"
+                    @click="previewFile(f)" />
+                  <div v-else @click="previewFile(f)"
+                    style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #e5e6eb;border-radius:8px;cursor:pointer;margin-top:4px">
+                    <span style="font-size:20px">&#128196;</span>
+                    <div>
+                      <div style="font-size:12px;font-weight:500">{{ f.fileName }}</div>
+                      <div style="font-size:10px;color:#8f959e">{{ formatFileSize(f.fileSize) }}</div>
+                    </div>
+                  </div>
+                </template>
+              </div>
             </div>
           </div>
         </div>
         <!-- Input area -->
         <div style="border-top:1px solid #e5e6eb;padding:10px 20px;flex-shrink:0">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <span style="color:#8f959e;cursor:pointer;font-size:15px" title="表情">&#128512;</span>
-            <span style="color:#8f959e;cursor:pointer;font-size:15px" title="图片">&#128247;</span>
-            <span style="color:#8f959e;cursor:pointer;font-size:15px" title="文件">&#128206;</span>
+            <label style="color:#8f959e;cursor:pointer;font-size:15px" title="图片">
+              &#128247;
+              <input type="file" accept="image/*" @change="onImageSelect"
+                style="display:none" ref="imgInput" multiple />
+            </label>
+            <label style="color:#8f959e;cursor:pointer;font-size:15px" title="文件">
+              &#128206;
+              <input type="file" @change="onFileSelect" style="display:none" ref="fileInput" />
+            </label>
           </div>
           <div style="display:flex;gap:8px">
             <textarea v-model="input" @keydown.enter.exact.prevent="sendMsg" placeholder="输入消息... (Enter 发送)"
@@ -166,6 +204,8 @@ const allUsers = ref([])
 const msgBox = ref(null)
 const inputBox = ref(null)
 const convSearch = ref('')
+const imgInput = ref(null)
+const fileInput = ref(null)
 
 const avatarColors = ['#3370ff','#34c759','#ff9500','#f54a45','#af52de','#5856d6','#ff3b30','#007aff']
 
@@ -270,6 +310,50 @@ async function loadUsers() {
   } catch (e) {
     allUsers.value = []
   }
+}
+
+async function uploadFileToServer(file) {
+  const form = new FormData()
+  form.append('file', file)
+  const headers = getAuthHeaders()
+  delete headers['Content-Type']
+  const r = await fetch('/api/chat/files/upload', { method: 'POST', headers, body: form })
+  const body = await r.json()
+  if (!r.ok || !isApiSuccess(body)) {
+    ElMessage.error(body?.message || '上传失败')
+    return null
+  }
+  return body.data
+}
+
+async function onImageSelect(e) {
+  for (const file of e.target.files) {
+    const result = await uploadFileToServer(file)
+    if (result) {
+      ws.send(JSON.stringify({
+        conversationId: activeConv.value.id,
+        content: '',
+        clientMsgId: 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        files: [result]
+      }))
+    }
+  }
+  e.target.value = ''
+}
+
+async function onFileSelect(e) {
+  for (const file of e.target.files) {
+    const result = await uploadFileToServer(file)
+    if (result) {
+      ws.send(JSON.stringify({
+        conversationId: activeConv.value.id,
+        content: '',
+        clientMsgId: 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        files: [result]
+      }))
+    }
+  }
+  e.target.value = ''
 }
 
 function connectWs() {
@@ -447,6 +531,16 @@ const filteredAvailableUsers = computed(() => {
   if (kw) list = list.filter(u => (u.realName||u.username).toLowerCase().includes(kw))
   return list
 })
+
+function formatFileSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+function previewFile(f) {
+  window.open('/api/chat/files/' + encodeURIComponent(f.ossKey), '_blank')
+}
 
 function formatTime(t) {
   if (!t) return ''

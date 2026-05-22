@@ -9,6 +9,8 @@ public class SysDoc {
     private Long id;
     private String title;
     private String content;
+    private Integer version;
+    private Integer snapshotVersion;
     private Long updatedBy;
     private String updatedByName;
     private LocalDateTime createdAt;
