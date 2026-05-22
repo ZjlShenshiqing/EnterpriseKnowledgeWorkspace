@@ -254,7 +254,7 @@ public class AgentLoop {
         }
 
         // 发送对话结束标记，完成 SSE 连接
-        emitter.send("done", Map.of("sessionId", session.getId()));
+        emitter.send("done", Map.of("sessionId", String.valueOf(session.getId())));
         emitter.complete();
     }
 

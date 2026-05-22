@@ -166,8 +166,8 @@ public class AgentController {
     public Result<java.util.List<com.zjl.knowledge.agent.model.ChatMessage>> getSessionHistory(
             @PathVariable("id") Long id) {
         UserContext user = UserContextHolder.get();
-        KbAgentSession session = sessionService.getOrCreateSession(id, user.getUserId(), null);
-        return Results.success(sessionService.loadHistory(session.getId(), 200));
+        sessionService.requireSession(id, user.getUserId());
+        return Results.success(sessionService.loadHistory(id, 200));
     }
 
     /**

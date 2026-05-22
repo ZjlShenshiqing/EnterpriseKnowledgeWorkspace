@@ -1,6 +1,8 @@
 package com.zjl.knowledge.agent;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.knowledge.agent.entity.KbAgentMessage;
 import com.zjl.knowledge.agent.entity.KbAgentSession;
 import com.zjl.knowledge.agent.mapper.KbAgentMessageMapper;
@@ -52,6 +54,24 @@ public class AgentSessionService {
         session.setCreatedAt(LocalDateTime.now());
         session.setUpdatedAt(LocalDateTime.now());
         sessionMapper.insert(session);
+        return session;
+    }
+
+    /**
+     * 加载已存在的会话，不存在或不属于当前用户时抛出异常。
+     *
+     * @param sessionId 会话 ID
+     * @param userId    用户 ID
+     * @return 会话实体
+     */
+    public KbAgentSession requireSession(Long sessionId, Long userId) {
+        if (sessionId == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "会话不存在");
+        }
+        KbAgentSession session = sessionMapper.selectById(sessionId);
+        if (session == null || !session.getUserId().equals(userId)) {
+            throw new BizException(ErrorCode.NOT_FOUND, "会话不存在");
+        }
         return session;
     }
 
