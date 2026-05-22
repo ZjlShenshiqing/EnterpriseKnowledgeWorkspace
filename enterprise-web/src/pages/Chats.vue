@@ -68,10 +68,17 @@
             </div>
             <div v-else style="max-width:70%;display:flex;flex-direction:column;align-items:flex-end">
               <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
+                <span v-if="msg._pending" style="font-size:10px;color:#ff9500">发送中...</span>
                 <span style="font-size:10px;color:#bbb">{{ formatTime(msg.createdAt) }}</span>
                 <span style="font-weight:500;font-size:12px;color:#1f2329">我</span>
               </div>
-              <div style="background:#d6e6ff;padding:8px 12px;border-radius:12px 4px 12px 12px;font-size:13px;line-height:1.5;word-break:break-word">{{ msg.content }}</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div :style="{background:msg._failed?'#ffe0e0':'#d6e6ff',padding:'8px 12px',borderRadius:'12px 4px 12px 12px',fontSize:'13px',lineHeight:'1.5',wordBreak:'break-word',border:msg._failed?'1px solid #f54a45':'none'}">
+                  {{ msg.content }}
+                </div>
+                <span v-if="msg._failed" @click="retrySend(msg)"
+                  style="color:#f54a45;cursor:pointer;font-size:16px;flex-shrink:0" title="重试">&#x27F3;</span>
+              </div>
             </div>
           </div>
         </div>
@@ -206,6 +213,9 @@ onMounted(async () => {
   await loadUsers()
   connectWs()
   await handleIncomingChatTarget(route.query.userId, route.query.userName)
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
 })
 
 watch(
@@ -272,9 +282,29 @@ function connectWs() {
     ws.onmessage = (e) => {
       try {
         const d = JSON.parse(e.data)
-        if (d.type==='message' && activeConv.value && d.conversationId===activeConv.value.id) {
-          msgs.value.push(d)
-          scrollBottom()
+        if (d.type === 'ack') {
+          const idx = msgs.value.findIndex(m => m.id === d.clientMsgId)
+          if (idx !== -1) {
+            if (d.status === 'FAILED') {
+              msgs.value[idx] = { ...msgs.value[idx], _failed: true, _pending: false }
+            } else {
+              msgs.value[idx] = { ...msgs.value[idx], id: d.serverMsgId, _pending: false }
+            }
+          }
+        } else if (d.type === 'message' && activeConv.value && d.conversationId === activeConv.value.id) {
+          if (!msgs.value.some(m => m.id === d.id)) {
+            msgs.value.push({ ...d, _pending: false })
+            scrollBottom()
+          }
+        } else if (d.type === 'message') {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(d.senderName || '新消息', {
+              body: (d.content || '').substring(0, 100),
+              icon: '/favicon.ico'
+            })
+          }
+        } else if (d.type === 'read' && activeConv.value && d.conversationId === activeConv.value.id) {
+          ElMessage({ message: '对方已读', type: 'info', duration: 1500 })
         }
       } catch {}
     }
@@ -351,8 +381,10 @@ async function sendMsg() {
     ElMessage.warning('连接未建立，请刷新页面后重试')
     return
   }
-  ws.send(JSON.stringify({conversationId:activeConv.value.id,content}))
-  const temp = { id: 'msg-'+Date.now()+'-'+Math.random().toString(36).slice(2,8), senderId: userId.value, senderName: '我', content, createdAt: new Date().toISOString() }
+  const clientMsgId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+  ws.send(JSON.stringify({ conversationId: activeConv.value.id, content, clientMsgId }))
+  const temp = { id: clientMsgId, senderId: userId.value, senderName: '我', content,
+    createdAt: new Date().toISOString(), _pending: true }
   msgs.value.push(temp)
   input.value = ''
   await nextTick()
@@ -373,6 +405,22 @@ async function doCreateGroup() {
     const created = conversations.value.find(c=>c.id===newId)
     if (created) openConv(created)
   } catch(e) { ElMessage.error('创建失败') }
+}
+
+function retrySend(msg) {
+  const content = msg.content
+  const idx = msgs.value.findIndex(m => m.id === msg.id)
+  if (idx !== -1) msgs.value.splice(idx, 1)
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    ElMessage.warning('连接未建立，请刷新页面后重试')
+    return
+  }
+  const clientMsgId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+  ws.send(JSON.stringify({ conversationId: activeConv.value.id, content, clientMsgId }))
+  const temp = { id: clientMsgId, senderId: userId.value, senderName: '我', content,
+    createdAt: new Date().toISOString(), _pending: true }
+  msgs.value.push(temp)
+  nextTick(() => scrollBottom())
 }
 
 function toggleMember(u) {
