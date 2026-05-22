@@ -10,7 +10,7 @@
 
     <!-- 操作栏 -->
     <div class="toolbar">
-      <div></div>
+      <el-button type="primary" @click="openCreate">新建会议</el-button>
       <div class="toolbar-right">
         <el-input v-model="keyword" placeholder="搜索会议标题" clearable style="width:200px" />
         <el-date-picker v-model="dateFilter" type="date" placeholder="筛选日期" clearable style="width:160px" value-format="YYYY-MM-DD" />
@@ -21,8 +21,7 @@
     <div v-loading="loading" class="meeting-list">
       <div v-if="!loading && myMeetings.length === 0" class="empty-state">
         <div class="empty-text">暂无会议</div>
-        <div class="empty-sub">点击下方按钮开始预约吧</div>
-        <el-button type="primary" @click="openCreate">新建会议</el-button>
+        <div class="empty-sub">点击左上角「新建会议」开始预约吧</div>
       </div>
 
       <div v-for="group in groupedMeetings" :key="group.date" class="date-group">
