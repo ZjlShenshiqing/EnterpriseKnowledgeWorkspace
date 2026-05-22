@@ -316,6 +316,8 @@ onMounted(load)
 <style scoped>
 .meetings-page { display:flex; flex-direction:column; gap:20px; }
 .meetings-page :deep(.el-button) { border-radius: 20px; padding-left: 20px; padding-right: 20px; }
+.meetings-page :deep(.el-input__wrapper),
+.meetings-page :deep(.el-textarea__inner) { border-radius: 10px; }
 .stats-row { display:flex; gap:16px; }
 .stat-card { flex:1; background:#fff; border-radius:12px; padding:20px 24px; border:1px solid #f3f4f6; }
 .stat-value { font-size:28px; font-weight:700; color:#1f2937; }
@@ -345,11 +347,16 @@ onMounted(load)
 .form-col { flex:1; display:flex; flex-direction:column; }
 .attendee-tags { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
 .desc-textarea :deep(.el-textarea__inner) {
-  border-radius: 8px;
-  background: #fafafa;
-  transition: background .2s;
+  border-radius: 10px;
+  border-color: #e5e7eb;
+  background: #f9fafb;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: border-color .2s, background .2s, box-shadow .2s;
 }
 .desc-textarea :deep(.el-textarea__inner):focus {
   background: #fff;
+  border-color: #3370ff;
+  box-shadow: 0 0 0 2px rgba(51, 112, 255, 0.1);
 }
 </style>
