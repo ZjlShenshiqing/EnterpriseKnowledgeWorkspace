@@ -193,3 +193,34 @@ export function isApiAvailable() {
     .then(() => true)
     .catch(() => false)
 }
+
+// ---- Meetings ----
+
+export function getMyMeetings() {
+  const { user } = readStoredAuth()
+  const userName = user.realName || user.username || ''
+  return fetch(`/api/meetings/my?userName=${encodeURIComponent(userName)}`, { headers: getAuthHeaders() })
+}
+
+export function createMeeting(body) {
+  return fetch('/api/meetings', {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export function updateMeeting(id, body) {
+  return fetch(`/api/meetings/${id}`, {
+    method: 'PUT',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export function deleteMeeting(id) {
+  return fetch(`/api/meetings/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+}
