@@ -246,7 +246,7 @@ async function loadConvs() {
       c._pinned = false
       const t = c.last_msg_time || c.updatedAt
       c._time = t ? formatTime(t) : ''
-      c._unread = 0
+      c._unread = c.unread || 0
     })
     conversations.value = data
   } catch (e) {
@@ -323,6 +323,15 @@ async function openConv(c) {
     msgs.value = (await mr.json()).data||[]
     members.value = (await mm.json()).data||[]
     await nextTick(); scrollBottom()
+    c._unread = 0
+    const lastMsg = msgs.value[msgs.value.length - 1]
+    if (lastMsg && lastMsg.id) {
+      fetch(`/api/chat/conversations/${c.id}/read`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ lastReadMsgId: lastMsg.id })
+      }).catch(() => {})
+    }
   } catch(e) {}
 }
 
