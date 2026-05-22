@@ -10,7 +10,7 @@
 
     <!-- 操作栏 -->
     <div class="toolbar">
-      <el-button type="primary" @click="openCreate">新建会议</el-button>
+      <el-button type="primary" size="large" @click="openCreate">新建会议</el-button>
       <div class="toolbar-right">
         <el-input v-model="keyword" placeholder="搜索会议标题" clearable style="width:200px" />
         <el-date-picker v-model="dateFilter" type="date" placeholder="筛选日期" clearable style="width:160px" value-format="YYYY-MM-DD" />
@@ -322,6 +322,7 @@ onMounted(load)
 
 <style scoped>
 .meetings-page { display:flex; flex-direction:column; gap:20px; }
+.meetings-page :deep(.el-button) { border-radius: 20px; padding-left: 20px; padding-right: 20px; }
 .stats-row { display:flex; gap:16px; }
 .stat-card { flex:1; background:#fff; border-radius:12px; padding:20px 24px; border:1px solid #f3f4f6; }
 .stat-value { font-size:28px; font-weight:700; color:#1f2937; }
