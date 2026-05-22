@@ -77,9 +77,9 @@ public class ImReadService {
                         .eq(ImMessageRead::getUserId, userId)
                         .eq(ImMessageRead::getConversationId, conversationId));
         long lastReadId = record != null ? record.getLastReadMsgId() : 0L;
-        return (int) msgMapper.selectCount(
+        return msgMapper.selectCount(
                 Wrappers.lambdaQuery(ImMessage.class)
                         .eq(ImMessage::getConversationId, conversationId)
-                        .gt(ImMessage::getId, lastReadId));
+                        .gt(ImMessage::getId, lastReadId)).intValue();
     }
 }
