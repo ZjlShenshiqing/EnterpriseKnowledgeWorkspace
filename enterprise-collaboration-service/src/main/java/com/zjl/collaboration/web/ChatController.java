@@ -52,7 +52,7 @@ public class ChatController {
 
     @PostMapping("/conversations")
     public Result<Long> createConv(@RequestBody CreateConvReq req, @RequestHeader("X-User-Id") Long userId) {
-        if ("private".equals(req.getType()) && req.getMemberIds().size() == 1) {
+        if ("private".equals(req.getType()) && req.getMemberIds() != null && req.getMemberIds().size() == 1) {
             Long targetUserId = req.getMemberIds().get(0);
             List<ImConversationMember> myMemberships = memberMapper.selectList(
                 Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getUserId, userId));
