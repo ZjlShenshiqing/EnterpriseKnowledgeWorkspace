@@ -5,10 +5,12 @@ import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import com.zjl.domain.SysDept;
+import com.zjl.domain.SysOpLog;
 import com.zjl.domain.SysPermission;
 import com.zjl.domain.SysRole;
 import com.zjl.domain.SysUser;
 import com.zjl.repository.SysDeptRepository;
+import com.zjl.repository.SysOpLogRepository;
 import com.zjl.repository.SysPermissionRepository;
 import com.zjl.security.UserContext;
 import com.zjl.service.OpLogService;
@@ -19,6 +21,7 @@ import com.zjl.service.UserService.UserStats;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +47,7 @@ public class SystemAdminController {
     private final RoleService roleService;
     private final SysPermissionRepository permissionRepository;
     private final SysDeptRepository deptRepository;
+    private final SysOpLogRepository opLogRepository;
     private final OpLogService opLogService;
 
     public SystemAdminController(
@@ -51,12 +55,14 @@ public class SystemAdminController {
             RoleService roleService,
             SysPermissionRepository permissionRepository,
             SysDeptRepository deptRepository,
+            SysOpLogRepository opLogRepository,
             OpLogService opLogService
     ) {
         this.userService = userService;
         this.roleService = roleService;
         this.permissionRepository = permissionRepository;
         this.deptRepository = deptRepository;
+        this.opLogRepository = opLogRepository;
         this.opLogService = opLogService;
     }
 
@@ -290,6 +296,26 @@ public class SystemAdminController {
                         .log(UserContext.userId(), UserContext.username(),
                                 "CREATE_DEPT", request, saved.getName())
                         .thenReturn(Results.success(saved)));
+    }
+
+    // ──────────────────── Operation logs ────────────────────
+
+    /**
+     * 查询操作日志（分页 + 关键词搜索 + 操作类型筛选）
+     */
+    @GetMapping("/logs")
+    public Mono<Result<PageResult<SysOpLog>>> logs(
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            @RequestParam(value = "action", defaultValue = "") String action,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size
+    ) {
+        return Mono.fromCallable(() -> {
+                    var pageable = PageRequest.of(page - 1, size);
+                    var result = opLogRepository.searchLogs(keyword, action, pageable);
+                    return Results.success(PageResult.of(page, size, result.getTotalElements(), result.getContent()));
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     // ──────────────────── Request records ────────────────────

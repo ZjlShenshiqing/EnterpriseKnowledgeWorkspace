@@ -188,6 +188,12 @@ export function getDepts() {
 
 // ---- Helpers ----
 
+// ---- Operation Logs ----
+
+export function getLogs(params) {
+  return systemApi.get('/logs', { params })
+}
+
 export function isApiAvailable() {
   return kbApi.get('/documents', { params: { current: 1, size: 1 } })
     .then(() => true)
