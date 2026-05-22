@@ -122,7 +122,11 @@
       </header>
 
       <section class="admin-content">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <transition name="view-fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </section>
     </main>
   </div>
