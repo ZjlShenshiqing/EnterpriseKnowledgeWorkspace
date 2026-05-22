@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjl.knowledge.agent.mapper.KbAgentMessageMapper">
+
+    <select id="messageStats" resultType="java.util.HashMap">
+        SELECT COUNT(*)             AS msgCount,
+               COUNT(DISTINCT session_id) AS sessionCount,
+               COALESCE(SUM(token_count), 0) AS totalTokens
+        FROM kb_agent_message
+    </select>
+
+</mapper>
