@@ -52,6 +52,23 @@ public class ChatController {
 
     @PostMapping("/conversations")
     public Result<Long> createConv(@RequestBody CreateConvReq req, @RequestHeader("X-User-Id") Long userId) {
+        if ("private".equals(req.getType()) && req.getMemberIds().size() == 1) {
+            Long targetUserId = req.getMemberIds().get(0);
+            List<ImConversationMember> myMemberships = memberMapper.selectList(
+                Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getUserId, userId));
+            for (ImConversationMember myMem : myMemberships) {
+                ImConversation conv = convMapper.selectById(myMem.getConversationId());
+                if (conv != null && "private".equals(conv.getType())) {
+                    List<ImConversationMember> otherMembers = memberMapper.selectList(
+                        Wrappers.lambdaQuery(ImConversationMember.class)
+                            .eq(ImConversationMember::getConversationId, conv.getId())
+                            .eq(ImConversationMember::getUserId, targetUserId));
+                    if (!otherMembers.isEmpty()) {
+                        return Results.success(conv.getId());
+                    }
+                }
+            }
+        }
         ImConversation c = new ImConversation();
         c.setName(req.getName()); c.setType(req.getType()); c.setCreatedBy(userId); c.setCreatedAt(LocalDateTime.now()); c.setUpdatedAt(LocalDateTime.now());
         convMapper.insert(c);
