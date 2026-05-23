@@ -4,7 +4,6 @@ import com.zjl.collaboration.config.ImOssProperties;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +25,6 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.im.oss.access-key")
 public class ImFileService {
 
     private final S3Client s3Client;
@@ -34,16 +32,28 @@ public class ImFileService {
 
     public ImFileService(ImOssProperties props) {
         this.bucket = props.getBucket();
-        this.s3Client = S3Client.builder()
-                .endpointOverride(URI.create(props.getEndpoint()))
-                .region(Region.of(props.getRegion()))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(props.getAccessKey(), props.getSecretKey())))
-                .build();
-        log.info("IM OSS 已初始化: endpoint={}, bucket={}", props.getEndpoint(), props.getBucket());
+        if (StringUtils.hasText(props.getAccessKey())) {
+            this.s3Client = S3Client.builder()
+                    .endpointOverride(URI.create(props.getEndpoint()))
+                    .region(Region.of(props.getRegion()))
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(props.getAccessKey(), props.getSecretKey())))
+                    .build();
+            log.info("IM OSS 已初始化: endpoint={}, bucket={}", props.getEndpoint(), props.getBucket());
+        } else {
+            this.s3Client = null;
+            log.info("IM OSS 未配置 (access-key 为空)，文件上传功能不可用");
+        }
+    }
+
+    public boolean isAvailable() {
+        return s3Client != null;
     }
 
     public Map<String, Object> upload(MultipartFile file) throws IOException {
+        if (s3Client == null) {
+            throw new BizException(ErrorCode.SYSTEM_ERROR, "OSS 未配置，文件上传暂不可用");
+        }
         String originalName = StringUtils.cleanPath(
                 file.getOriginalFilename() != null ? file.getOriginalFilename() : "file");
         if (originalName.contains("..")) {
@@ -66,6 +76,9 @@ public class ImFileService {
     }
 
     public InputStream read(String key) throws IOException {
+        if (s3Client == null) {
+            throw new BizException(ErrorCode.SYSTEM_ERROR, "OSS 未配置，文件下载暂不可用");
+        }
         try {
             return s3Client.getObject(
                     GetObjectRequest.builder().bucket(bucket).key(key).build());
