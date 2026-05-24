@@ -7,6 +7,7 @@ import com.zjl.collaboration.service.ImMessageConsumer;
 import com.zjl.collaboration.service.ImMessageService;
 import com.zjl.collaboration.util.JwtUtil;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -15,6 +16,9 @@ import java.util.Map;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
+
+    private static final CloseStatus TOKEN_EXPIRED = new CloseStatus(4001, "Token已过期");
+    private static final CloseStatus TOKEN_INVALID = new CloseStatus(4002, "Token无效");
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final JwtUtil jwtUtil;
@@ -29,12 +33,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Long userId = getUserId(session);
-        if (userId != null) {
-            ImMessageConsumer.onlineUsers.put(userId, session);
-            broadcastStatus(userId, "online");
+        if (userId == null) {
+            session.close(TOKEN_INVALID);
+            return;
         }
+        ImMessageConsumer.onlineUsers.put(userId, session);
+        broadcastStatus(userId, "online");
     }
 
     @Override
@@ -79,6 +85,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             try {
                 Claims c = jwtUtil.parse(query.substring(6));
                 return c.get("userId", Long.class);
+            } catch (ExpiredJwtException e) {
+                try { session.close(TOKEN_EXPIRED); } catch (Exception ignored) {}
             } catch (Exception ignored) {}
         }
         return null;

@@ -54,11 +54,22 @@ export function getAuthHeaders() {
   return headers
 }
 
+/**
+ * 清除登录态并跳转登录页。
+ * 可被各模块调用或作为 401 回调统一使用。
+ */
+export function forceLogout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.location.href = '/login'
+}
+
 function attachResponseInterceptor(api) {
   api.interceptors.response.use(
     response => {
       const data = response.data
       if (data && (data.code === 40100 || data.code === '40100')) {
+        forceLogout()
         return Promise.reject({
           response: { status: 401, data },
           message: data.message || '未登录或登录已过期'
@@ -66,7 +77,13 @@ function attachResponseInterceptor(api) {
       }
       return response
     },
-    error => Promise.reject(error)
+    error => {
+      const status = error?.response?.status
+      if (status === 401) {
+        forceLogout()
+      }
+      return Promise.reject(error)
+    }
   )
 }
 
@@ -112,6 +129,10 @@ export function getKnowledgeBase(id) {
   return kbApi.get(`/bases/${id}`)
 }
 
+export function createKnowledgeBase(body) {
+  return kbApi.post('/bases', body)
+}
+
 // ---- Agent Chat (SSE) ----
 
 export function agentChat(sessionId, message, webSearch = false) {
@@ -132,6 +153,16 @@ export function getAgentSessions() {
 
 export function getAgentSessionHistory(id) {
   return kbApi.get(`/agent/sessions/${String(id)}`)
+}
+
+export function uploadAgentAttachment(file) {
+  const form = new FormData()
+  form.append('file', file)
+  return fetch('/api/kb/agent/upload', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: form
+  })
 }
 
 // ---- System Admin ----

@@ -189,7 +189,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getAuthHeaders, readStoredAuth } from '../api'
+import { getAuthHeaders, readStoredAuth, forceLogout } from '../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -392,7 +392,13 @@ function connectWs() {
         }
       } catch {}
     }
-    ws.onclose = () => { wsTimer = setTimeout(connectWs, 3000) }
+    ws.onclose = (e) => {
+      if (e && (e.code === 4001 || e.code === 4002)) {
+        forceLogout()
+        return
+      }
+      wsTimer = setTimeout(connectWs, 3000)
+    }
     ws.onerror = () => {}
   } catch { ws = null }
 }
