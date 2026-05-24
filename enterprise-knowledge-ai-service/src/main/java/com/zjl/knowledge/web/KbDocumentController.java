@@ -63,8 +63,8 @@ public class KbDocumentController {
      */
     @GetMapping("/documents")
     public Result<PageResult<KbDocument>> page(
-            @RequestParam(defaultValue = "1") long current,
-            @RequestParam(defaultValue = "20") long size
+            @RequestParam(name = "current", defaultValue = "1") long current,
+            @RequestParam(name = "size", defaultValue = "20") long size
     ) {
         UserContext user = UserContextHolder.get();
         Page<KbDocument> p = new Page<>(current, size);
@@ -139,8 +139,8 @@ public class KbDocumentController {
     @GetMapping("/documents/{id}/chunk-logs")
     public Result<IPage<KbDocumentChunkLogVO>> chunkLogs(
             @PathVariable("id") Long id,
-            @RequestParam(defaultValue = "1") long current,
-            @RequestParam(defaultValue = "20") long size
+            @RequestParam(name = "current", defaultValue = "1") long current,
+            @RequestParam(name = "size", defaultValue = "20") long size
     ) {
         return Results.success(kbDocumentService.pageChunkLogs(id, current, size, UserContextHolder.get()));
     }
