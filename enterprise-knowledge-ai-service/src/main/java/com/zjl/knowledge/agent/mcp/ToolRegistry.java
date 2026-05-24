@@ -3,6 +3,7 @@ package com.zjl.knowledge.agent.mcp;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.knowledge.web.UserContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * Tool 注册表：收集所有 {@link McpTool} 实现，按名称索引
  */
+@Slf4j
 @Component
 public class ToolRegistry {
 
@@ -67,8 +69,10 @@ public class ToolRegistry {
             McpTool tool = requireTool(name);
             return tool.execute(args, user);
         } catch (BizException e) {
+            log.warn("工具执行失败: name={}, error={}", name, e.getMessage());
             return ToolResult.failure(e.getMessage());
         } catch (Exception e) {
+            log.error("工具执行异常: name={}", name, e);
             return ToolResult.failure("工具执行异常: " + e.getMessage());
         }
     }
