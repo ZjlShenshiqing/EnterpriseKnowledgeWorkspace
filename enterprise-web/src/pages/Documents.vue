@@ -1,243 +1,340 @@
 <template>
-  <div class="documents-fullpage">
-    <!-- Left: Doc List -->
-    <div style="width:260px;background:#fafafa;border-right:1px solid #eee;display:flex;flex-direction:column;flex-shrink:0">
-      <div style="padding:16px">
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <el-input v-model="searchText" placeholder="搜索文档" size="small" clearable />
-          <el-button type="primary" size="small" circle @click="createDoc"><el-icon><Plus /></el-icon></el-button>
-        </div>
+  <div class="doc-page">
+    <aside class="doc-sidebar">
+      <div class="sidebar-header">
+        <input v-model="keyword" placeholder="搜索文档" @input="searchDocs" class="search-input" />
+        <el-button type="primary" size="small" @click="createDoc">新建</el-button>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:0 8px">
-        <div v-for="doc in filteredDocs" :key="doc.id" @click="openDoc(doc)"
-          :style="{ padding:'10px 12px',cursor:'pointer',borderRadius:'8px',marginBottom:'2px',background: activeDoc?.id===doc.id ? '#e8f4ff' : 'transparent',transition:'background .15s' }"
-          @mouseenter="e=>e.target.style.background= activeDoc?.id===doc.id ? '#e8f4ff' : '#f5f5f5'"
-          @mouseleave="e=>e.target.style.background= activeDoc?.id===doc.id ? '#e8f4ff' : 'transparent'">
-          <div style="display:flex;align-items:center;gap:8px">
-            <el-icon :size="18" :color="doc.type==='doc'?'#409eff':doc.type==='sheet'?'#67c23a':'#e6a23c'">
-              <component :is="doc.type==='doc'?'Document':doc.type==='sheet'?'Grid':'Picture'" />
-            </el-icon>
-            <div style="font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.title }}</div>
+      <ul class="doc-list">
+        <li v-for="doc in docs" :key="doc.id"
+            :class="['doc-item', { active: currentDoc?.id === doc.id }]"
+            @click="openDoc(doc)">
+          <div class="doc-item-title">{{ doc.title || '无标题文档' }}</div>
+          <div class="doc-item-meta">
+            <span>{{ doc.updatedByName }}</span>
+            <span>{{ formatTime(doc.updatedAt) }}</span>
           </div>
-          <div style="font-size:11px;color:#c0c4cc;margin-top:4px;margin-left:26px">{{ doc.updatedAt || doc.created_at }} · {{ doc.updatedByName || doc.updated_by_name || '未知' }}</div>
-        </div>
-      </div>
-      <div style="border-top:1px solid #eee;padding:12px;display:flex;gap:6px;align-items:center">
-        <el-avatar v-for="u in onlineUsers" :key="u.name" :size="26" :style="{background:u.color}">{{ u.name[0] }}</el-avatar>
-        <span style="font-size:11px;color:#909399;margin-left:4px">3 人在线</span>
-      </div>
-    </div>
+        </li>
+      </ul>
+    </aside>
 
-    <!-- Center: Editor -->
-    <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-      <div v-if="!activeDoc" style="flex:1;display:flex;align-items:center;justify-content:center;color:#c0c4cc">
-        <div style="text-align:center">
-          <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#409eff,#67c23a);margin:0 auto;display:flex;align-items:center;justify-content:center" class="pulse-icon">
-            <el-icon :size="40" color="#fff"><Document /></el-icon>
-          </div>
-          <div style="font-size:16px;color:#909399;margin-top:20px">选择或创建一个文档开始协作</div>
-          <el-button type="primary" style="margin-top:16px" @click="createDoc">新建文档</el-button>
-        </div>
-      </div>
-      <template v-else>
-        <!-- Toolbar -->
-        <div style="padding:6px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:#fafafa">
-          <el-input v-model="activeDoc.title" style="width:180px" size="small" placeholder="未命名文档" @input="autoSave" />
-          <el-divider direction="vertical" />
-          <el-button-group size="small">
-            <el-button @click="execCmd('bold')"><b>B</b></el-button>
-            <el-button @click="execCmd('italic')"><i>I</i></el-button>
-            <el-button @click="execCmd('underline')"><u>U</u></el-button>
-            <el-button @click="execCmd('strikeThrough')"><s>S</s></el-button>
-          </el-button-group>
-          <el-divider direction="vertical" />
-          <el-button-group size="small">
-            <el-button @click="execCmd('insertUnorderedList')"><el-icon><List /></el-icon></el-button>
-            <el-button @click="execCmd('insertOrderedList')"><el-icon><Tickets /></el-icon></el-button>
-          </el-button-group>
-          <el-divider direction="vertical" />
-          <el-select v-model="heading" size="small" style="width:100px" @change="setHeading" placeholder="正文">
-            <el-option label="正文" value="div" />
-            <el-option label="标题1" value="h2" />
-            <el-option label="标题2" value="h3" />
-          </el-select>
-          <el-divider direction="vertical" />
-          <el-button size="small" @click="insertTable">插入表格</el-button>
-          <span style="font-size:11px;color:#67c23a;margin-left:auto">已自动保存</span>
-        </div>
-        <!-- Editor Area -->
-        <div ref="editor" contenteditable="true" @input="autoSave" @paste="handlePaste"
-          style="flex:1;padding:24px 40px;outline:none;font-size:15px;line-height:1.8;overflow-y:auto;min-height:300px"
-          v-html="activeDoc.content">
+    <main class="doc-editor">
+      <template v-if="currentDoc">
+        <div class="editor-toolbar" id="editor-toolbar"></div>
+        <div class="editor-container" id="editor-container"></div>
+        <div class="editor-footer">
+          <span v-if="onlineCount > 1">{{ onlineCount }} 人在线</span>
+          <span v-else>仅自己</span>
+          <span class="save-status">{{ saveStatus }}</span>
         </div>
       </template>
-    </div>
+      <div v-else class="editor-empty">选择或新建一个文档</div>
+    </main>
 
-    <!-- Right: Collaboration Panel -->
-    <div v-if="activeDoc" style="width:240px;background:#fafafa;border-left:1px solid #eee;display:flex;flex-direction:column;flex-shrink:0">
-      <div style="padding:12px;border-bottom:1px solid #eee">
-        <div style="font-weight:600;font-size:13px;margin-bottom:8px">协作成员</div>
-        <div v-for="c in collaborators" :key="c.name" style="display:flex;align-items:center;gap:8px;padding:4px 0">
-          <el-avatar :size="28" :style="{background:c.color}">{{ c.name[0] }}</el-avatar>
-          <div>
-            <div style="font-size:12px">{{ c.name }}</div>
-            <div style="font-size:11px;color:#909399">{{ c.status }}</div>
-          </div>
-          <div :style="{width:8,height:8,borderRadius:'50%',background:c.online?'#67c23a':'#c0c4cc',marginLeft:'auto',transition:'background .5s'}"></div>
-        </div>
-        <el-button size="small" style="margin-top:8px;width:100%" @click="shareVisible=true">
-          <el-icon><Share /></el-icon> 分享协作
-        </el-button>
-      </div>
-      <div style="flex:1;overflow-y:auto;padding:12px">
-        <div style="font-weight:600;font-size:13px;margin-bottom:8px">评论</div>
-        <div v-for="c in comments" :key="c.id" style="margin-bottom:10px;padding:8px;background:#fff;border-radius:6px;font-size:12px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-            <el-avatar :size="20" :style="{background:c.color}">{{ c.user[0] }}</el-avatar>
-            <span style="font-weight:500">{{ c.user }}</span>
-            <span style="color:#c0c4cc;font-size:11px;margin-left:auto">{{ c.time }}</span>
-          </div>
-          <div style="line-height:1.6;color:#606266">{{ c.text }}</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <el-input v-model="newComment" size="small" placeholder="添加评论..." @keyup.enter="addComment" />
-          <el-button size="small" circle @click="addComment"><el-icon><Promotion /></el-icon></el-button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Share Dialog -->
-    <el-dialog v-model="shareVisible" title="分享文档" width="420px">
-      <div style="line-height:2">
-        <p><b>分享链接</b></p>
-        <el-input v-model="shareLink" readonly><template #append><el-button @click="copyLink">复制</el-button></template></el-input>
-        <p style="margin-top:12px"><b>权限设置</b></p>
-        <el-radio-group v-model="sharePerm">
-          <el-radio value="view">仅查看</el-radio>
-          <el-radio value="comment">可评论</el-radio>
-          <el-radio value="edit">可编辑</el-radio>
-        </el-radio-group>
-        <p style="margin-top:12px"><b>邀请成员</b></p>
-        <el-select v-model="inviteUsers" multiple filterable placeholder="搜索成员" style="width:100%">
-          <el-option v-for="u in allUsers" :key="u" :label="u" :value="u" />
-        </el-select>
-      </div>
-      <template #footer><el-button @click="shareVisible=false">取消</el-button><el-button type="primary" @click="shareVisible=false">确认分享</el-button></template>
-    </el-dialog>
+    <aside class="doc-panel" v-if="currentDoc">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="协作者" name="collaborators">
+          <CollaboratorPanel :docId="currentDoc.id" />
+        </el-tab-pane>
+        <el-tab-pane label="评论" name="comments">
+          <CommentPanel :docId="currentDoc.id" :quill="quill" />
+        </el-tab-pane>
+        <el-tab-pane label="分享" name="share">
+          <SharePanel :docId="currentDoc.id" />
+        </el-tab-pane>
+      </el-tabs>
+    </aside>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, nextTick, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
+import Quill from 'quill'
+import QuillCursors from 'quill-cursors'
+import 'quill/dist/quill.snow.css'
+import 'quill-cursors/dist/quill-cursors.css'
+import { getAuthHeaders } from '../api'
+import CollaboratorPanel from '../components/CollaboratorPanel.vue'
+import CommentPanel from '../components/CommentPanel.vue'
+import SharePanel from '../components/SharePanel.vue'
+
+Quill.register('modules/cursors', QuillCursors)
 
 const docs = ref([])
-const searchText = ref('')
-const activeDoc = ref(null)
-const shareVisible = ref(false)
-const shareLink = ref('https://enterprise.local/docs/abc123')
-const sharePerm = ref('edit')
-const inviteUsers = ref([])
-const newComment = ref('')
-const heading = ref('div')
-const editor = ref(null)
+const currentDoc = ref(null)
+const keyword = ref('')
+const activeTab = ref('collaborators')
+const saveStatus = ref('已保存')
+const onlineCount = ref(1)
 
-const allUsers = ['张三','李四','王五','赵六','陈七']
-const onlineUsers = [{name:'张三',color:'#409eff'},{name:'李四',color:'#67c23a'},{name:'王五',color:'#e6a23c'}]
+let quill = null
+let ws = null
+let cursors = null
+let remoteChange = false
+let localVersion = 0
 
-const collaborators = ref([
-  {name:'张三',color:'#409eff',status:'正在编辑',online:true},
-  {name:'李四',color:'#67c23a',status:'正在查看',online:true},
-  {name:'王五',color:'#e6a23c',status:'2分钟前离开',online:false},
-])
-
-const comments = ref([
-  {id:1,user:'李四',color:'#67c23a',text:'这里的数据来源需要补充一下',time:'10:30'},
-  {id:2,user:'王五',color:'#e6a23c',text:'已补充数据来源，请再次确认',time:'10:45'},
-])
-
-const mockDocs = [
-  {id:1,title:'Q2项目评审报告',type:'doc',content:'<h2>Q2项目评审报告</h2><p>本报告总结了2026年第二季度的项目进展情况。</p><h3>一、项目概况</h3><p>Q2共完成5个重点项目，其中<strong>知识库微服务</strong>为核心交付。</p>',updatedByName:'张三',updatedAt:'10:45'},
-  {id:2,title:'技术架构设计文档',type:'doc',content:'<h2>技术架构设计文档</h2><p>本文档描述企业智能工作平台的技术架构设计。</p><h3>微服务架构</h3><ul><li>Gateway 网关服务</li><li>Knowledge-AI 知识库服务</li><li>Collaboration 协同服务</li><li>Workbench 工作台服务</li></ul>',updatedByName:'张三',updatedAt:'09:30'},
-]
-
-const filteredDocs = computed(() => docs.value.filter(d => !searchText.value || d.title.includes(searchText.value)))
-
-function readUser() {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}') || {}
-  } catch {
-    return {}
+function authHeaders() {
+  const h = getAuthHeaders()
+  return {
+    'X-User-Id': h['X-User-Id'] || '',
+    'X-Department-Id': h['X-Department-Id'] || '',
+    'X-Is-Admin': h['X-Is-Admin'] || 'false'
   }
 }
-function headers() {
-  const u = readUser()
-  return { 'X-User-Id': String(u.id || 1), 'X-Is-Admin': String(u.isAdmin ? 'true' : 'false'), 'Content-Type': 'application/json' }
+
+function getToken() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    return user.accessToken || ''
+  } catch { return '' }
 }
 
 async function loadDocs() {
-  try { const r=await fetch('/api/docs',{headers:headers()}); docs.value=(await r.json()).data||[] }
-  catch(e) { docs.value=mockDocs }
+  try {
+    const res = await fetch('/api/docs?keyword=' + encodeURIComponent(keyword.value))
+    const body = await res.json()
+    if (String(body.code) === '200') {
+      docs.value = body.data?.records || []
+    }
+  } catch (e) {
+    console.error('加载文档列表失败', e)
+  }
 }
 
-const route = useRoute()
-watch(
-  () => route.path,
-  (path) => {
-    if (path === '/documents') {
-      loadDocs()
-    }
-  },
-  { immediate: true }
-)
+let searchTimer = null
+function searchDocs() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(loadDocs, 300)
+}
 
 async function createDoc() {
+  const title = prompt('请输入文档标题')
+  if (!title) return
   try {
-    const r=await fetch('/api/docs',{method:'POST',headers:headers(),body:JSON.stringify({title:'未命名文档',content:''})})
-    const id=(await r.json()).data; const d={id,title:'未命名文档',type:'doc',content:'',updatedBy:'我',updatedAt:'刚刚'}
-    docs.value.unshift(d); activeDoc.value=d
-  } catch(e) { const d={id:Date.now(),title:'未命名文档',type:'doc',content:'',updatedBy:'我',updatedAt:'刚刚'}; docs.value.unshift(d); activeDoc.value=d }
+    const res = await fetch('/api/docs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ title })
+    })
+    const body = await res.json()
+    if (String(body.code) === '200') {
+      await loadDocs()
+      const newDoc = { id: body.data.id, title }
+      openDoc(newDoc)
+    }
+  } catch (e) {
+    ElMessage.error('创建失败')
+  }
 }
 
-function openDoc(doc) { activeDoc.value = doc }
+async function openDoc(doc) {
+  disconnectWs()
 
-let saveTimer=null
-function autoSave() {
-  if (!activeDoc.value) return
-  clearTimeout(saveTimer)
-  saveTimer=setTimeout(async () => {
-    const el=document.querySelector('[contenteditable="true"]')
-    if (el) activeDoc.value.content=el.innerHTML
-    try { await fetch(`/api/docs/${activeDoc.value.id}`,{method:'PUT',headers:headers(),body:JSON.stringify({title:activeDoc.value.title,content:activeDoc.value.content})}) } catch(e) {}
-  }, 1500)
+  try {
+    const res = await fetch(`/api/docs/${doc.id}`, { headers: authHeaders() })
+    const body = await res.json()
+    if (String(body.code) !== '200') {
+      ElMessage.error('加载文档失败')
+      return
+    }
+
+    currentDoc.value = body.data
+    localVersion = body.data.version || 0
+
+    await nextTick()
+    initEditor(body.data.content)
+    connectWs(doc.id)
+
+    loadOnlineCount(doc.id)
+  } catch (e) {
+    console.error('打开文档失败', e)
+  }
 }
-function execCmd(cmd) { document.execCommand(cmd, false, null); editor.value?.focus() }
-function setHeading(v) { document.execCommand('formatBlock', false, `<${v}>`); editor.value?.focus() }
-function insertTable() {
-  document.execCommand('insertHTML', false, '<table border="1" style="border-collapse:collapse;width:100%"><tr><td>列1</td><td>列2</td></tr><tr><td></td><td></td></tr></table><p><br></p>')
-  autoSave()
+
+function initEditor(content) {
+  const container = document.getElementById('editor-container')
+  const toolbar = document.getElementById('editor-toolbar')
+  if (!container) return
+
+  if (quill) {
+    quill.off('text-change')
+    quill.off('selection-change')
+    container.innerHTML = ''
+  }
+
+  quill = new Quill(container, {
+    modules: {
+      toolbar: toolbar || '#editor-toolbar',
+      cursors: true
+    },
+    theme: 'snow',
+    placeholder: '开始输入...'
+  })
+
+  cursors = quill.getModule('cursors')
+
+  try {
+    const delta = JSON.parse(content)
+    quill.setContents(delta, 'silent')
+  } catch (e) {
+    quill.setContents([{ insert: '\n' }], 'silent')
+  }
+
+  quill.on('text-change', (delta, oldDelta, source) => {
+    if (source !== 'user') return
+    if (remoteChange) return
+
+    const ops = delta.ops
+    if (!ops || ops.length === 0) return
+
+    sendWsMessage({
+      action: 'op',
+      docId: currentDoc.value.id,
+      ops: ops,
+      version: localVersion
+    })
+
+    saveStatus.value = '保存中...'
+  })
+
+  quill.on('selection-change', (range) => {
+    if (range && ws && ws.readyState === WebSocket.OPEN) {
+      sendWsMessage({
+        action: 'cursor',
+        docId: currentDoc.value.id,
+        range: range
+      })
+    }
+  })
 }
-function addComment() {
-  if (!newComment.value.trim()) return
-  comments.value.push({ id: Date.now(), user:'我', color:'#409eff', text:newComment.value, time: new Date().toLocaleTimeString('zh',{hour:'2-digit',minute:'2-digit'}) })
-  newComment.value = ''
+
+function connectWs(docId) {
+  const token = getToken()
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = location.hostname
+  ws = new WebSocket(`${protocol}//${host}:8090/ws/docs?token=${encodeURIComponent(token)}`)
+
+  ws.onopen = () => {
+    sendWsMessage({ action: 'sub', docId })
+  }
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data)
+      handleWsMessage(msg)
+    } catch (e) {
+      console.error('解析 WebSocket 消息失败', e)
+    }
+  }
+
+  ws.onclose = () => {
+    console.log('WebSocket 断开')
+  }
+
+  ws.onerror = (e) => {
+    console.error('WebSocket 错误', e)
+  }
 }
-function copyLink() { navigator.clipboard.writeText(shareLink.value); ElMessage.success('链接已复制') }
-function handlePaste(e) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }
+
+function disconnectWs() {
+  if (ws) {
+    ws.onclose = null
+    ws.close()
+    ws = null
+  }
+}
+
+function sendWsMessage(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(msg))
+  }
+}
+
+function handleWsMessage(msg) {
+  if (!currentDoc.value) return
+
+  switch (msg.action) {
+    case 'init': {
+      localVersion = msg.version
+      try {
+        const delta = JSON.parse(msg.content)
+        remoteChange = true
+        quill.setContents(delta, 'silent')
+        remoteChange = false
+      } catch (e) { /* ignore */ }
+      break
+    }
+    case 'ack': {
+      localVersion = msg.version
+      saveStatus.value = '已保存'
+      break
+    }
+    case 'op': {
+      localVersion = msg.version
+      remoteChange = true
+      quill.updateContents(msg.ops, 'silent')
+      remoteChange = false
+      break
+    }
+    case 'cursor': {
+      if (cursors) {
+        cursors.createCursor(msg.userId, msg.userName || ('用户' + msg.userId), 'red')
+        cursors.moveCursor(msg.userId, msg.range)
+      }
+      break
+    }
+    case 'presence': {
+      loadOnlineCount(currentDoc.value.id)
+      break
+    }
+    case 'error': {
+      ElMessage.error(msg.message || '协同编辑出错')
+      break
+    }
+  }
+}
+
+async function loadOnlineCount(docId) {
+  try {
+    const res = await fetch(`/api/docs/${docId}/collaborators`, { headers: authHeaders() })
+    const body = await res.json()
+    if (String(body.code) === '200') {
+      const list = body.data || []
+      onlineCount.value = Math.max(1, list.filter(c => c.online).length)
+    }
+  } catch { /* ignore */ }
+}
+
+function formatTime(t) {
+  if (!t) return ''
+  return new Date(t).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+onBeforeUnmount(() => {
+  disconnectWs()
+})
+
+loadDocs()
 </script>
 
 <style scoped>
-/**
- * 在 MainLayout 主内容区内占满剩余高度与宽度。
- */
-.documents-fullpage {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  height: 100%;
-  background: #fff;
-  overflow: hidden;
-}
+.doc-page { display: flex; height: 100vh; overflow: hidden; }
+.doc-sidebar { width: 260px; border-right: 1px solid #e5e5e5; display: flex; flex-direction: column; background: #fff; }
+.sidebar-header { padding: 12px; display: flex; gap: 8px; }
+.search-input { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; }
+.doc-list { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 0; }
+.doc-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+.doc-item:hover, .doc-item.active { background: #e8f0fe; }
+.doc-item-title { font-size: 14px; font-weight: 500; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-item-meta { font-size: 12px; color: #999; margin-top: 4px; display: flex; justify-content: space-between; }
+.doc-editor { flex: 1; display: flex; flex-direction: column; background: #f9f9f9; min-width: 0; }
+.editor-toolbar { border-bottom: 1px solid #ddd; background: #fff; }
+.editor-container { flex: 1; padding: 24px 40px; overflow-y: auto; background: #fff; margin: 0 auto; width: 100%; max-width: 800px; }
+.editor-container :deep(.ql-editor) { min-height: 400px; font-size: 15px; line-height: 1.8; }
+.editor-footer { padding: 8px 16px; font-size: 12px; color: #999; border-top: 1px solid #eee; display: flex; justify-content: space-between; background: #fff; }
+.editor-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #999; font-size: 16px; }
+.doc-panel { width: 300px; border-left: 1px solid #e5e5e5; background: #fff; overflow-y: auto; }
+.doc-panel :deep(.el-tabs__header) { margin: 0; padding: 0 12px; }
+.doc-panel :deep(.el-tabs__content) { padding: 0 12px; }
 </style>
