@@ -226,7 +226,8 @@ public class AgentLoop {
                 ToolResult result = toolRegistry.execute(tc.getName(), tc.getArguments(), user);
                 
                 // 发送工具执行结果到客户端
-                emitter.send("tool_result", Map.of("tool", tc.getName(), "result", result.getData()));
+                Object toolData = result.getData() != null ? result.getData() : "";
+emitter.send("tool_result", Map.of("tool", tc.getName(), "result", toolData));
                 
                 // 保存工具调用记录到数据库
                 sessionService.saveToolMessage(session.getId(), tc.getName(), tc.getArguments(), result.getData());

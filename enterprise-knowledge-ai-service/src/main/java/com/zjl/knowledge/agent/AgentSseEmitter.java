@@ -76,7 +76,7 @@ public class AgentSseEmitter {
     public void error(String message) {
         try {
             delegate.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter
-                    .event().name("error").data(Map.of("message", message)));
+                    .event().name("error").data(Map.of("message", message != null ? message : "未知错误")));
             delegate.complete();
         } catch (IOException e) {
             log.warn("SSE 错误发送失败", e);
