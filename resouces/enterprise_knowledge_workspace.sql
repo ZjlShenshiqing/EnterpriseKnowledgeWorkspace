@@ -160,6 +160,45 @@ CREATE TABLE kb_agent_message (
     KEY idx_agent_message_session (session_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent对话消息表';
 
+-- -------------------- kb_intent_node 意图节点表 --------------------
+DROP TABLE IF EXISTS kb_intent_node;
+CREATE TABLE kb_intent_node (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    parent_id BIGINT NULL COMMENT '父节点ID，NULL为根场景',
+    name VARCHAR(128) NOT NULL COMMENT '节点名称',
+    level TINYINT NOT NULL DEFAULT 1 COMMENT '层级 1=场景 2=意图',
+    sort_order INT DEFAULT 0 COMMENT '同级排序',
+    description VARCHAR(512) NULL COMMENT '节点说明',
+    enabled TINYINT NOT NULL DEFAULT 1 COMMENT '是否启用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_intent_parent (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='意图节点表';
+
+-- -------------------- kb_intent_rule 意图匹配规则表 --------------------
+DROP TABLE IF EXISTS kb_intent_rule;
+CREATE TABLE kb_intent_rule (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    node_id BIGINT NOT NULL COMMENT '意图节点ID',
+    rule_type VARCHAR(16) NOT NULL COMMENT 'keyword / regex',
+    expression VARCHAR(256) NOT NULL COMMENT '关键词或正则表达式',
+    weight DOUBLE NOT NULL DEFAULT 1.0 COMMENT '匹配权重',
+    enabled TINYINT NOT NULL DEFAULT 1 COMMENT '是否启用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_rule_node (node_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='意图匹配规则表';
+
+-- -------------------- kb_intent_kb_rel 意图知识库关联表 --------------------
+DROP TABLE IF EXISTS kb_intent_kb_rel;
+CREATE TABLE kb_intent_kb_rel (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    node_id BIGINT NOT NULL COMMENT '意图节点ID',
+    kb_id BIGINT NOT NULL COMMENT '知识库ID',
+    weight DOUBLE NOT NULL DEFAULT 1.0 COMMENT '检索权重',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_intent_kb (node_id, kb_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='意图知识库关联表';
+
 -- -------------------- 种子数据 --------------------
 INSERT INTO kb_category (id, parent_id, category_name, category_type, sort_order, status, created_at, updated_at, deleted)
 SELECT 1001, NULL, '默认分类', 'COMMON', 0, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
@@ -311,6 +350,10 @@ INSERT INTO sys_user_role (user_id, role_id) VALUES
 USE enterprise_collaboration;
 
 DROP TABLE IF EXISTS sys_doc;
+DROP TABLE IF EXISTS sys_doc_operation;
+DROP TABLE IF EXISTS sys_doc_comment;
+DROP TABLE IF EXISTS sys_doc_share_link;
+DROP TABLE IF EXISTS sys_doc_collaborator;
 DROP TABLE IF EXISTS sys_todo;
 DROP TABLE IF EXISTS sys_meeting;
 DROP TABLE IF EXISTS sys_approval_record;
@@ -325,6 +368,9 @@ DROP TABLE IF EXISTS im_conversation;
 DROP TABLE IF EXISTS sys_announcement;
 DROP TABLE IF EXISTS sys_user;
 DROP TABLE IF EXISTS sys_dept;
+DROP TABLE IF EXISTS kb_intent_kb_rel;
+DROP TABLE IF EXISTS kb_intent_rule;
+DROP TABLE IF EXISTS kb_intent_node;
 
 CREATE TABLE sys_dept (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
@@ -490,12 +536,66 @@ CREATE TABLE sys_todo (
 CREATE TABLE sys_doc (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
     title VARCHAR(256) NOT NULL COMMENT '文档标题',
-    content LONGTEXT NULL COMMENT '文档内容(HTML)',
+    content LONGTEXT NULL COMMENT '文档内容(Quill Delta JSON)',
+    version INT NOT NULL DEFAULT 0 COMMENT '当前操作版本号',
+    snapshot_version INT NOT NULL DEFAULT 0 COMMENT '最后快照版本号',
+    created_by BIGINT NULL COMMENT '创建者ID',
     updated_by BIGINT NULL COMMENT '最后编辑人ID',
     updated_by_name VARCHAR(64) NULL COMMENT '最后编辑人姓名',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='协作文档表';
+
+-- 文档操作日志表 (OT)
+CREATE TABLE IF NOT EXISTS sys_doc_operation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    doc_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    version INT NOT NULL,
+    operation LONGTEXT NOT NULL COMMENT 'Quill Delta JSON',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_doc_version (doc_id, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档操作日志表';
+
+-- 文档评论表
+CREATE TABLE IF NOT EXISTS sys_doc_comment (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    doc_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    anchor_index INT DEFAULT NULL COMMENT '锚定起始位置',
+    anchor_length INT DEFAULT NULL COMMENT '锚定长度',
+    parent_id BIGINT DEFAULT NULL COMMENT '回复目标评论ID',
+    resolved TINYINT NOT NULL DEFAULT 0,
+    deleted TINYINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_doc_comment (doc_id, deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档评论表';
+
+-- 文档分享链接表
+CREATE TABLE IF NOT EXISTS sys_doc_share_link (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    doc_id BIGINT NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    permission VARCHAR(10) NOT NULL COMMENT 'VIEW/COMMENT/EDIT',
+    expired_at TIMESTAMP NULL DEFAULT NULL,
+    deleted TINYINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_token (token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档分享链接表';
+
+-- 文档协作者表
+CREATE TABLE IF NOT EXISTS sys_doc_collaborator (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    doc_id BIGINT NOT NULL,
+    target_type VARCHAR(10) NOT NULL COMMENT 'USER/DEPT',
+    target_id BIGINT NOT NULL,
+    permission VARCHAR(10) NOT NULL COMMENT 'VIEW/COMMENT/EDIT',
+    deleted TINYINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_doc_collaborator (doc_id, deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档协作者表';
 
 INSERT INTO sys_dept (id, name) VALUES (1, '技术部'), (2, '产品部'), (3, '设计部');
 
