@@ -271,6 +271,11 @@ async function refreshData() {
 
 async function loadData() {
   try {
+    // 一次性清除旧缓存
+    if (!localStorage.getItem('_wb_cache_cleared')) {
+      localStorage.setItem('_wb_cache_cleared', '1')
+      await fetch('/api/workbench/cache/overview', {method:'DELETE', headers:headers()}).catch(()=>{})
+    }
     const resp = await fetch('/api/workbench/overview', {headers:headers()})
     const data = (await resp.json()).data||{}
     recentDocs.value = data.recentDocs||[]
