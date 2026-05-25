@@ -24,7 +24,7 @@ spring:
         - id: collaboration
           uri: lb://enterprise-collaboration-service
           predicates:
-            - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**,/api/chat/**,/api/docs/**,/api/approvals/**,/api/announcements/**,/api/intents/**
+            - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**,/api/chat/**,/api/docs/**,/api/approvals/**,/api/announcements/**,/api/intents/**,/api/keyword-mappings/**
         - id: workbench
           uri: lb://enterprise-workbench-service
           predicates:
@@ -61,7 +61,7 @@ app:
   security:
     jwt:
       secret: "dev-secret-change-me-dev-secret-change-me-32bytes"
-      ttl-seconds: 7200
+      ttl-seconds: 86400
     whitelist:
       paths:
         - /api/system/health
