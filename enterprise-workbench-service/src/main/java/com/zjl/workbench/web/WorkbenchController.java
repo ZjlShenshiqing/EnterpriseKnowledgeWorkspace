@@ -2,6 +2,7 @@ package com.zjl.workbench.web;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/workbench")
 public class WorkbenchController {
@@ -31,6 +33,8 @@ public class WorkbenchController {
     @GetMapping("/overview")
     @Cacheable(value = "wb_overview", key = "#userId", unless = "#result.data.isEmpty()")
     public Result<Map<String,Object>> overview(@RequestHeader(UA) Long userId, @RequestHeader(value=AD,defaultValue="false") String isAdmin) {
+        long start = System.currentTimeMillis();
+        log.info("工作台概览查询: userId={}", userId);
         Map<String,Object> data = new LinkedHashMap<>();
         var headers = Map.of(UA, String.valueOf(userId), AD, isAdmin);
 
@@ -69,6 +73,8 @@ public class WorkbenchController {
             }).count());
         } catch (Exception e) { data.put("inProgressTaskCount", 0); }
 
+        long elapsed = System.currentTimeMillis() - start;
+        log.info("工作台概览查询完成: userId={}, elapsed={}ms", userId, elapsed);
         return Results.success(data);
     }
 
