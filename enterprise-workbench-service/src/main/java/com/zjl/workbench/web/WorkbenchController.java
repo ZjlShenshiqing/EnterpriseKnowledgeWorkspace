@@ -1,7 +1,10 @@
 package com.zjl.workbench.web;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.workbench.entity.WbFavorite;
+import com.zjl.workbench.mapper.WbFavoriteMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
@@ -17,6 +20,7 @@ import java.util.*;
 public class WorkbenchController {
 
     private final RestTemplate rt;
+    private final WbFavoriteMapper favoriteMapper;
 
     @Value("${collab.service.url:http://enterprise-collaboration-service}")
     private String collabUrl;
@@ -24,8 +28,9 @@ public class WorkbenchController {
     @Value("${knowledge.service.url:http://enterprise-knowledge-ai-service}")
     private String knowledgeUrl;
 
-    public WorkbenchController(RestTemplate restTemplate) {
+    public WorkbenchController(RestTemplate restTemplate, WbFavoriteMapper favoriteMapper) {
         this.rt = restTemplate;
+        this.favoriteMapper = favoriteMapper;
     }
 
     private static final String UA = "X-User-Id";
@@ -47,12 +52,23 @@ public class WorkbenchController {
             if (kbResp != null) {
                 Object dataObj = kbResp.get("data");
                 if (dataObj instanceof Map kbData) {
-                    data.put("recentDocs", kbData.getOrDefault("records", List.of()));
-                    data.put("docCount", kbData.getOrDefault("total", 0));
+                    Object records = kbData.get("records");
+                    if (records instanceof List list) {
+                        List<Map<String,Object>> docs = new ArrayList<>();
+                        for (Object item : list) {
+                            if (item instanceof Map m) {
+                                Map<String,Object> doc = new LinkedHashMap<>(m);
+                                doc.put("docType", "knowledge");
+                                docs.add(doc);
+                            }
+                        }
+                        data.put("recentDocs", docs);
+                        data.put("documentCount", kbData.getOrDefault("total", 0));
+                    }
                 }
             }
         } catch (Exception e) {
-            data.put("recentDocs", List.of()); data.put("docCount", 0);
+            data.put("recentDocs", List.of()); data.put("documentCount", 0);
         }
 
         // 从 collaboration 统计
@@ -76,6 +92,50 @@ public class WorkbenchController {
                 return "todo".equals(s) || "in_progress".equals(s);
             }).count());
         } catch (Exception e) { data.put("inProgressTaskCount", 0); }
+
+        // 审批统计
+        try {
+            var approvals = callList(collabUrl + "/api/approvals", headers);
+            long pendingApprovals = approvals.stream().filter(a -> {
+                Object s = ((Map<?,?>)a).get("status");
+                return s == null || (!"approved".equals(s.toString()) && !"rejected".equals(s.toString()));
+            }).count();
+            data.put("pendingApprovalCount", pendingApprovals);
+        } catch (Exception e) { data.put("pendingApprovalCount", 0); }
+
+        // 未读消息数
+        try {
+            var unreadResp = callForObject(collabUrl + "/api/im/unread-count?userId=" + userId, Map.of(UA, String.valueOf(userId)), Map.class);
+            if (unreadResp != null && unreadResp.get("data") instanceof Number n) {
+                data.put("unreadMessageCount", n.intValue());
+            } else {
+                data.put("unreadMessageCount", 0);
+            }
+        } catch (Exception e) { data.put("unreadMessageCount", 0); }
+
+        // 知识库数量
+        try {
+            var basesResp = callForObject(knowledgeUrl + "/api/kb/bases?current=1&size=1", headers, Map.class);
+            if (basesResp != null && basesResp.get("data") instanceof Map basesData) {
+                data.put("baseCount", basesData.getOrDefault("total", 0));
+            }
+        } catch (Exception e) { data.put("baseCount", 0); }
+
+        // 意图配置数量
+        try {
+            var intentsResp = callForObject(collabUrl + "/api/intents?current=1&size=1", headers, Map.class);
+            if (intentsResp != null && intentsResp.get("data") instanceof Map intentsData) {
+                data.put("intentCount", intentsData.getOrDefault("total", 0));
+            }
+        } catch (Exception e) { data.put("intentCount", 0); }
+
+        // 今日会话数量
+        try {
+            var sessionsResp = callForObject(knowledgeUrl + "/api/kb/agent/sessions?current=1&size=1", headers, Map.class);
+            if (sessionsResp != null && sessionsResp.get("data") instanceof Map sessionsData) {
+                data.put("todaySessionCount", sessionsData.getOrDefault("total", 0));
+            }
+        } catch (Exception e) { data.put("todaySessionCount", 0); }
 
         return Results.success(data);
     }
@@ -134,6 +194,34 @@ public class WorkbenchController {
     private <T> T callForObject(String url, Map<String,String> headers, Class<T> type) {
         var entity = new HttpEntity<>(toHttpHeaders(headers));
         return rt.exchange(url, HttpMethod.GET, entity, type).getBody();
+    }
+
+    @GetMapping("/favorites")
+    public Result<List<WbFavorite>> listFavorites(@RequestHeader(UA) Long userId) {
+        List<WbFavorite> list = favoriteMapper.selectList(
+                new LambdaQueryWrapper<WbFavorite>().eq(WbFavorite::getUserId, userId)
+                        .orderByDesc(WbFavorite::getCreatedAt));
+        return Results.success(list);
+    }
+
+    @PostMapping("/favorites")
+    public Result<WbFavorite> addFavorite(@RequestHeader(UA) Long userId, @RequestBody Map<String,Object> body) {
+        WbFavorite f = new WbFavorite();
+        f.setUserId(userId);
+        f.setItemType((String) body.get("itemType"));
+        f.setItemId(Long.valueOf(body.get("itemId").toString()));
+        f.setTitle((String) body.get("title"));
+        favoriteMapper.insert(f);
+        return Results.success(f);
+    }
+
+    @DeleteMapping("/favorites/{id}")
+    public Result<Void> removeFavorite(@RequestHeader(UA) Long userId, @PathVariable Long id) {
+        favoriteMapper.delete(
+                new LambdaQueryWrapper<WbFavorite>()
+                        .eq(WbFavorite::getId, id)
+                        .eq(WbFavorite::getUserId, userId));
+        return Results.success();
     }
 
     private HttpHeaders toHttpHeaders(Map<String,String> headers) {
