@@ -6,7 +6,6 @@ import com.zjl.common.response.Results;
 import com.zjl.workbench.entity.WbFavorite;
 import com.zjl.workbench.mapper.WbFavoriteMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -22,7 +21,6 @@ public class WorkbenchController {
 
     private final RestTemplate rt;
     private final WbFavoriteMapper favoriteMapper;
-    private final CacheManager cacheManager;
 
     @Value("${collab.service.url:http://enterprise-collaboration-service}")
     private String collabUrl;
@@ -30,10 +28,9 @@ public class WorkbenchController {
     @Value("${knowledge.service.url:http://enterprise-knowledge-ai-service}")
     private String knowledgeUrl;
 
-    public WorkbenchController(RestTemplate restTemplate, WbFavoriteMapper favoriteMapper, CacheManager cacheManager) {
+    public WorkbenchController(RestTemplate restTemplate, WbFavoriteMapper favoriteMapper) {
         this.rt = restTemplate;
         this.favoriteMapper = favoriteMapper;
-        this.cacheManager = cacheManager;
     }
 
     private static final String UA = "X-User-Id";
@@ -197,15 +194,6 @@ public class WorkbenchController {
     private <T> T callForObject(String url, Map<String,String> headers, Class<T> type) {
         var entity = new HttpEntity<>(toHttpHeaders(headers));
         return rt.exchange(url, HttpMethod.GET, entity, type).getBody();
-    }
-
-    @DeleteMapping("/cache/overview")
-    public Result<Void> clearOverviewCache(@RequestHeader(UA) Long userId) {
-        var cache = cacheManager.getCache("wb_overview");
-        if (cache != null) {
-            cache.evict(userId);
-        }
-        return Results.success();
     }
 
     @GetMapping("/favorites")
