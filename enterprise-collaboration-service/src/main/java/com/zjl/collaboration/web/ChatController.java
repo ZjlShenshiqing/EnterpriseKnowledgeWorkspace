@@ -66,6 +66,20 @@ public class ChatController {
         return Results.success(result);
     }
 
+    @GetMapping("/unread-count")
+    public Result<Integer> unreadCount(@RequestHeader("X-User-Id") Long userId) {
+        List<Long> convIds = memberMapper.selectList(
+                Wrappers.lambdaQuery(ImConversationMember.class)
+                        .eq(ImConversationMember::getUserId, userId))
+                .stream().map(ImConversationMember::getConversationId).toList();
+        if (convIds.isEmpty()) return Results.success(0);
+        int total = 0;
+        for (Long convId : convIds) {
+            total += readService.unreadCount(userId, convId);
+        }
+        return Results.success(total);
+    }
+
     @GetMapping("/messages/{convId}")
     public Result<List<ImMessage>> messages(@PathVariable Long convId,
                                              @RequestParam(defaultValue = "1") int page,
