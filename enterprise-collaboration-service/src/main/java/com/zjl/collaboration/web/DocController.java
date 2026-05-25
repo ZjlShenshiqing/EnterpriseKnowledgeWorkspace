@@ -13,6 +13,7 @@ import com.zjl.common.exception.BizException;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/docs")
 @RequiredArgsConstructor
@@ -96,6 +98,7 @@ public class DocController {
         }
 
         docMapper.insert(doc);
+        log.info("文档创建: docId={}, title={}, userId={}", doc.getId(), req.getTitle(), userId);
         Map<String, Object> m = new HashMap<>();
         m.put("id", doc.getId());
         return Results.success(m);
@@ -114,6 +117,7 @@ public class DocController {
 
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        log.info("文档删除: docId={}", id);
         docMapper.deleteById(id);
         return Results.success();
     }

@@ -8,12 +8,14 @@ import com.zjl.collaboration.service.ImMessageService;
 import com.zjl.collaboration.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.util.Map;
 
+@Slf4j
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
@@ -39,6 +41,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             session.close(TOKEN_INVALID);
             return;
         }
+        log.info("Chat WS连接: userId={}", userId);
         ImMessageConsumer.onlineUsers.put(userId, session);
         broadcastStatus(userId, "online");
     }
@@ -64,6 +67,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Long userId = getUserId(session);
         if (userId != null) {
+            log.info("Chat WS断开: userId={}", userId);
             ImMessageConsumer.onlineUsers.remove(userId);
             broadcastStatus(userId, "offline");
         }

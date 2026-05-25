@@ -7,11 +7,13 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/approvals")
 @RequiredArgsConstructor
@@ -36,6 +38,7 @@ public class ApprovalController {
         r.setFormData(body.get("formData") != null ? body.get("formData").toString() : "{}");
         r.setStatus("pending"); r.setCreatedAt(LocalDateTime.now());
         requestMapper.insert(r);
+        log.info("审批创建: userId={}, requestId={}", userId, r.getId());
         return Results.success(r.getId());
     }
 
@@ -58,6 +61,7 @@ public class ApprovalController {
 
         SysApprovalRequest req = requestMapper.selectById(id);
         String newStatus = "rejected".equals(body.get("action")) ? "rejected" : nextStatus(req);
+        log.info("审批处理: requestId={}, userId={}, action={}, newStatus={}", id, userId, body.get("action"), newStatus);
         req.setStatus(newStatus); req.setUpdatedAt(LocalDateTime.now());
         requestMapper.updateById(req);
         return Results.success();

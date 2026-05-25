@@ -5,8 +5,10 @@ import com.zjl.collaboration.service.UserLoginService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -16,7 +18,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public Result<UserLoginRespDTO> login(@RequestBody UserLoginReqDTO request) {
-        return Results.success(userLoginService.login(request));
+        try {
+            UserLoginRespDTO resp = userLoginService.login(request);
+            log.info("协作服务登录: userId={}", resp.getUserId());
+            return Results.success(resp);
+        } catch (Exception e) {
+            log.warn("协作服务登录失败: username={}", request.getUsername());
+            throw e;
+        }
     }
 
     @GetMapping("/check-login")

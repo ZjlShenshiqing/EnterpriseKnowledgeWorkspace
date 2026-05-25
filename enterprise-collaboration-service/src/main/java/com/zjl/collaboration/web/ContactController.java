@@ -8,11 +8,13 @@ import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/contacts")
 @RequiredArgsConstructor

@@ -8,12 +8,14 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/docs")
 @RequiredArgsConstructor
@@ -87,6 +89,7 @@ public class DocCommentController {
         comment.setCreatedAt(LocalDateTime.now());
         comment.setUpdatedAt(LocalDateTime.now());
         commentMapper.insert(comment);
+        log.info("评论添加: docId={}, userId={}", docId, userId);
 
         Map<String, Object> m = commentToMap(comment);
         return Results.success(m);
@@ -105,6 +108,7 @@ public class DocCommentController {
 
     @DeleteMapping("/comments/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        log.info("评论删除: commentId={}", id);
         SysDocComment comment = commentMapper.selectById(id);
         if (comment != null) {
             comment.setDeleted(1);

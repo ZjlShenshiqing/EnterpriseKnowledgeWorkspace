@@ -10,6 +10,7 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class ChatController {
 
     @GetMapping("/conversations")
     public Result<List<Map<String, Object>>> conversations(@RequestHeader("X-User-Id") Long userId) {
+        log.debug("会话列表查询: userId={}", userId);
         List<Long> convIds = memberMapper.selectList(
                 Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getUserId, userId))
                 .stream().map(ImConversationMember::getConversationId).toList();

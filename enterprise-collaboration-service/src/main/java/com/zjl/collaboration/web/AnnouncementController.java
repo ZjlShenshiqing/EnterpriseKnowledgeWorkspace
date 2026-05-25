@@ -9,12 +9,14 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/announcements")
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class AnnouncementController {
         a.setPublisherId(userId); a.setPublisherName(user != null ? user.getRealName() : "管理员");
         a.setCreatedAt(LocalDateTime.now());
         announcementMapper.insert(a);
+        log.info("公告发布: userId={}, announcementId={}", userId, a.getId());
         return Results.success(a.getId());
     }
 

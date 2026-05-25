@@ -66,6 +66,7 @@ public class DocWebSocketHandler extends TextWebSocketHandler {
             Long userId = claims.get("userId", Long.class);
             String userName = claims.get("realName", String.class);
             sessionUsers.put(session.getId(), new UserContext(userId, userName));
+            log.info("WS连接建立: sessionId={}, userId={}", session.getId(), userId);
         } catch (Exception e) {
             log.error("WebSocket 认证失败: session={}", session.getId(), e);
             try {
@@ -107,6 +108,7 @@ public class DocWebSocketHandler extends TextWebSocketHandler {
 
         Permission perm = permissionService.checkPermission(docId, user.userId(), null);
         if (perm == null) {
+            log.warn("WS订阅拒绝: docId={}, userId={}", docId, user.userId());
             sendError(session, "无权访问此文档");
             return;
         }
@@ -212,7 +214,11 @@ public class DocWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         UserContext user = sessionUsers.remove(session.getId());
-        if (user == null) return;
+        if (user == null) {
+            log.info("WS连接断开: sessionId={}", session.getId());
+            return;
+        }
+        log.info("WS连接断开: sessionId={}, userId={}", session.getId(), user.userId());
 
         Set<Long> docIds = presenceService.removeSession(session.getId());
         for (Long docId : docIds) {

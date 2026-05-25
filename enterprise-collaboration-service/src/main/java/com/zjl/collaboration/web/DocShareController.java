@@ -12,12 +12,14 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -71,6 +73,7 @@ public class DocShareController {
     @PostMapping("/docs/{docId}/collaborators")
     public Result<Map<String, Object>> addCollaborator(@PathVariable Long docId,
                                                         @RequestBody CollaboratorReq req) {
+        log.info("协作者添加: docId={}, targetId={}, permission={}", docId, req.getTargetId(), req.getPermission());
         SysDocCollaborator c = new SysDocCollaborator();
         c.setDocId(docId);
         c.setTargetType(req.getTargetType());
@@ -128,6 +131,7 @@ public class DocShareController {
     @PostMapping("/docs/{docId}/shares")
     public Result<Map<String, Object>> createShare(@PathVariable Long docId,
                                                     @RequestBody ShareReq req) {
+        log.info("分享链接创建: docId={}, permission={}", docId, req.getPermission());
         SysDocShareLink link = new SysDocShareLink();
         link.setDocId(docId);
         link.setToken(UUID.randomUUID().toString().replace("-", "").substring(0, 16));

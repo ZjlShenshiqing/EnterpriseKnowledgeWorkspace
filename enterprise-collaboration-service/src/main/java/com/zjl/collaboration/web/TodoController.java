@@ -7,10 +7,12 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/todos")
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class TodoController {
         SysTodo t = new SysTodo();
         t.setTitle(req.getTitle()); t.setUserId(userId); t.setPriority(req.getPriority()); t.setDueDate(req.getDueDate()); t.setDone(0);
         todoMapper.insert(t);
+        log.info("待办创建: userId={}, todoId={}", userId, t.getId());
         return Results.success(t.getId());
     }
 

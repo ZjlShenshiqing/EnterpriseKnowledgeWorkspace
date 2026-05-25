@@ -7,12 +7,14 @@ import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
@@ -46,6 +48,7 @@ public class TaskController {
         t.setCreatorId(userId); t.setAssigneeId(req.getAssigneeId()); t.setPriority(req.getPriority());
         t.setStatus("todo"); t.setCreatedAt(LocalDateTime.now());
         taskMapper.insert(t);
+        log.info("任务创建: userId={}, taskId={}", userId, t.getId());
         return Results.success(t.getId());
     }
 
@@ -63,8 +66,10 @@ public class TaskController {
     public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String,String> body) {
         SysTask t = taskMapper.selectById(id);
         if (t==null) return Results.success();
+        String oldStatus = t.getStatus();
         t.setStatus(body.get("status")); t.setUpdatedAt(LocalDateTime.now());
         taskMapper.updateById(t);
+        log.info("任务状态变更: taskId={}, from={}, to={}", id, oldStatus, body.get("status"));
         return Results.success();
     }
 
