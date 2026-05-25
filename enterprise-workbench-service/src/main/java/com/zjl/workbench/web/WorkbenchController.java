@@ -157,7 +157,8 @@ public class WorkbenchController {
         // 知识库数量
         try {
             Result<Map<String, Object>> resp = knowledgeClient.getBases(userId, isAdmin, 1, 1);
-            if (resp != null && resp.getData() instanceof Map basesData) {
+            if (resp != null && resp.getData() instanceof Map) {
+                Map basesData = (Map) resp.getData();
                 data.put("baseCount", basesData.getOrDefault("total", 0));
             } else {
                 data.put("baseCount", 0);
@@ -170,7 +171,8 @@ public class WorkbenchController {
         // 意图配置数量
         try {
             Result<Map<String, Object>> resp = collabClient.getIntents(userId, isAdmin, 1, 1);
-            if (resp != null && resp.getData() instanceof Map intentsData) {
+            if (resp != null && resp.getData() instanceof Map) {
+                Map intentsData = (Map) resp.getData();
                 data.put("intentCount", intentsData.getOrDefault("total", 0));
             } else {
                 data.put("intentCount", 0);
@@ -183,7 +185,8 @@ public class WorkbenchController {
         // 今日会话数量
         try {
             Result<Map<String, Object>> resp = knowledgeClient.getAgentSessions(userId, isAdmin, 1, 1);
-            if (resp != null && resp.getData() instanceof Map sessionsData) {
+            if (resp != null && resp.getData() instanceof Map) {
+                Map sessionsData = (Map) resp.getData();
                 data.put("todaySessionCount", sessionsData.getOrDefault("total", 0));
             } else {
                 data.put("todaySessionCount", 0);
@@ -259,7 +262,8 @@ public class WorkbenchController {
 
         try {
             Result<Map<String, Object>> resp = knowledgeClient.getDocuments(userId, isAdmin, 1, 1);
-            if (resp != null && resp.getData() instanceof Map kbData) {
+            if (resp != null && resp.getData() instanceof Map) {
+                Map kbData = (Map) resp.getData();
                 data.put("docCount", kbData.getOrDefault("total", 0));
             } else {
                 data.put("docCount", 0);
