@@ -19,6 +19,16 @@ public class AgentProperties {
     /** 联网搜索配置 */
     private WebSearch webSearch = new WebSearch();
 
+    /** 协同服务配置（会议预约等） */
+    private Collaboration collaboration = new Collaboration();
+
+    @Data
+    public static class Collaboration {
+
+        /** collaboration-service 基址，默认本地 8090 */
+        private String baseUrl = "http://localhost:8090";
+    }
+
     @Data
     public static class Llm {
 

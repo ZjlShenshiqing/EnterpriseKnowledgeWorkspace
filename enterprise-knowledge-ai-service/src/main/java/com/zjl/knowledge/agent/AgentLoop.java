@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,36 +54,41 @@ public class AgentLoop {
     private static final int MAX_TURNS = 10;
 
     /**
-     * 系统提示词（基础版，不包含联网搜索）
+     * 构建系统提示词（按是否联网搜索、是否管理员动态组装工具说明）。
      */
-    private static final String SYSTEM_PROMPT_BASE = """
-            你是企业知识库助手。你的职责是帮助员工查找和了解公司内部文档。
+    private static String buildSystemPrompt(boolean webSearchEnabled, boolean admin) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("你是企业智能协同助手，可以帮助员工查找知识库文档、预约和管理会议");
+        if (admin) {
+            sb.append("、上传知识库文档（管理员）");
+        }
+        sb.append("。\n\n");
 
-            可用工具：search_documents、list_documents、get_document_detail、list_knowledge_bases
+        sb.append("知识库工具：search_documents、list_documents、get_document_detail、list_knowledge_bases、rag_qa");
+        if (webSearchEnabled) {
+            sb.append("、web_search");
+        }
+        sb.append("\n");
+        sb.append("会议工具：list_my_meetings、check_meeting_conflict、create_meeting、cancel_meeting\n");
+        if (admin) {
+            sb.append("管理员工具：list_document_categories、upload_knowledge_document\n");
+        }
 
-            规则：
-            1. 只回答与知识库文档相关的问题
-            2. 当用户询问文档内容时，先搜索再回答
-            3. 回答时引用具体的文档标题和来源
-            4. 不要编造信息，找不到就说找不到
-            5. 不讨论文档上传、删除、分块等管理操作
-            """;
-
-    /**
-     * 系统提示词（联网搜索版，额外包含 web_search 工具）
-     */
-    private static final String SYSTEM_PROMPT_WITH_SEARCH = """
-            你是企业知识库助手。你的职责是帮助员工查找和了解公司内部文档。
-
-            可用工具：search_documents、list_documents、get_document_detail、list_knowledge_bases、web_search
-
-            规则：
-            1. 优先使用知识库工具回答与公司文档相关的问题
-            2. 当用户询问最新资讯、外部信息或知识库中找不到的内容时，使用 web_search 搜索互联网
-            3. 回答时引用具体的文档标题和来源（知识库）或网页来源（联网搜索）
-            4. 不要编造信息，找不到就说找不到
-            5. 不讨论文档上传、删除、分块等管理操作
-            """;
+        sb.append("\n规则：\n");
+        sb.append("1. 知识库问题优先使用知识库工具；回答时引用具体文档标题\n");
+        sb.append("2. 会议预约：创建线下会议前先 check_meeting_conflict；日期 YYYY-MM-DD，时间 HH:mm\n");
+        sb.append("3. 线下会议室：A301 (20人)、B102 (10人)、C501 (50人)；线上选 线上-Zoom\n");
+        if (admin) {
+            sb.append("4. 上传文档：用户需先在对话中上传附件，使用返回的 storage_path 调用 upload_knowledge_document；"
+                    + "category_id 可通过 list_document_categories 获取\n");
+            sb.append("5. 不要编造信息，找不到或无法完成就说清楚\n");
+            sb.append("6. 普通用户不可代为上传文档；非管理员不要尝试调用管理员工具\n");
+        } else {
+            sb.append("4. 不要编造信息，找不到或无法完成就说清楚\n");
+            sb.append("5. 文档上传、删除、分块等管理操作不在你的权限范围内，请引导管理员处理\n");
+        }
+        return sb.toString();
+    }
 
     /**
      * LLM 客户端，用于调用大语言模型
@@ -144,20 +150,22 @@ public class AgentLoop {
         // ① 构建消息列表
         List<ChatMessage> messages = new ArrayList<>();
 
-        // 根据是否开启联网搜索选择不同的系统提示词
-        String systemPrompt = webSearchEnabled ? SYSTEM_PROMPT_WITH_SEARCH : SYSTEM_PROMPT_BASE;
-        messages.add(ChatMessage.builder().role("system").content(systemPrompt).build());
+        // 根据是否开启联网搜索、是否管理员选择系统提示词
+        messages.add(ChatMessage.builder()
+                .role("system")
+                .content(buildSystemPrompt(webSearchEnabled, user.isAdmin()))
+                .build());
 
         // 加载历史消息（最近 N 条），用于上下文理解
-        List<ChatMessage> history = sessionService.loadHistory(
+        List<ChatMessage> history = sessionService.loadHistoryForLlm(
                 session.getId(), agentProperties.getSession().getMaxHistory());
         messages.addAll(history);
 
         // 当前用户消息由 AgentController 传入前已保存到 DB，不需要加到 messages 中
         // （AgentController.saveUserMessage 已在调用前执行）
 
-        // ② 获取可用工具定义（未开启联网搜索时排除 web_search）
-        List<ToolDefinition> tools = toolRegistry.getAllDefinitions().stream()
+        // ② 获取可用工具定义（未开启联网搜索时排除 web_search；非管理员排除管理员工具）
+        List<ToolDefinition> tools = toolRegistry.getDefinitionsFor(user).stream()
                 .filter(t -> webSearchEnabled || !"web_search".equals(t.getName()))
                 .toList();
 
@@ -186,7 +194,10 @@ public class AgentLoop {
                     // 工具调用回调：记录工具调用并通知客户端
                     hasToolCalls[0] = true;
                     collectedToolCalls.add(call);
-                    emitter.send("tool_call", Map.of("tool", call.getName(), "args", call.getArguments()));
+                    Map<String, Object> payload = new LinkedHashMap<>();
+                    payload.put("tool", call.getName());
+                    payload.put("args", call.getArguments() != null ? call.getArguments() : Map.of());
+                    emitter.send("tool_call", payload);
                 }
 
                 @Override
@@ -213,6 +224,12 @@ public class AgentLoop {
             }
 
             // 将助手消息（包含工具调用）添加到消息列表
+            for (int i = 0; i < collectedToolCalls.size(); i++) {
+                ToolCall tc = collectedToolCalls.get(i);
+                if (tc.getId() == null || tc.getId().isBlank()) {
+                    tc.setId("call_" + i);
+                }
+            }
             ChatMessage assistantMsg = ChatMessage.builder()
                     .role("assistant")
                     .content(turnText.toString())
@@ -222,20 +239,39 @@ public class AgentLoop {
 
             // 执行所有工具调用
             for (ToolCall tc : collectedToolCalls) {
+                String toolCallId = resolveToolCallId(tc);
+                if (tc.getName() == null || tc.getName().isBlank()) {
+                    log.warn("跳过无效工具调用: id={}", toolCallId);
+                    Map<String, Object> skipPayload = new LinkedHashMap<>();
+                    skipPayload.put("tool", "");
+                    skipPayload.put("result", "工具名称为空，跳过执行");
+                    emitter.send("tool_result", skipPayload);
+                    messages.add(ChatMessage.builder()
+                            .role("tool")
+                            .toolCallId(toolCallId)
+                            .toolName("")
+                            .content("{\"error\":\"工具名称为空\"}")
+                            .build());
+                    continue;
+                }
+
                 // 调用工具执行
                 ToolResult result = toolRegistry.execute(tc.getName(), tc.getArguments(), user);
-                
+
                 // 发送工具执行结果到客户端
                 Object toolData = result.isSuccess() ? result.getData() : "工具执行失败: " + result.getError();
-                emitter.send("tool_result", Map.of("tool", tc.getName(), "result", toolData != null ? toolData : ""));
-                
+                Map<String, Object> resultPayload = new LinkedHashMap<>();
+                resultPayload.put("tool", tc.getName());
+                resultPayload.put("result", toolData != null ? toolData : "");
+                emitter.send("tool_result", resultPayload);
+
                 // 保存工具调用记录到数据库
                 sessionService.saveToolMessage(session.getId(), tc.getName(), tc.getArguments(), result.getData());
-                
+
                 // 将工具执行结果作为 tool 消息添加到消息列表（供下一轮 LLM 参考）
                 messages.add(ChatMessage.builder()
                         .role("tool")
-                        .toolCallId(tc.getId())
+                        .toolCallId(toolCallId)
                         .toolName(tc.getName())
                         .content(toJson(result.getData()))
                         .build());
@@ -278,5 +314,15 @@ public class AgentLoop {
         } catch (Exception e) { 
             return String.valueOf(obj); 
         }
+    }
+
+    private static String resolveToolCallId(ToolCall tc) {
+        if (tc.getId() != null && !tc.getId().isBlank()) {
+            return tc.getId();
+        }
+        if (tc.getName() != null && !tc.getName().isBlank()) {
+            return "call_" + tc.getName();
+        }
+        return "call_unknown";
     }
 }

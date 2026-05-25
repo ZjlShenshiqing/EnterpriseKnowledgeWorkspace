@@ -120,25 +120,61 @@ public class AgentSessionService {
     }
 
     /**
-     * 加载会话历史消息，转为 ChatMessage 列表
+     * 加载会话历史消息，转为 ChatMessage 列表（供前端展示，包含 tool 消息）
      */
     public List<ChatMessage> loadHistory(Long sessionId, int maxMessages) {
-        List<KbAgentMessage> messages = messageMapper.selectList(
+        return toChatMessages(fetchMessages(sessionId, maxMessages));
+    }
+
+    /**
+     * 加载供 LLM 使用的会话历史。
+     *
+     * <p>数据库未持久化 {@code tool_call_id}，tool 角色消息无法按 OpenAI 格式回填给 LLM，
+     * 因此仅保留 user / assistant 文本消息，避免 DeepSeek 返回 400。</p>
+     */
+    public List<ChatMessage> loadHistoryForLlm(Long sessionId, int maxMessages) {
+        List<KbAgentMessage> messages = fetchMessages(sessionId, maxMessages);
+        List<ChatMessage> result = new ArrayList<>();
+        for (KbAgentMessage m : messages) {
+            if ("tool".equals(m.getRole())) {
+                continue;
+            }
+            if ("assistant".equals(m.getRole()) && (m.getContent() == null || m.getContent().isBlank())) {
+                continue;
+            }
+            result.add(toChatMessage(m));
+        }
+        return result;
+    }
+
+    private List<KbAgentMessage> fetchMessages(Long sessionId, int maxMessages) {
+        return messageMapper.selectList(
                 Wrappers.lambdaQuery(KbAgentMessage.class)
                         .eq(KbAgentMessage::getSessionId, sessionId)
                         .orderByAsc(KbAgentMessage::getCreatedAt)
                         .last("LIMIT " + maxMessages)
         );
+    }
 
+    private List<ChatMessage> toChatMessages(List<KbAgentMessage> messages) {
         List<ChatMessage> result = new ArrayList<>();
         for (KbAgentMessage m : messages) {
-            result.add(ChatMessage.builder()
-                    .role(m.getRole())
-                    .content(m.getContent())
-                    .toolName(m.getToolName())
-                    .build());
+            result.add(toChatMessage(m));
         }
         return result;
+    }
+
+    private ChatMessage toChatMessage(KbAgentMessage m) {
+        String content = m.getContent();
+        if ("tool".equals(m.getRole()) && (content == null || content.isBlank())) {
+            content = m.getToolOutput();
+        }
+        return ChatMessage.builder()
+                .role(m.getRole())
+                .content(content)
+                .toolName(m.getToolName())
+                .createdAt(m.getCreatedAt())
+                .build();
     }
 
     /**
