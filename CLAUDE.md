@@ -103,7 +103,7 @@ Key `application.yml` properties (knowledge-ai-service):
 | `app.milvus.vector-dimension` | Must match embedding model output |
 | `app.milvus.fail-on-init` | If true, startup fails when Milvus is unreachable |
 
-Database: MySQL. Knowledge-ai uses `enterprise_knowledge_ai` schema (auto-init via `schema.sql` when `spring.sql.init.mode=always`). Gateway uses `enterprise_gateway` schema (manual SQL, `ddl-auto: none`).
+Database: MySQL. All services use `spring.sql.init.mode=never` — schema scripts are NOT executed at startup. Gateway uses `enterprise_gateway` schema (JPA/Hibernate, `ddl-auto: none`).
 
 ## Core Documentation (docs/)
 

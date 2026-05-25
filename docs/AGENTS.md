@@ -106,6 +106,12 @@
 6. 关键业务数据避免物理删除。
 7. 多对多关系使用关联表。
 
+### 6.1 数据库初始化与变更规范
+
+1. **唯一定义文件**：所有数据库（`enterprise_knowledge_ai`、`enterprise_gateway`、`enterprise_collaboration`）的完整建表语句统一维护在 `resouces/enterprise_knowledge_workspace.sql`，这是唯一的建表规范文件。
+2. **服务启动不执行 schema**：所有微服务的 `spring.sql.init.mode` 必须设为 `never`，禁止在服务启动时自动执行任何 schema 脚本。各微服务下不得存在独立的 `schema.sql` 文件。
+3. **变更走迁移**：对数据库表结构的任何修改（新增表、修改字段、加索引等），必须通过增量迁移脚本执行，不得直接修改 `enterprise_knowledge_workspace.sql`。迁移脚本随版本迭代更新该文件，使其始终反映最新的完整 schema。
+
 ## 7. API 规则
 
 ### 7.1 统一响应格式
