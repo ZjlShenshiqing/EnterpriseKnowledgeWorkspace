@@ -104,5 +104,68 @@ public class MeetingController {
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) { meetingMapper.deleteById(id); return Results.success(); }
 
+    /**
+     * 检测会议室时间冲突（同一线下会议室、同一日期、时间段重叠）。
+     */
+    @PostMapping("/check-conflict")
+    public Result<ConflictCheckResp> checkConflict(@RequestBody ConflictCheckReq req) {
+        if (req.getDate() == null || req.getDate().isBlank()
+                || req.getStartTime() == null || req.getStartTime().isBlank()
+                || req.getEndTime() == null || req.getEndTime().isBlank()
+                || req.getRoom() == null || req.getRoom().isBlank()) {
+            return Results.success(new ConflictCheckResp(false, List.of(), "参数完整，未检测到冲突"));
+        }
+
+        if ("线上-Zoom".equals(req.getRoom())) {
+            return Results.success(new ConflictCheckResp(false, List.of(), "线上会议不检测会议室占用"));
+        }
+
+        LocalDate date = LocalDate.parse(req.getDate());
+        List<SysMeeting> sameDayRoom = meetingMapper.selectList(
+                Wrappers.lambdaQuery(SysMeeting.class)
+                        .eq(SysMeeting::getDate, date)
+                        .eq(SysMeeting::getRoom, req.getRoom())
+                        .ne(req.getExcludeId() != null, SysMeeting::getId, req.getExcludeId())
+        );
+
+        List<SysMeeting> conflicts = sameDayRoom.stream()
+                .filter(m -> m.getStartTime() != null && m.getEndTime() != null)
+                .filter(m -> overlaps(req.getStartTime(), req.getEndTime(), m.getStartTime(), m.getEndTime()))
+                .toList();
+
+        if (conflicts.isEmpty()) {
+            return Results.success(new ConflictCheckResp(false, List.of(), "该时段会议室可用"));
+        }
+        return Results.success(new ConflictCheckResp(true, conflicts,
+                "该时段 " + req.getRoom() + " 已被占用，共 " + conflicts.size() + " 个冲突会议"));
+    }
+
+    private static boolean overlaps(String startA, String endA, String startB, String endB) {
+        return toMinutes(startA) < toMinutes(endB) && toMinutes(endA) > toMinutes(startB);
+    }
+
+    private static int toMinutes(String time) {
+        String[] parts = time.split(":");
+        int hour = Integer.parseInt(parts[0]);
+        int minute = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+        return hour * 60 + minute;
+    }
+
     @Data public static class MeetingReq { private String title; private String room; private String date; private String startTime; private String endTime; private String attendees; private String description; }
+
+    @Data public static class ConflictCheckReq {
+        private String date;
+        private String startTime;
+        private String endTime;
+        private String room;
+        private Long excludeId;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    public static class ConflictCheckResp {
+        private boolean conflict;
+        private List<SysMeeting> conflicts;
+        private String message;
+    }
 }
