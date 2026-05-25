@@ -44,7 +44,7 @@ public class WorkbenchController {
 
         // 从 collaboration 聚合
         try { data.put("todos", callList(collabUrl + "/api/todos", headers)); } catch (Exception e) { data.put("todos", List.of()); }
-        try { data.put("meetings", callList(collabUrl + "/api/meetings", headers)); } catch (Exception e) { data.put("meetings", List.of()); }
+        try { data.put("meetings", callList(collabUrl + "/api/meetings/my", headers)); } catch (Exception e) { data.put("meetings", List.of()); }
 
         // 从 knowledge-ai 聚合
         try {
@@ -81,7 +81,7 @@ public class WorkbenchController {
         } catch (Exception e) { data.put("todoCount", 0); }
 
         try {
-            var meetings = callList(collabUrl + "/api/meetings", headers);
+            var meetings = callList(collabUrl + "/api/meetings/my", headers);
             data.put("meetingCount", meetings.size());
         } catch (Exception e) { data.put("meetingCount", 0); }
 
