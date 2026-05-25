@@ -238,6 +238,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteVisible(Long id, UserContext user) {
+        log.info("文档删除: docId={}, userId={}", id, user.getUserId());
         documentDeleteService.deleteVisible(id, user);
     }
 

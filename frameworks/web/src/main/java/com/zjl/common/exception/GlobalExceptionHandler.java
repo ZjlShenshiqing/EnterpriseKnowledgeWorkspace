@@ -26,11 +26,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBizException(BizException ex) {
+        log.warn("业务异常: code={}, message={}", ex.getCode(), ex.getMessage());
         return Results.failure(ex);
     }
 
     /**
-     * 处理参数校验相关异常。
+     * 处理参数校验相关异常
      *
      * @param ex 校验异常
      * @return 标准失败响应
@@ -42,11 +43,12 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException.class
     })
     public Result<Void> handleValidationException(Exception ex) {
+        log.warn("参数校验失败: {}", ex.getMessage());
         return Results.failure(String.valueOf(ErrorCode.PARAM_INVALID.getCode()), ErrorCode.PARAM_INVALID.getMessage());
     }
 
     /**
-     * 处理未捕获异常。
+     * 处理未捕获异常
      *
      * @param ex 未知异常
      * @return 标准失败响应

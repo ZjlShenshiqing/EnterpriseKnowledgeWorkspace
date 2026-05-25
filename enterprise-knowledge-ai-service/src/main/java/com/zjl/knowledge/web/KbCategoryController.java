@@ -9,6 +9,7 @@ import com.zjl.knowledge.entity.KbCategory;
 import com.zjl.knowledge.service.KbCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +24,7 @@ import java.util.List;
 /**
  * 知识分类接口
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/kb/categories")
 @RequiredArgsConstructor
@@ -60,6 +62,7 @@ public class KbCategoryController {
         c.setSortOrder(req.getSortOrder() == null ? 0 : req.getSortOrder());
         c.setStatus("ACTIVE");
         kbCategoryService.save(c);
+        log.info("分类创建: categoryId={}, name={}", c.getId(), req.getCategoryName());
         return Results.success(c.getId());
     }
 
@@ -95,6 +98,7 @@ public class KbCategoryController {
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") Long id) {
+        log.info("分类删除: categoryId={}", id);
         if (!kbCategoryService.removeById(id)) {
             throw new BizException(ErrorCode.NOT_FOUND);
         }

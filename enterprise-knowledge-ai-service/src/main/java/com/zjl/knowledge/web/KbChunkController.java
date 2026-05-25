@@ -11,6 +11,7 @@ import com.zjl.common.response.Results;
 import com.zjl.knowledge.service.KbChunkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,6 +28,7 @@ import java.util.List;
 /**
  * 文档 Chunk API
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/kb/documents/{docId}/chunks")
 @RequiredArgsConstructor

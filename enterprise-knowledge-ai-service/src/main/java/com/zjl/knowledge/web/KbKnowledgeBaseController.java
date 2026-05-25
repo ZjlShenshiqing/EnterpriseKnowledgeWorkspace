@@ -12,6 +12,7 @@ import com.zjl.knowledge.dto.kb.KbKnowledgeBaseVO;
 import com.zjl.knowledge.service.KbKnowledgeBaseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 知识库（多 Milvus 集合）管理接口
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/kb/bases")
 @RequiredArgsConstructor
@@ -33,7 +35,9 @@ public class KbKnowledgeBaseController {
 
     @PostMapping
     public Result<Long> create(@Valid @RequestBody KbKnowledgeBaseCreateRequest request) {
-        return Results.success(kbKnowledgeBaseService.create(request, UserContextHolder.get()));
+        Long id = kbKnowledgeBaseService.create(request, UserContextHolder.get());
+        log.info("知识库创建: baseId={}, name={}", id, request.getName());
+        return Results.success(id);
     }
 
     @PutMapping("/{id}")
@@ -56,6 +60,7 @@ public class KbKnowledgeBaseController {
 
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") Long id) {
+        log.info("知识库删除: baseId={}", id);
         kbKnowledgeBaseService.delete(id, UserContextHolder.get());
         return Results.success();
     }

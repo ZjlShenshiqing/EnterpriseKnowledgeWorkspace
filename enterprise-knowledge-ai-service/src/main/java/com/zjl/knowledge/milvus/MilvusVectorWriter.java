@@ -127,6 +127,7 @@ public class MilvusVectorWriter {
         } catch (BizException ex) {
             throw ex;
         } catch (Exception ex) {
+            log.error("Milvus chunk 写入失败: collection={}, docId={}", col, docId, ex);
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     ErrorCode.VECTOR_WRITE_FAILED.getMessage() + ": " + ex.getMessage());
         }
@@ -177,6 +178,7 @@ public class MilvusVectorWriter {
         } catch (BizException ex) {
             throw ex;
         } catch (Exception ex) {
+            log.error("Milvus 更新 chunk 失败: collection={}, docId={}, chunkId={}", col, docId, chunkPk, ex);
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     "向量库更新失败: " + ex.getMessage());
         }
@@ -203,6 +205,7 @@ public class MilvusVectorWriter {
             log.info("Milvus 按文档删除向量, collection={}, docId={}, deleteCnt={}",
                     resolveCollection(collectionName), docId, resp.getDeleteCnt());
         } catch (Exception ex) {
+            log.error("Milvus 按文档删除向量失败: collection={}, docId={}", resolveCollection(collectionName), docId, ex);
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     "向量库删除失败: " + ex.getMessage());
         }
@@ -227,6 +230,7 @@ public class MilvusVectorWriter {
             log.info("Milvus 按 chunk 删除向量, collection={}, chunkId={}, deleteCnt={}",
                     resolveCollection(collectionName), chunkId, resp.getDeleteCnt());
         } catch (Exception ex) {
+            log.error("Milvus 按 chunk 删除向量失败: collection={}, chunkId={}", resolveCollection(collectionName), chunkId, ex);
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     "向量库删除失败: " + ex.getMessage());
         }
@@ -258,6 +262,7 @@ public class MilvusVectorWriter {
             log.info("Milvus 批量删除 chunk 向量, collection={}, count={}, deleteCnt={}",
                     resolveCollection(collectionName), chunkIds.size(), resp.getDeleteCnt());
         } catch (Exception ex) {
+            log.error("Milvus 批量删除 chunk 向量失败: collection={}", resolveCollection(collectionName), ex);
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     "向量库删除失败: " + ex.getMessage());
         }
