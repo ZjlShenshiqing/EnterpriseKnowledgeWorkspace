@@ -109,31 +109,6 @@ public class SystemAdminController {
         return Mono.fromCallable(() -> Results.success(userService.getUser(id)))
                 .subscribeOn(Schedulers.boundedElastic());
     }
-            @RequestParam(value = "keyword", defaultValue = "") String keyword,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size
-    ) {
-        return Mono.fromCallable(() -> Results.success(userService.listUsers(keyword, page, size)))
-                .subscribeOn(Schedulers.boundedElastic());
-    }
-
-    /**
-     * 用户统计
-     */
-    @GetMapping("/users/stats")
-    public Mono<Result<UserStats>> userStats() {
-        return Mono.fromCallable(() -> Results.success(userService.getUserStats()))
-                .subscribeOn(Schedulers.boundedElastic());
-    }
-
-    /**
-     * 单个用户详情
-     */
-    @GetMapping("/users/{id}")
-    public Mono<Result<SysUser>> getUser(@PathVariable Long id) {
-        return Mono.fromCallable(() -> Results.success(userService.getUser(id)))
-                .subscribeOn(Schedulers.boundedElastic());
-    }
 
     /**
      * 创建用户
