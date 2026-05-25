@@ -17,9 +17,11 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * DeepSeek API 客户端实现（OpenAI 兼容格式）
@@ -154,6 +156,10 @@ public class DeepSeekLlmClient implements LlmClient {
             
             // 工具响应消息需要包含 tool_call_id
             if ("tool".equals(msg.getRole())) {
+                if (msg.getToolCallId() == null || msg.getToolCallId().isBlank()) {
+                    log.warn("跳过缺少 tool_call_id 的 tool 消息，避免 LLM 请求 400");
+                    continue;
+                }
                 m.put("tool_call_id", msg.getToolCallId());
                 m.put("content", msg.getContent());
             } else if (msg.getContent() != null) {
@@ -248,6 +254,7 @@ public class DeepSeekLlmClient implements LlmClient {
         StringBuilder fullContent = new StringBuilder();  // 累计完整响应内容
         List<ToolCall> toolCalls = new ArrayList<>();      // 收集所有工具调用
         Map<Integer, ToolCall> toolCallMap = new LinkedHashMap<>();  // 按索引缓存工具调用
+        Set<Integer> notifiedToolCalls = new HashSet<>();
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
@@ -293,7 +300,6 @@ public class DeepSeekLlmClient implements LlmClient {
                                     String id = tc.containsKey("id") ? (String) tc.get("id") : "";
                                     ToolCall newCall = ToolCall.builder().id(id).build();
                                     toolCalls.add(newCall);
-                                    listener.onToolCall(newCall);  // 通知监听器收到工具调用
                                     return newCall;
                                 });
 
@@ -302,6 +308,7 @@ public class DeepSeekLlmClient implements LlmClient {
                                 if (func != null) {
                                     if (func.containsKey("name") && func.get("name") != null) {
                                         call.setName((String) func.get("name"));
+                                        notifyToolCallIfReady(call, index, notifiedToolCalls, listener);
                                     }
                                     if (func.containsKey("arguments")) {
                                         String args = (String) func.get("arguments");
@@ -330,5 +337,20 @@ public class DeepSeekLlmClient implements LlmClient {
                 .inputTokens(0)
                 .outputTokens(fullContent.length() / 4)  // 粗略估算 token 数量
                 .build());
+    }
+
+    /**
+     * 工具名称解析完成后通知 AgentLoop，避免流式首包 name 为空时触发 NPE。
+     */
+    private void notifyToolCallIfReady(ToolCall call, int index, Set<Integer> notifiedToolCalls,
+                                       StreamListener listener) {
+        if (notifiedToolCalls.contains(index)) {
+            return;
+        }
+        if (call.getName() == null || call.getName().isBlank()) {
+            return;
+        }
+        notifiedToolCalls.add(index);
+        listener.onToolCall(call);
     }
 }

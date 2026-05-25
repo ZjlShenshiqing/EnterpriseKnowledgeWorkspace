@@ -11,12 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -119,12 +122,18 @@ public class SpringAiLlmClient implements LlmClient {
             AtomicBoolean errorOccurred = new AtomicBoolean(false);
             Map<Integer, ToolCall> toolCallMap = new LinkedHashMap<>();
             Map<Integer, StringBuilder> toolArgBufferMap = new HashMap<>();
+            Set<Integer> notifiedToolCalls = new HashSet<>();
 
             openAiApi.chatCompletionStream(request)
                     .subscribe(
-                            chunk -> processChunk(chunk, listener, toolCallMap, toolArgBufferMap),
+                            chunk -> processChunk(chunk, listener, toolCallMap, toolArgBufferMap, notifiedToolCalls),
                             error -> {
-                                log.error("Spring AI 流式调用失败", error);
+                                if (error instanceof WebClientResponseException wcre) {
+                                    log.error("Spring AI 流式调用失败: status={}, body={}",
+                                            wcre.getStatusCode(), wcre.getResponseBodyAsString());
+                                } else {
+                                    log.error("Spring AI 流式调用失败", error);
+                                }
                                 errorOccurred.set(true);
                                 listener.onError(error);
                                 latch.countDown();
@@ -219,21 +228,33 @@ public class SpringAiLlmClient implements LlmClient {
                     if (msg.getToolCalls() != null && !msg.getToolCalls().isEmpty()) {
                         toolCalls = new ArrayList<>();
                         for (ToolCall tc : msg.getToolCalls()) {
+                            if (tc.getName() == null || tc.getName().isBlank()) {
+                                log.warn("跳过缺少名称的 assistant tool_call: id={}", tc.getId());
+                                continue;
+                            }
                             String argsJson = "{}";
                             try {
-                                argsJson = objectMapper.writeValueAsString(tc.getArguments());
+                                argsJson = objectMapper.writeValueAsString(
+                                        tc.getArguments() != null ? tc.getArguments() : Map.of());
                             } catch (JsonProcessingException e) {
                                 log.warn("工具调用参数序列化失败: {}", tc.getName());
                             }
                             toolCalls.add(new OpenAiApi.ChatCompletionMessage.ToolCall(
-                                    tc.getId(),
+                                    resolveToolCallId(tc),
                                     "function",
                                     new OpenAiApi.ChatCompletionMessage.ChatCompletionFunction(
                                             tc.getName(), argsJson)));
                         }
+                        if (toolCalls.isEmpty()) {
+                            toolCalls = null;
+                        }
+                    }
+                    String assistantContent = content;
+                    if (toolCalls != null && assistantContent.isEmpty()) {
+                        assistantContent = null;
                     }
                     result.add(new OpenAiApi.ChatCompletionMessage(
-                            content,
+                            assistantContent,
                             OpenAiApi.ChatCompletionMessage.Role.ASSISTANT,
                             null,
                             null,
@@ -243,16 +264,23 @@ public class SpringAiLlmClient implements LlmClient {
                             null));
                 }
 
-                case "tool" -> result.add(
-                        new OpenAiApi.ChatCompletionMessage(
-                                content,
-                                OpenAiApi.ChatCompletionMessage.Role.TOOL,
-                                null,
-                                null,
-                                null,
-                                msg.getToolCallId(),
-                                null,
-                                null));
+                case "tool" -> {
+                    if (msg.getToolCallId() == null || msg.getToolCallId().isBlank()) {
+                        log.warn("跳过缺少 tool_call_id 的 tool 消息，避免 LLM 请求 400");
+                        continue;
+                    }
+                    // 参数顺序：content, role, name, toolCallId, toolCalls, refusal, audio, annotations
+                    result.add(
+                            new OpenAiApi.ChatCompletionMessage(
+                                    content,
+                                    OpenAiApi.ChatCompletionMessage.Role.TOOL,
+                                    null,
+                                    msg.getToolCallId(),
+                                    null,
+                                    null,
+                                    null,
+                                    null));
+                }
 
                 default -> {
                     log.warn("未知的消息角色: {}, 按 user 角色处理", role);
@@ -311,6 +339,8 @@ public class SpringAiLlmClient implements LlmClient {
                 props.put(entry.getKey(), prop);
             }
             params.put("properties", props);
+        } else {
+            params.put("properties", Map.of());
         }
 
         return params;
@@ -329,7 +359,8 @@ public class SpringAiLlmClient implements LlmClient {
     private void processChunk(OpenAiApi.ChatCompletionChunk chunk,
                                StreamListener listener,
                                Map<Integer, ToolCall> toolCallMap,
-                               Map<Integer, StringBuilder> toolArgBufferMap) {
+                               Map<Integer, StringBuilder> toolArgBufferMap,
+                               Set<Integer> notifiedToolCalls) {
         try {
             if (chunk.choices() == null || chunk.choices().isEmpty()) {
                 return;
@@ -352,14 +383,9 @@ public class SpringAiLlmClient implements LlmClient {
                 for (OpenAiApi.ChatCompletionMessage.ToolCall deltaTc : delta.toolCalls()) {
                     int index = deltaTc.index() != null ? deltaTc.index() : 0;
 
-                    ToolCall call = toolCallMap.computeIfAbsent(index, k -> {
-                        String id = deltaTc.id() != null ? deltaTc.id() : "";
-                        ToolCall newCall = ToolCall.builder()
-                                .id(id)
-                                .build();
-                        listener.onToolCall(newCall);
-                        return newCall;
-                    });
+                    ToolCall call = toolCallMap.computeIfAbsent(index, k -> ToolCall.builder()
+                            .id(resolveToolCallId(deltaTc.id(), index))
+                            .build());
                     StringBuilder argBuffer = toolArgBufferMap.computeIfAbsent(index, k -> new StringBuilder());
 
                     // 更新工具调用详情
@@ -367,6 +393,7 @@ public class SpringAiLlmClient implements LlmClient {
                     if (func != null) {
                         if (func.name() != null && !func.name().isEmpty()) {
                             call.setName(func.name());
+                            notifyToolCallIfReady(call, index, notifiedToolCalls, listener);
                         }
                         if (func.arguments() != null && !func.arguments().isEmpty()) {
                             argBuffer.append(func.arguments());
@@ -375,15 +402,52 @@ public class SpringAiLlmClient implements LlmClient {
                     }
 
                     // 补充 ID（某些 chunk 可能延迟携带）
-                    if ((call.getId() == null || call.getId().isEmpty())
-                            && deltaTc.id() != null && !deltaTc.id().isEmpty()) {
+                    if ((call.getId() == null || call.getId().isBlank())
+                            && deltaTc.id() != null && !deltaTc.id().isBlank()) {
                         call.setId(deltaTc.id());
                     }
+                    ensureToolCallId(call, index);
                 }
             }
         } catch (Exception e) {
             log.debug("SSE chunk 处理跳过: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 工具名称解析完成后通知 AgentLoop，避免流式首包 name 为空时触发 NPE。
+     */
+    private void notifyToolCallIfReady(ToolCall call, int index, Set<Integer> notifiedToolCalls,
+                                       StreamListener listener) {
+        if (notifiedToolCalls.contains(index)) {
+            return;
+        }
+        if (call.getName() == null || call.getName().isBlank()) {
+            return;
+        }
+        ensureToolCallId(call, index);
+        notifiedToolCalls.add(index);
+        listener.onToolCall(call);
+    }
+
+    private static void ensureToolCallId(ToolCall call, int index) {
+        if (call.getId() == null || call.getId().isBlank()) {
+            call.setId("call_" + index);
+        }
+    }
+
+    private static String resolveToolCallId(ToolCall tc) {
+        if (tc.getId() != null && !tc.getId().isBlank()) {
+            return tc.getId();
+        }
+        return "call_" + tc.getName();
+    }
+
+    private static String resolveToolCallId(String id, int index) {
+        if (id != null && !id.isBlank()) {
+            return id;
+        }
+        return "call_" + index;
     }
 
     /**

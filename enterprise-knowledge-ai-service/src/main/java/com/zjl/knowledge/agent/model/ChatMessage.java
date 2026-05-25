@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -21,6 +22,9 @@ public class ChatMessage {
 
     /** 文本内容 */
     private String content;
+
+    /** 消息时间 */
+    private LocalDateTime createdAt;
 
     /** assistant 消息中的 tool call 列表 */
     private List<ToolCall> toolCalls;
