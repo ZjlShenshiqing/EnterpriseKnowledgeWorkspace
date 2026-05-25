@@ -1,108 +1,161 @@
 <template>
   <div style="display:flex;flex-direction:column;gap:24px">
     <!-- Header -->
-    <div>
-      <div style="font-size:22px;font-weight:700;color:#1f2937">工作台</div>
-      <div style="font-size:13px;color:#9ca3af;margin-top:4px">欢迎回来，{{ userName }}</div>
-    </div>
-
-    <!-- Stat Cards -->
-    <div class="stat-grid">
-      <div v-for="card in statCards" :key="card.label" class="stat-card" @click="$router.push(card.path)">
-        <div class="stat-card-top">
-          <div class="stat-icon" :style="{background:card.bg}">
-            <span v-html="card.icon"></span>
-          </div>
-          <div class="stat-trend" v-if="card.trend">
-            <span style="font-size:11px;color:#10b981;font-weight:500">{{ card.trend }}</span>
-          </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:22px;font-weight:700;color:#1f2329">工作台</div>
+        <div style="font-size:13px;color:#8f959e;margin-top:4px">欢迎回来，{{ userName }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="time-selector">
+          <span v-for="t in timeRanges" :key="t"
+            :class="['time-item', {active: selectedTime === t}]"
+            @click="selectedTime = t">
+            {{ t }}
+          </span>
         </div>
-        <div class="stat-value">{{ card.value }}</div>
-        <div class="stat-label">{{ card.label }}</div>
+        <span style="color:#8f959e;font-size:12px">
+          <span style="width:8px;height:8px;background:#34c759;border-radius:50%;display:inline-block;margin-right:6px"></span>
+          {{ currentTime }}
+        </span>
+        <el-button circle :icon="Refresh" style="margin-left:8px" @click="refreshData" />
       </div>
     </div>
 
-    <!-- Main Content -->
-    <div style="display:flex;gap:20px">
-      <!-- Left: Recent Docs + Quick Actions -->
-      <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+    <!-- Knowledge Stats -->
+    <div class="stat-grid">
+      <div class="stat-card" @click="$router.push('/admin/documents')">
+        <div class="stat-icon-wrapper">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-value">{{ knowledgeStats.documents || 0 }}</div>
+        <div class="stat-label">知识文档</div>
+      </div>
+      <div class="stat-card" @click="$router.push('/admin/bases')">
+        <div class="stat-icon-wrapper">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-value">{{ knowledgeStats.bases || 0 }}</div>
+        <div class="stat-label">知识库</div>
+      </div>
+      <div class="stat-card" @click="$router.push('/admin/intent-config')">
+        <div class="stat-icon-wrapper">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#fffbeb,#fef3c7)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-value">{{ knowledgeStats.intents || 0 }}</div>
+        <div class="stat-label">意图配置</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrapper">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#fef2f2,#fee2e2)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-value">{{ knowledgeStats.sessions || 0 }}</div>
+        <div class="stat-label">今日会话</div>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <div class="content-grid">
+      <div class="content-column">
         <!-- Quick Actions -->
-        <div class="card">
-          <div class="card-title">快捷操作</div>
-          <div style="display:flex;gap:12px">
-            <div v-for="a in quickActions" :key="a.label" class="quick-btn" @click="$router.push(a.path)">
-              <div class="quick-btn-icon" :style="{background:a.bg}">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">快捷操作</span>
+          </div>
+          <div class="quick-actions-grid">
+            <div v-for="a in quickActions" :key="a.label" class="quick-action-item" @click="$router.push(a.path)">
+              <div class="quick-action-icon" :style="{background:a.bg}">
                 <el-icon :size="20" :color="a.color"><component :is="a.icon" /></el-icon>
               </div>
-              <span class="quick-btn-label">{{ a.label }}</span>
+              <span class="quick-action-label">{{ a.label }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Recent Documents -->
-        <div class="card" style="flex:1">
-          <div class="card-title" style="display:flex;justify-content:space-between">
-            最近文档
-            <span class="card-link" @click="$router.push('/documents')">查看全部 →</span>
+        <!-- Recent Docs -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">最近文档</span>
+            <span class="panel-link" @click="$router.push('/admin/documents')">查看全部 →</span>
           </div>
-          <div v-if="!recentDocs.length" class="card-empty">暂无文档</div>
-          <div v-for="doc in recentDocs.slice(0,6)" :key="doc.id" class="doc-item">
-            <div class="doc-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div v-if="!recentDocs.length" class="empty-state">暂无文档</div>
+          <div v-else class="doc-list">
+            <div v-for="doc in recentDocs.slice(0,5)" :key="doc.id" class="doc-item">
+              <div class="doc-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8f959e" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">{{ doc.title }}</div>
+                <div class="doc-meta">{{ doc.fileType }} · {{ doc.createdAt || doc.created_at }}</div>
+              </div>
             </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.title }}</div>
-              <div style="font-size:12px;color:#9ca3af;margin-top:2px">{{ doc.fileType }} · {{ doc.createdAt || doc.created_at }}</div>
+          </div>
+        </div>
+
+        <!-- ToDos -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">今日待办</span>
+            <span class="panel-badge">{{ todos.filter(t=>!t.done).length }}</span>
+            <span class="panel-link" @click="$router.push('/todos')">查看全部 →</span>
+          </div>
+          <div v-if="!todos.length" class="empty-state">暂无待办</div>
+          <div v-else class="todo-list">
+            <div v-for="t in todos.slice(0,5)" :key="t.id" class="todo-item">
+              <div class="todo-checkbox" :class="{checked:t.done}" @click="toggleTodo(t)">
+                <svg v-if="t.done" width="12" height="12" viewBox="0 0 24 24" fill="#34c759" stroke="#34c759" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <span class="todo-title" :class="{done:t.done}">{{ t.title }}</span>
+              <el-tag v-if="t.priority==='high'" size="small" type="danger">紧急</el-tag>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Right: Todos + Meetings -->
-      <div style="width:340px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
-        <!-- Today's Todos -->
-        <div class="card">
-          <div class="card-title" style="display:flex;justify-content:space-between">
-            今日待办 ({{ todos.filter(t=>!t.done).length }})
-            <span class="card-link" @click="$router.push('/todos')">查看全部 →</span>
+      <div class="content-column">
+        <!-- Meetings -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">今日会议</span>
+            <span class="panel-badge">{{ todayMeetings.length }}</span>
+            <span class="panel-link" @click="$router.push('/meetings')">全部 →</span>
           </div>
-          <div v-if="!todos.length" class="card-empty">暂无待办</div>
-          <div v-for="t in todos.slice(0,5)" :key="t.id" class="todo-item">
-            <div class="todo-check" :class="{done:t.done}" @click="toggleTodo(t)">
-              <svg v-if="t.done" width="14" height="14" viewBox="0 0 24 24" fill="#10b981" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <div v-if="!todayMeetings.length" class="empty-state">今日暂无会议</div>
+          <div v-else class="meeting-list">
+            <div v-for="m in todayMeetings.slice(0,3)" :key="m.id" class="meeting-item">
+              <div class="meeting-time">
+                <span class="time-hour">{{ m.start_time?.substring(0,2) || '--' }}</span>
+                <span class="time-minute">:00</span>
+              </div>
+              <div class="meeting-info">
+                <div class="meeting-title">{{ m.title }}</div>
+                <div class="meeting-room">{{ m.room }}</div>
+              </div>
+              <a v-if="m.join_url" :href="m.join_url" target="_blank" class="meeting-join">加入</a>
             </div>
-            <div style="flex:1;font-size:13px" :class="{'line-through':t.done}">{{ t.title }}</div>
-            <span v-if="t.priority==='high'" class="tag tag-red">紧急</span>
-          </div>
-        </div>
-
-        <!-- Today's Meetings -->
-        <div class="card">
-          <div class="card-title" style="display:flex;justify-content:space-between">
-            今日会议 ({{ todayMeetings.length }})
-            <span class="card-link" @click="$router.push('/meetings')">全部 →</span>
-          </div>
-          <div v-if="!todayMeetings.length" class="card-empty">今日暂无会议</div>
-          <div v-for="m in todayMeetings.slice(0,3)" :key="m.id" class="meeting-item">
-            <div style="width:40px;text-align:center">
-              <div style="font-size:20px;font-weight:700;color:#1f2937">{{ m.start_time?.substring(0,2) || '--' }}</div>
-              <div style="font-size:11px;color:#9ca3af">:00</div>
-            </div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:500">{{ m.title }}</div>
-              <div style="font-size:11px;color:#9ca3af">{{ m.room }}</div>
-            </div>
-            <a v-if="m.join_url" :href="m.join_url" target="_blank" class="join-link">加入</a>
-          </div>
-        </div>
-
-        <!-- Announcements -->
-        <div class="card">
-          <div class="card-title">最新公告</div>
-          <div v-if="!announcements.length" class="card-empty">暂无公告</div>
-          <div v-for="a in announcements.slice(0,3)" :key="a.id" class="announce-item">
-            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.title }}</div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:2px">{{ a.publisherName || a.publisher_name }} · {{ a.createdAt || a.created_at }}</div>
           </div>
         </div>
       </div>
@@ -112,81 +165,346 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Refresh, DocumentAdd, Calendar, List, Checked } from '@element-plus/icons-vue'
 
 const userName = computed(() => { const u=JSON.parse(localStorage.getItem('user')||'{}'); return u.realName||u.username||'管理员' })
+
+const selectedTime = ref('24h')
+const timeRanges = ['24h', '7d', '30d']
+const currentTime = computed(() => {
+  const now = new Date()
+  return `${String(now.getMonth()+1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+})
 
 const recentDocs = ref([])
 const todos = ref([])
 const todayMeetings = ref([])
-const announcements = ref([])
 
-const statCards = computed(() => [
-  { label:'知识文档', value:recentDocs.value.length||0, bg:'linear-gradient(135deg,#eff6ff,#dbeafe)', icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', trend:'+12%', path:'/documents' },
-  { label:'今日会议', value:todayMeetings.value.length, bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', trend:null, path:'/meetings' },
-  { label:'我的待办', value:todos.value.filter(t=>!t.done).length, bg:'linear-gradient(135deg,#fffbeb,#fef3c7)', icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>', trend:null, path:'/todos' },
-  { label:'进行中任务', value:0, bg:'linear-gradient(135deg,#fef2f2,#fee2e2)', icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', trend:null, path:'/tasks' },
-])
+const knowledgeStats = ref({
+  documents: 0,
+  bases: 0,
+  intents: 0,
+  sessions: 0
+})
 
 const quickActions = [
-  { label:'新建文档', icon:'DocumentAdd', bg:'#eff6ff', color:'#3b82f6', path:'/documents' },
+  { label:'新建文档', icon:'DocumentAdd', bg:'#eff6ff', color:'#3b82f6', path:'/admin/documents' },
   { label:'新建会议', icon:'Calendar', bg:'#f0fdf4', color:'#22c55e', path:'/meetings' },
   { label:'添加待办', icon:'List', bg:'#fffbeb', color:'#f59e0b', path:'/todos' },
-  { label:'发起审批', icon:'Checked', bg:'#fef2f2', color:'#ef4444', path:'/approvals' },
+  { label:'意图配置', icon:'Checked', bg:'#fef2f2', color:'#ef4444', path:'/admin/intent-config' },
 ]
 
 function headers() { const u=JSON.parse(localStorage.getItem('user')||'{}'); return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false')} }
 
-onMounted(async () => {
+async function refreshData() {
+  await loadData()
+  ElMessage.success('刷新成功')
+}
+
+async function loadData() {
   try {
     const resp = await fetch('/api/workbench/overview', {headers:headers()})
     const data = (await resp.json()).data||{}
     recentDocs.value = data.recentDocs||[]
     todos.value = (data.todos||[]).map(t=>({...t,done:t.done===1||t.done===true}))
     if (data.meetings) todayMeetings.value = data.meetings.filter(m=>m.date===new Date().toISOString().split('T')[0])
-    statCards.value[3].value = data.inProgressTaskCount||0
-  } catch(e) { console.log('Workbench API not available') }
 
-  try {
-    const resp = await fetch('/api/announcements', {headers:headers()})
-    announcements.value = (await resp.json()).data||[]
-  } catch(e) {}
-})
+    knowledgeStats.value = {
+      documents: data.documentCount || 0,
+      bases: data.baseCount || 0,
+      intents: data.intentCount || 0,
+      sessions: data.todaySessionCount || 0
+    }
+  } catch(e) {
+    console.log('Workbench API not available')
+  }
+}
 
 function toggleTodo(t) { t.done = !t.done }
+
+onMounted(() => { loadData() })
 </script>
 
 <style scoped>
-.stat-grid { display:flex; gap:16px; }
-.stat-card { flex:1; background:#fff; border-radius:16px; padding:20px; cursor:pointer; border:1px solid #f3f4f6; transition:all .2s; }
-.stat-card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.06); transform:translateY(-2px); }
-.stat-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-.stat-icon { width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center; }
-.stat-value { font-size:28px;font-weight:700;color:#1f2937; }
-.stat-label { font-size:13px;color:#9ca3af;margin-top:4px; }
+.time-selector {
+  display:flex;
+  background:#f7f8fa;
+  padding:4px;
+  border-radius:12px;
+}
+.time-item {
+  padding:6px 16px;
+  border-radius:8px;
+  font-size:13px;
+  cursor:pointer;
+  color:#8f959e;
+  transition:all .15s;
+}
+.time-item.active {
+  background:#1f2329;
+  color:#fff;
+  font-weight:600;
+}
 
-.card { background:#fff;border-radius:16px;padding:20px;border:1px solid #f3f4f6; }
-.card-title { font-size:15px;font-weight:600;color:#1f2937;margin-bottom:16px; }
-.card-link { font-size:12px;color:#3b82f6;cursor:pointer;font-weight:400; }
-.card-empty { color:#d1d5db;font-size:13px;text-align:center;padding:30px 0; }
+/* Stat Grid */
+.stat-grid {
+  display:flex;
+  gap:16px;
+}
+.stat-card {
+  flex:1;
+  background:#fff;
+  border-radius:16px;
+  padding:20px;
+  cursor:pointer;
+  border:1px solid #f2f3f5;
+  transition:all .2s;
+}
+.stat-card:hover {
+  box-shadow:0 4px 20px rgba(0,0,0,0.06);
+  transform:translateY(-2px);
+}
+.stat-icon-wrapper {
+  margin-bottom:12px;
+}
+.stat-icon {
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.stat-value {
+  font-size:28px;
+  font-weight:700;
+  color:#1f2329;
+}
+.stat-label {
+  font-size:13px;
+  color:#8f959e;
+  margin-top:4px;
+}
 
-.quick-btn { display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;cursor:pointer;transition:all .15s;flex:1; }
-.quick-btn:hover { background:#f9fafb; }
-.quick-btn-icon { width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center; }
-.quick-btn-label { font-size:12px;color:#6b7280; }
+/* Content Grid */
+.content-grid {
+  display:flex;
+  gap:20px;
+}
+.content-column {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
 
-.doc-item { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f9fafb; }
-.doc-icon { width:32px;height:32px;background:#f9fafb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+/* Panel */
+.panel {
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #f2f3f5;
+  overflow:hidden;
+}
+.panel-header {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:16px 20px;
+  border-bottom:1px solid #f2f3f5;
+}
+.panel-title {
+  font-size:15px;
+  font-weight:600;
+  color:#1f2329;
+}
+.panel-link {
+  margin-left:auto;
+  font-size:12px;
+  color:#3b82f6;
+  cursor:pointer;
+}
+.panel-badge {
+  background:#f7f8fa;
+  color:#1f2329;
+  font-size:12px;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:10px;
+}
 
-.todo-item { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f9fafb; }
-.todo-check { width:20px;height:20px;border-radius:6px;border:2px solid #d1d5db;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-.todo-check.done { border-color:#10b981;background:#ecfdf5; }
-.line-through { text-decoration:line-through;color:#9ca3af; }
-.tag { font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;flex-shrink:0; }
-.tag-red { background:#fef2f2;color:#ef4444; }
+/* Quick Actions */
+.quick-actions-grid {
+  display:flex;
+  flex-wrap:wrap;
+  padding:16px;
+  gap:12px;
+}
+.quick-action-item {
+  width:calc(50% - 6px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:12px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.quick-action-item:hover {
+  background:#f7f8fa;
+}
+.quick-action-icon {
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.quick-action-label {
+  font-size:12px;
+  color:#8f959e;
+}
 
-.meeting-item { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f9fafb; }
-.join-link { font-size:12px;color:#3b82f6;text-decoration:none;border:1px solid #3b82f6;padding:4px 10px;border-radius:6px;transition:all .15s; }
-.join-link:hover { background:#eff6ff; }
+/* Empty State */
+.empty-state {
+  padding:30px 20px;
+  text-align:center;
+  color:#8f959e;
+  font-size:13px;
+}
 
-.announce-item { display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f9fafb; }
+/* Doc List */
+.doc-list {
+  padding:0 20px;
+}
+.doc-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid #f7f8fa;
+}
+.doc-item:last-child {
+  border-bottom:none;
+}
+.doc-icon {
+  width:28px;
+  height:28px;
+  background:#f7f8fa;
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.doc-info {
+  flex:1;
+  min-width:0;
+}
+.doc-title {
+  font-size:13px;
+  color:#1f2329;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.doc-meta {
+  font-size:11px;
+  color:#8f959e;
+  margin-top:2px;
+}
+
+/* Todo List */
+.todo-list {
+  padding:0 20px;
+}
+.todo-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid #f7f8fa;
+}
+.todo-item:last-child {
+  border-bottom:none;
+}
+.todo-checkbox {
+  width:18px;
+  height:18px;
+  border-radius:6px;
+  border:2px solid #d1d5db;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  transition:all .15s;
+}
+.todo-checkbox.checked {
+  border-color:#34c759;
+  background:#ecfdf5;
+}
+.todo-title {
+  flex:1;
+  font-size:13px;
+  color:#1f2329;
+}
+.todo-title.done {
+  text-decoration:line-through;
+  color:#8f959e;
+}
+
+/* Meeting List */
+.meeting-list {
+  padding:0 20px;
+}
+.meeting-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid #f7f8fa;
+}
+.meeting-item:last-child {
+  border-bottom:none;
+}
+.meeting-time {
+  text-align:center;
+}
+.time-hour {
+  font-size:18px;
+  font-weight:700;
+  color:#1f2329;
+}
+.time-minute {
+  font-size:11px;
+  color:#8f959e;
+}
+.meeting-info {
+  flex:1;
+}
+.meeting-title {
+  font-size:13px;
+  font-weight:500;
+  color:#1f2329;
+}
+.meeting-room {
+  font-size:11px;
+  color:#8f959e;
+  margin-top:2px;
+}
+.meeting-join {
+  font-size:12px;
+  color:#3b82f6;
+  text-decoration:none;
+  padding:4px 10px;
+  border:1px solid #3b82f6;
+  border-radius:6px;
+  transition:all .15s;
+}
+.meeting-join:hover {
+  background:#eff6ff;
+}
 </style>

@@ -105,10 +105,11 @@
           />
           <div class="composer-bar">
             <div class="composer-bar-left">
-              <button type="button" class="btn-icon-circle" title="添加（即将支持）" @click.prevent>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button v-if="canUploadToKb" type="button" class="btn-icon-circle" title="上传文件" @click="triggerUpload" :disabled="uploading">
+                <svg v-if="!uploading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
+                <span v-else class="upload-spinner"></span>
               </button>
               <span class="pill-web" :class="{ 'pill-web--active': webSearchEnabled }" @click="webSearchEnabled = !webSearchEnabled">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,6 +136,18 @@
                 <span v-else class="send-btn-dots send-btn-dots--on-light" aria-hidden="true">
                   <span></span><span></span><span></span>
                 </span>
+              </button>
+            </div>
+          </div>
+          <!-- Attachments -->
+          <div v-if="canUploadToKb && attachments.length" class="attachments-row">
+            <div v-for="(att, i) in attachments" :key="i" class="attachment-chip">
+              <span class="attachment-chip-name">{{ att.name }}</span>
+              <span class="attachment-chip-size">{{ formatSize(att.size) }}</span>
+              <button type="button" class="attachment-chip-remove" @click="removeAttachment(i)" title="移除">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
               </button>
             </div>
           </div>
@@ -166,8 +179,11 @@
       <div v-for="(msg, i) in messages" :key="i" class="message-wrapper">
         <!-- User Message -->
         <div v-if="msg.role === 'user'" class="message user-message">
-          <div class="message-bubble user-bubble">
-            {{ msg.content }}
+          <div class="message-body">
+            <div class="message-bubble user-bubble">
+              {{ msg.content }}
+            </div>
+            <div v-if="msg.createdAt" class="message-time message-time--user">{{ formatTime(msg.createdAt) }}</div>
           </div>
           <div class="message-avatar user-avatar">
             <span>U</span>
@@ -175,7 +191,7 @@
         </div>
 
         <!-- AI Message -->
-        <div v-else class="message ai-message">
+        <div v-else-if="msg.role === 'assistant'" class="message ai-message">
           <div class="message-avatar ai-avatar">
             <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
               <defs>
@@ -192,16 +208,38 @@
               <circle cx="31" cy="24" r="2" fill="#fff"/>
             </svg>
           </div>
-          <div class="message-bubble ai-bubble">
-            <div v-if="msg.typing" class="typing-container">
-              <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+          <div class="message-body">
+            <div class="message-bubble ai-bubble">
+              <div v-if="msg.typing" class="typing-container">
+                <div class="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
               </div>
+              <div v-else v-html="renderMsg(msg)"></div>
             </div>
-            <div v-else v-html="renderMsg(msg)"></div>
+            <div v-if="msg.createdAt" class="message-time message-time--ai">{{ formatTime(msg.createdAt) }}</div>
           </div>
+        </div>
+
+        <!-- Tool Message -->
+        <div v-else-if="msg.role === 'tool'" class="message tool-message-wrapper">
+          <details class="tool-card">
+            <summary class="tool-card-summary">
+              <svg class="tool-card-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <span class="tool-card-name">{{ msg.toolName || '工具调用' }}</span>
+              <svg class="tool-card-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </summary>
+            <div class="tool-card-body">
+              <pre class="tool-card-content">{{ msg.content || '（无详情）' }}</pre>
+            </div>
+          </details>
+          <div v-if="msg.createdAt" class="message-time message-time--tool">{{ formatTime(msg.createdAt) }}</div>
         </div>
       </div>
       <div ref="bottom" />
@@ -222,10 +260,11 @@
         />
         <div class="composer-bar">
           <div class="composer-bar-left">
-            <button type="button" class="btn-icon-circle" title="添加（即将支持）" @click.prevent>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button v-if="canUploadToKb" type="button" class="btn-icon-circle" title="上传文件" @click="triggerUpload" :disabled="uploading">
+              <svg v-if="!uploading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
+              <span v-else class="upload-spinner"></span>
             </button>
             <span class="pill-web" :class="{ 'pill-web--active': webSearchEnabled }" @click="webSearchEnabled = !webSearchEnabled">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -255,16 +294,30 @@
             </button>
           </div>
         </div>
+        <!-- Attachments -->
+        <div v-if="canUploadToKb && attachments.length" class="attachments-row">
+          <div v-for="(att, i) in attachments" :key="i" class="attachment-chip">
+            <span class="attachment-chip-name">{{ att.name }}</span>
+            <span class="attachment-chip-size">{{ formatSize(att.size) }}</span>
+            <button type="button" class="attachment-chip-remove" @click="removeAttachment(i)" title="移除">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     </div>
+    <!-- Hidden file input -->
+    <input ref="fileInput" type="file" style="display:none" @change="onFileSelected" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.html,.png,.jpg,.jpeg,.gif,.webp" />
   </div>
 </template>
 
 <script setup>
 import { ref, nextTick, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { agentChat, getAgentSessions, getAgentSessionHistory } from '../api'
+import { agentChat, getAgentSessions, getAgentSessionHistory, uploadAgentAttachment, isAdminUser } from '../api'
 
 const input = ref('')
 const messages = ref([])
@@ -280,6 +333,10 @@ const loadingHistory = ref(false)
 const box = ref(null)
 const bottom = ref(null)
 const textarea = ref(null)
+const fileInput = ref(null)
+const uploading = ref(false)
+const attachments = ref([])
+const canUploadToKb = computed(() => isAdminUser())
 
 const suggestionCards = [
   {
@@ -311,6 +368,65 @@ const filteredSessions = computed(() => {
 function sessionTitle(s) {
   const t = (s.title || '新对话').trim()
   return t.length > 32 ? `${t.slice(0, 32)}…` : t
+}
+
+function formatTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const isToday = d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate()
+  if (isToday) return time
+  const date = `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  if (d.getFullYear() === now.getFullYear()) return `${date} ${time}`
+  return `${d.getFullYear()}-${date} ${time}`
+}
+
+function formatSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return bytes + 'B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + 'MB'
+}
+
+function triggerUpload() {
+  fileInput.value?.click()
+}
+
+async function onFileSelected(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  uploading.value = true
+  try {
+    const resp = await uploadAgentAttachment(file)
+    const body = await resp.json()
+    if (body && body.code === '200' && body.data) {
+      if (body.data.error) {
+        ElMessage.error(body.data.error)
+      } else {
+        attachments.value.push({
+          name: body.data.name || file.name,
+          size: body.data.size || file.size,
+          path: body.data.path || ''
+        })
+      }
+    } else {
+      ElMessage.error(body?.message || '上传失败')
+    }
+  } catch (e) {
+    ElMessage.error('上传失败: ' + (e.message || '网络错误'))
+  } finally {
+    uploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+function removeAttachment(i) {
+  attachments.value.splice(i, 1)
 }
 
 function normalizeSession(session) {
@@ -348,6 +464,7 @@ function startNewChat() {
   sessionId.value = null
   messages.value = []
   input.value = ''
+  attachments.value = []
   historyOpen.value = false
   if (textarea.value) textarea.value.style.height = 'auto'
 }
@@ -361,13 +478,17 @@ async function openSession(session) {
     const body = res.data
     if (!isApiSuccess(body)) {
       ElMessage.error(body?.message || '加载历史失败')
+      loadingHistory.value = false
       return
     }
     const history = body.data || []
     sessionId.value = sid
-    messages.value = history
-      .filter(m => m.role === 'user' || m.role === 'assistant')
-      .map(m => ({ role: m.role, content: m.content || '' }))
+    messages.value = history.map(m => ({
+      role: m.role,
+      content: m.content || '',
+      toolName: m.toolName || '',
+      createdAt: m.createdAt || null
+    }))
     historyOpen.value = false
     if (messages.value.length === 0) {
       ElMessage.info('该会话暂无消息')
@@ -416,15 +537,24 @@ async function send() {
   if (!input.value.trim() || sending.value) return
   const text = input.value.trim()
   input.value = ''
+  const files = [...attachments.value]
+  attachments.value = []
   if (textarea.value) textarea.value.style.height = 'auto'
-  
-  messages.value.push({ role: 'user', content: text })
-  messages.value.push({ role: 'assistant', content: '', typing: true })
+
+  const displayContent = files.length
+    ? text + '\n\n📎 ' + files.map(f => f.name).join(', ')
+    : text
+
+  const now = new Date().toISOString()
+  messages.value.push({ role: 'user', content: displayContent, createdAt: now })
+  messages.value.push({ role: 'assistant', content: '', createdAt: null, typing: true })
   sending.value = true
   await scrollBottom()
-  
+
+  const sendText = text
+
   try {
-    const resp = await agentChat(sessionId.value, text, webSearchEnabled.value)
+    const resp = await agentChat(sessionId.value, sendText, webSearchEnabled.value, canUploadToKb.value ? files : [])
     if (!resp.ok) throw new Error('HTTP ' + resp.status)
     const reader = resp.body.getReader()
     const decoder = new TextDecoder()
@@ -1146,6 +1276,175 @@ async function send() {
     transform: translateY(-5px);
     opacity: 1;
   }
+}
+
+/* Message body (bubble + time) */
+.message-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Message time */
+.message-time {
+  font-size: 11px;
+  color: #999;
+  margin-top: 3px;
+}
+
+.message-time--user {
+  text-align: right;
+  margin-right: 2px;
+}
+
+.message-time--ai {
+  margin-left: 2px;
+}
+
+.message-time--tool {
+  text-align: center;
+}
+
+/* Tool message card */
+.tool-message-wrapper {
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tool-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  max-width: 480px;
+  width: fit-content;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.tool-card[open] {
+  border-color: #d1d5db;
+}
+
+.tool-card-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: #6b7280;
+  list-style: none;
+}
+
+.tool-card-summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-card-summary:hover {
+  background: #f9fafb;
+}
+
+.tool-card-icon {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.tool-card-name {
+  flex: 1;
+}
+
+.tool-card-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: #bbb;
+}
+
+.tool-card[open] .tool-card-chevron {
+  transform: rotate(180deg);
+}
+
+.tool-card-body {
+  padding: 10px 14px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.tool-card-content {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b7280;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+}
+
+/* Upload spinner */
+.upload-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Attachments row */
+.attachments-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 0;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 10px;
+  background: #f0f4ff;
+  border: 1px solid #dde4f7;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.attachment-chip-name {
+  color: #374151;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-chip-size {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.attachment-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.attachment-chip-remove:hover {
+  background: #e5e7eb;
+  color: #374151;
 }
 
 /* Scrollbar */
