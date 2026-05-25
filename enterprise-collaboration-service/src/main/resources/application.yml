@@ -16,6 +16,8 @@ spring:
   sql:
     init:
       mode: never
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
 
 server:
   port: 8090
@@ -23,6 +25,9 @@ server:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
+
+flyway:
+  enabled: false
 
 auth:
   jwt:
