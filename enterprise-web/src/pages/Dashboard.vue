@@ -43,40 +43,40 @@
       </div>
       <div style="display:flex;gap:12px;">
         <div class="stat-card admin-collab-card" @click="$router.push('/todos')">
-          <div class="stat-icon-wrapper">
-            <div class="stat-icon" style="background:#ecfdf5;">
+          <div class="admin-collab-inner">
+            <div class="admin-collab-icon" style="background:#ecfdf5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
+            <span class="admin-collab-value" style="color:#0d9488;">{{ collabStats.todos }}</span>
+            <span class="admin-collab-label">我的待办</span>
           </div>
-          <div class="stat-value" style="color:#0d9488;">{{ collabStats.todos }}</div>
-          <div class="stat-label">我的待办</div>
         </div>
         <div class="stat-card admin-collab-card" @click="$router.push('/meetings')">
-          <div class="stat-icon-wrapper">
-            <div class="stat-icon" style="background:#ecfdf5;">
+          <div class="admin-collab-inner">
+            <div class="admin-collab-icon" style="background:#ecfdf5;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
+            <span class="admin-collab-value" style="color:#0d9488;">{{ collabStats.meetings }}</span>
+            <span class="admin-collab-label">今日会议</span>
           </div>
-          <div class="stat-value" style="color:#0d9488;">{{ collabStats.meetings }}</div>
-          <div class="stat-label">今日会议</div>
         </div>
         <div class="stat-card admin-collab-card" @click="$router.push('/approvals')">
-          <div class="stat-icon-wrapper">
-            <div class="stat-icon" style="background:#fff7ed;">
+          <div class="admin-collab-inner">
+            <div class="admin-collab-icon" style="background:#fff7ed;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             </div>
+            <span class="admin-collab-value" style="color:#f97316;">{{ collabStats.approvals }}</span>
+            <span class="admin-collab-label">待审批</span>
           </div>
-          <div class="stat-value" style="color:#f97316;">{{ collabStats.approvals }}</div>
-          <div class="stat-label">待审批</div>
         </div>
         <div class="stat-card admin-collab-card" @click="$router.push('/chats')">
-          <div class="stat-icon-wrapper">
-            <div class="stat-icon" style="background:#f5f3ff;">
+          <div class="admin-collab-inner">
+            <div class="admin-collab-icon" style="background:#f5f3ff;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
+            <span class="admin-collab-value" style="color:#8b5cf6;">{{ collabStats.messages }}</span>
+            <span class="admin-collab-label">未读消息</span>
           </div>
-          <div class="stat-value" style="color:#8b5cf6;">{{ collabStats.messages }}</div>
-          <div class="stat-label">未读消息</div>
         </div>
       </div>
     </template>
@@ -601,14 +601,36 @@ onMounted(() => { loadData() })
   background:#fff;
   border:1px solid #e5e7eb;
   border-radius:12px;
-  padding:16px;
-  text-align:center;
   cursor:pointer;
   transition:all .15s;
 }
 .admin-collab-card:hover {
   box-shadow:0 2px 12px rgba(0,0,0,0.04);
   transform:translateY(-1px);
+}
+.admin-collab-inner {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 16px;
+}
+.admin-collab-icon {
+  width:36px;
+  height:36px;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.admin-collab-value {
+  font-size:22px;
+  font-weight:700;
+}
+.admin-collab-label {
+  font-size:13px;
+  color:#6b7280;
+  margin-left:auto;
 }
 
 /* Regular User Gradient Cards */
