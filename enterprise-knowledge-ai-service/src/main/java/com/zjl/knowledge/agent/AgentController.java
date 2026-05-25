@@ -3,6 +3,7 @@ package com.zjl.knowledge.agent;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import com.zjl.knowledge.agent.entity.KbAgentSession;
+import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.web.UserContext;
 import com.zjl.knowledge.web.UserContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +15,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,6 +54,11 @@ public class AgentController {
      * 会话服务，管理会话的创建、查询和消息存储
      */
     private final AgentSessionService sessionService;
+
+    /**
+     * 文件存储服务，用于聊天附件上传
+     */
+    private final FileStorageService fileStorageService;
 
     /**
      * 对话接口（SSE 流式响应）
@@ -90,7 +99,7 @@ public class AgentController {
                         truncate(request.getMessage(), 100));
                 
                 // 保存用户消息到历史记录
-                sessionService.saveUserMessage(session.getId(), request.getMessage());
+                sessionService.saveUserMessage(session.getId(), buildUserMessageText(request));
 
                 // 执行 Agent 核心循环（LLM 调用 + 工具调用）
                 agentLoop.run(session, user, emitter, request.isWebSearch());
@@ -191,6 +200,65 @@ public class AgentController {
     }
 
     /**
+     * 聊天文件上传
+     *
+     * <p>上传聊天附件文件到 OSS/S3，返回文件信息供对话引用。</p>
+     *
+     * @param file 上传文件
+     * @return 文件信息（name, size, url）
+     */
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Result<Map<String, Object>> uploadAttachment(@RequestParam("file") MultipartFile file) {
+        UserContext user = UserContextHolder.get();
+        if (file == null || file.isEmpty()) {
+            return Results.success(Map.of("error", "文件不能为空"));
+        }
+        try {
+            long docId = System.currentTimeMillis();
+            String originalName = file.getOriginalFilename();
+            if (originalName == null || originalName.isBlank()) {
+                originalName = "file";
+            }
+            String storedPath = fileStorageService.store(docId, originalName, file.getInputStream());
+            log.info("聊天附件已上传: userId={}, name={}, path={}, size={}",
+                    user.getUserId(), originalName, storedPath, file.getSize());
+
+            Map<String, Object> result = Map.of(
+                    "name", originalName,
+                    "size", file.getSize(),
+                    "path", storedPath
+            );
+            return Results.success(result);
+        } catch (Exception e) {
+            log.error("聊天附件上传失败", e);
+            return Results.success(Map.of("error", "上传失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 组装发给 LLM 的用户消息（含附件 storage_path，供管理员上传文档 Tool 使用）。
+     */
+    private String buildUserMessageText(ChatRequest request) {
+        String message = request.getMessage() != null ? request.getMessage().trim() : "";
+        if (request.getAttachments() == null || request.getAttachments().isEmpty()) {
+            return message;
+        }
+        StringBuilder sb = new StringBuilder(message);
+        sb.append("\n\n[附件信息]\n");
+        for (ChatAttachment attachment : request.getAttachments()) {
+            sb.append("- 文件: ").append(attachment.getName());
+            if (attachment.getSize() != null) {
+                sb.append(" (").append(attachment.getSize()).append(" bytes)");
+            }
+            if (attachment.getPath() != null && !attachment.getPath().isBlank()) {
+                sb.append(", storage_path: ").append(attachment.getPath());
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
+    /**
      * 截断文本到指定长度
      *
      * @param text 原始文本
@@ -225,5 +293,23 @@ public class AgentController {
          * <p>为 true 时 Agent 可使用 web_search 工具检索互联网内容</p>
          */
         private boolean webSearch;
+
+        /**
+         * 聊天附件（来自 /api/kb/agent/upload 的上传结果）
+         */
+        private List<ChatAttachment> attachments;
+    }
+
+    /**
+     * 聊天附件元数据
+     */
+    @lombok.Data
+    public static class ChatAttachment {
+        /** 原始文件名 */
+        private String name;
+        /** 文件大小（字节） */
+        private Long size;
+        /** 存储路径（upload 接口返回的 path） */
+        private String path;
     }
 }
