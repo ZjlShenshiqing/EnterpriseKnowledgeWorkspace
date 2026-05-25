@@ -2,15 +2,16 @@ package com.zjl.workbench.web;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/workbench")
 public class WorkbenchController {
@@ -33,8 +34,6 @@ public class WorkbenchController {
     @GetMapping("/overview")
     @Cacheable(value = "wb_overview", key = "#userId", unless = "#result.data.isEmpty()")
     public Result<Map<String,Object>> overview(@RequestHeader(UA) Long userId, @RequestHeader(value=AD,defaultValue="false") String isAdmin) {
-        long start = System.currentTimeMillis();
-        log.info("工作台概览查询: userId={}", userId);
         Map<String,Object> data = new LinkedHashMap<>();
         var headers = Map.of(UA, String.valueOf(userId), AD, isAdmin);
 
@@ -44,12 +43,17 @@ public class WorkbenchController {
 
         // 从 knowledge-ai 聚合
         try {
-            var kbResp = rt.getForObject(knowledgeUrl + "/api/kb/documents?current=1&size=5", Map.class);
-            if (kbResp != null && kbResp.get("data") instanceof Map kbData) {
-                data.put("recentDocs", kbData.getOrDefault("records", List.of()));
-                data.put("docCount", kbData.getOrDefault("total", 0));
+            var kbResp = callForObject(knowledgeUrl + "/api/kb/documents?current=1&size=5", headers, Map.class);
+            if (kbResp != null) {
+                Object dataObj = kbResp.get("data");
+                if (dataObj instanceof Map kbData) {
+                    data.put("recentDocs", kbData.getOrDefault("records", List.of()));
+                    data.put("docCount", kbData.getOrDefault("total", 0));
+                }
             }
-        } catch (Exception e) { data.put("recentDocs", List.of()); data.put("docCount", 0); }
+        } catch (Exception e) {
+            data.put("recentDocs", List.of()); data.put("docCount", 0);
+        }
 
         // 从 collaboration 统计
         try {
@@ -73,8 +77,6 @@ public class WorkbenchController {
             }).count());
         } catch (Exception e) { data.put("inProgressTaskCount", 0); }
 
-        long elapsed = System.currentTimeMillis() - start;
-        log.info("工作台概览查询完成: userId={}, elapsed={}ms", userId, elapsed);
         return Results.success(data);
     }
 
@@ -112,7 +114,7 @@ public class WorkbenchController {
         } catch(Exception e) { data.put("meetingStats", Map.of()); }
 
         try {
-            var kbResp = rt.getForObject(knowledgeUrl + "/api/kb/documents?current=1&size=1", Map.class);
+            var kbResp = callForObject(knowledgeUrl + "/api/kb/documents?current=1&size=1", headers, Map.class);
             if (kbResp != null && kbResp.get("data") instanceof Map kbData) {
                 data.put("docCount", kbData.getOrDefault("total", 0));
             }
@@ -123,8 +125,20 @@ public class WorkbenchController {
 
     @SuppressWarnings("unchecked")
     private List<Map<String,Object>> callList(String url, Map<String,String> headers) {
-        var resp = rt.getForObject(url, Map.class);
+        var entity = new HttpEntity<>(toHttpHeaders(headers));
+        var resp = rt.exchange(url, HttpMethod.GET, entity, Map.class).getBody();
         if (resp != null && resp.get("data") instanceof List) return (List<Map<String,Object>>) resp.get("data");
         return List.of();
+    }
+
+    private <T> T callForObject(String url, Map<String,String> headers, Class<T> type) {
+        var entity = new HttpEntity<>(toHttpHeaders(headers));
+        return rt.exchange(url, HttpMethod.GET, entity, type).getBody();
+    }
+
+    private HttpHeaders toHttpHeaders(Map<String,String> headers) {
+        HttpHeaders h = new HttpHeaders();
+        if (headers != null) headers.forEach(h::set);
+        return h;
     }
 }
