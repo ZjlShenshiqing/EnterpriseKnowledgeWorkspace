@@ -3,6 +3,7 @@ package com.zjl.filter;
 import com.zjl.gateway.response.ApiResponseWriter;
 import com.zjl.common.trace.TraceIdHolder;
 import com.zjl.config.AppGatewayProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>说明：MVP 阶段使用内存计数器 多实例或生产环境建议替换为 Redis 等集中式限流</p>
  */
+@Slf4j
 @Component
 @EnableConfigurationProperties(AppGatewayProperties.class)
 public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
@@ -125,6 +127,8 @@ public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
          * <p>注意：这里使用 next.count > limit 使得 limit 表示窗口内允许的最大请求数</p>
          */
         if (next.count > limit) {
+            String path = exchange.getRequest().getPath().value();
+            log.warn("限流触发: IP={}, path={}", key, path);
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             return writer.writeFailure(exchange, 42900, "请求过于频繁，请稍后再试", traceId());
         }

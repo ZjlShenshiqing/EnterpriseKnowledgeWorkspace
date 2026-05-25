@@ -11,6 +11,7 @@ import com.zjl.security.JwtUtil;
 import com.zjl.security.TokenBlacklistService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
@@ -24,6 +25,7 @@ import java.util.*;
 /**
  * 认证相关接口（登录、退出）。
  */
+@Slf4j
 @Validated
 @RestController
 @RequestMapping("/api/auth")
@@ -111,10 +113,12 @@ public class AuthController {
                 .flatMap(user -> {
                     // 用户不存在或已被禁用
                     if (user == null || !user.isEnabled()) {
+                        log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
                         return Mono.error(new BizException(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
                     }
                     // BCrypt 密文比对
                     if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+                        log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
                         return Mono.error(new BizException(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
                     }
                     // 从用户角色和权限生成 JWT authorities 列表
@@ -125,6 +129,7 @@ public class AuthController {
                     Long deptId = user.getDept() != null ? user.getDept().getId() : null;
                     boolean isAdmin = user.getRoles().stream()
                             .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode()));
+                    log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
                     return Mono.just(Results.success(new LoginResponse(
                             token,
                             user.getId(),

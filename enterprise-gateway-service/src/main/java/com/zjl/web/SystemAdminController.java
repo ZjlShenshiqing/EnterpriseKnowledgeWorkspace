@@ -21,6 +21,7 @@ import com.zjl.service.UserService.UserStats;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -37,6 +38,7 @@ import java.util.Set;
  * <p>约束：仅允许管理员访问（hasRole('ADMIN')）。</p>
  * <p>Controller 仅做路由转发和参数校验，业务逻辑在 Service 层。</p>
  */
+@Slf4j
 @Validated
 @RestController
 @RequestMapping("/api/system")
@@ -75,6 +77,40 @@ public class SystemAdminController {
     public Mono<Result<PageResult<SysUser>>> users(
             @RequestParam(value = "keyword", defaultValue = "") String keyword,
             @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
+        return Mono.fromCallable(() -> Results.success(userService.listUsers(keyword, page, size)))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 用户统计
+     */
+    @GetMapping("/users/stats")
+    public Mono<Result<UserStats>> userStats(
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
+        return Mono.fromCallable(() -> Results.success(userService.getUserStats()))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 单个用户详情
+     */
+    @GetMapping("/users/{id}")
+    public Mono<Result<SysUser>> getUser(
+            @PathVariable Long id,
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
+        return Mono.fromCallable(() -> Results.success(userService.getUser(id)))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "20") int size
     ) {
         return Mono.fromCallable(() -> Results.success(userService.listUsers(keyword, page, size)))
@@ -107,6 +143,7 @@ public class SystemAdminController {
             @Valid @RequestBody CreateUserRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() ->
                         userService.createUser(req.username(), req.password(),
                                 req.realName(), req.deptId(), req.roleCodes()))
@@ -126,6 +163,7 @@ public class SystemAdminController {
             @Valid @RequestBody UpdateUserRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() ->
                         userService.updateUser(id, req.realName(), req.deptId(),
                                 req.enabled(), req.roleCodes()))
@@ -145,6 +183,7 @@ public class SystemAdminController {
             @Valid @RequestBody UpdateUserRolesRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() -> userService.updateUserRoles(id, req.roleCodes()))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(saved -> opLogService
@@ -161,6 +200,7 @@ public class SystemAdminController {
             @PathVariable Long id,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromRunnable(() -> userService.deleteUser(id))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then(opLogService
@@ -175,7 +215,10 @@ public class SystemAdminController {
      * 角色列表（附带 userCount）
      */
     @GetMapping("/roles")
-    public Mono<Result<List<RoleDTO>>> roles() {
+    public Mono<Result<List<RoleDTO>>> roles(
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() -> Results.success(roleService.listRoles()))
                 .subscribeOn(Schedulers.boundedElastic());
     }
@@ -184,7 +227,11 @@ public class SystemAdminController {
      * 单个角色详情
      */
     @GetMapping("/roles/{id}")
-    public Mono<Result<SysRole>> getRole(@PathVariable Long id) {
+    public Mono<Result<SysRole>> getRole(
+            @PathVariable Long id,
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() -> Results.success(roleService.getRole(id)))
                 .subscribeOn(Schedulers.boundedElastic());
     }
@@ -197,6 +244,7 @@ public class SystemAdminController {
             @Valid @RequestBody CreateRoleRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() ->
                         roleService.createRole(req.code(), req.name(), req.permissionCodes()))
                 .subscribeOn(Schedulers.boundedElastic())
@@ -215,6 +263,7 @@ public class SystemAdminController {
             @Valid @RequestBody UpdateRoleRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() ->
                         roleService.updateRole(id, req.name(), req.permissionCodes()))
                 .subscribeOn(Schedulers.boundedElastic())
@@ -232,6 +281,7 @@ public class SystemAdminController {
             @PathVariable Long id,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromRunnable(() -> roleService.deleteRole(id))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then(opLogService
@@ -243,7 +293,10 @@ public class SystemAdminController {
     // ──────────────────── Permission / Dept (保持已有逻辑) ────────────────────
 
     @GetMapping("/permissions")
-    public Mono<Result<List<SysPermission>>> permissions() {
+    public Mono<Result<List<SysPermission>>> permissions(
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(permissionRepository::findAll)
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(Results::success);
@@ -254,6 +307,7 @@ public class SystemAdminController {
             @Valid @RequestBody CreatePermissionRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() -> {
                     if (permissionRepository.findByCode(req.code()).isPresent()) {
                         throw new BizException(40000, "权限 code 已存在");
@@ -271,7 +325,10 @@ public class SystemAdminController {
     }
 
     @GetMapping("/depts")
-    public Mono<Result<List<SysDept>>> depts() {
+    public Mono<Result<List<SysDept>>> depts(
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(deptRepository::findAll)
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(Results::success);
@@ -282,6 +339,7 @@ public class SystemAdminController {
             @Valid @RequestBody CreateDeptRequest req,
             org.springframework.http.server.reactive.ServerHttpRequest request
     ) {
+        log.info("管理员操作: {} {}, operatorId={}", request.getMethod(), request.getURI().getPath(), UserContext.userId());
         return Mono.fromCallable(() -> {
                     if (deptRepository.findByName(req.name()).isPresent()) {
                         throw new BizException(40000, "部门名称已存在");

@@ -1,6 +1,7 @@
 package com.zjl.filter;
 
 import com.zjl.security.UserContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
@@ -23,8 +24,9 @@ import reactor.core.publisher.Mono;
  * 实际的 token 解析、token 校验、用户身份构造逻辑，并不在这个类中完成，
  * 而是在传入的 ServerAuthenticationConverter 中完成。
  *
- * 这个类主要负责“组装认证过滤器流程”。
+ * 这个类主要负责”组装认证过滤器流程”。
  */
+@Slf4j
 public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
 
     /**
@@ -91,6 +93,9 @@ public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
          */
         setAuthenticationSuccessHandler((webFilterExchange, authentication) -> {
             webFilterExchange.getExchange().getAttributes().put("AUTHENTICATION", authentication);
+            String userId = String.valueOf(authentication.getPrincipal());
+            String path = webFilterExchange.getExchange().getRequest().getPath().value();
+            log.info("JWT认证通过: userId={}, path={}", userId, path);
             return setUserContext(authentication)
                     .then(new WebFilterChainServerAuthenticationSuccessHandler()
                             .onAuthenticationSuccess(webFilterExchange, authentication));

@@ -1,5 +1,6 @@
 package com.zjl.filter;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -13,6 +14,7 @@ import reactor.core.publisher.Mono;
 /**
  * 将网关已认证的用户身份写入下游请求头，并移除 Authorization，避免下游重复校验 JWT。
  */
+@Slf4j
 @Component
 public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
 
@@ -35,6 +37,8 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
 
     private ServerWebExchange mutateRequest(ServerWebExchange exchange, Authentication auth) {
         String userId = String.valueOf(auth.getPrincipal());
+        String targetUri = exchange.getRequest().getURI().toString();
+        log.debug("身份头注入: userId={}, downstream={}", userId, targetUri);
         boolean admin = auth.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equalsIgnoreCase(a.getAuthority()));
         String deptId = exchange.getRequest().getHeaders().getFirst("X-Department-Id");

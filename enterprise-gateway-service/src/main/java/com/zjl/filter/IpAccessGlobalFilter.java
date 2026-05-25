@@ -4,6 +4,7 @@ import com.zjl.gateway.response.ApiResponseWriter;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.trace.TraceIdHolder;
 import com.zjl.config.AppGatewayProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -27,6 +28,7 @@ import java.util.List;
  * 5. 如果校验不通过，则直接返回统一 JSON 错误响应；
  * 6. 如果校验通过，则继续执行后续网关过滤器和业务请求。
  */
+@Slf4j
 @Component
 @EnableConfigurationProperties(AppGatewayProperties.class)
 public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
@@ -101,6 +103,8 @@ public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
         // !whitelist.contains(ip)
         // 表示当前 IP 不在白名单中，也不允许访问。
         if (!CollectionUtils.isEmpty(whitelist) && (ip == null || !whitelist.contains(ip))) {
+            String path = exchange.getRequest().getPath().value();
+            log.warn("IP白名单拦截: IP={}, path={}", ip, path);
 
             // 如果 IP 不在白名单内，直接返回 403 禁止访问
             // traceId() 用于把当前请求的链路追踪 ID 一起返回，方便排查日志。
@@ -121,6 +125,8 @@ public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
         // 黑名单是在白名单之后校验的。
         // 也就是说，如果白名单开启了，请求必须先通过白名单校验。
         if (!CollectionUtils.isEmpty(blacklist) && ip != null && blacklist.contains(ip)) {
+            String path = exchange.getRequest().getPath().value();
+            log.warn("IP黑名单拦截: IP={}, path={}", ip, path);
 
             // 如果当前 IP 在黑名单中，直接返回 403 禁止访问
             return writer.writeFailure(
