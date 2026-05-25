@@ -8,10 +8,12 @@ import com.zjl.collaboration.mapper.SysDocCollaboratorMapper;
 import com.zjl.collaboration.mapper.SysDocMapper;
 import com.zjl.collaboration.mapper.SysDocShareLinkMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DocPermissionService {
@@ -69,6 +71,7 @@ public class DocPermissionService {
             }
         }
 
+        log.warn("文档权限拒绝: docId={}, userId={}", docId, userId);
         return null;
     }
 

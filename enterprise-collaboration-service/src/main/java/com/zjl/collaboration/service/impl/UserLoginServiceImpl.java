@@ -10,6 +10,7 @@ import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserLoginServiceImpl implements UserLoginService {
@@ -49,6 +51,7 @@ public class UserLoginServiceImpl implements UserLoginService {
         claims.put("isAdmin", user.getIsAdmin() != null && user.getIsAdmin() == 1);
         String token = jwtUtil.generate(claims);
 
+        log.info("用户登录: userId={}, username={}", user.getId(), user.getUsername());
         UserLoginRespDTO resp = new UserLoginRespDTO();
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());

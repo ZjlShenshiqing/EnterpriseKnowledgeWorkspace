@@ -74,9 +74,11 @@ public class DocOTService {
                 String newContent = applyOpsToContent(doc.getContent(), opList);
                 doc.setContent(newContent);
                 doc.setSnapshotVersion(newVersion);
+                log.info("快照生成: docId={}, version={}", docId, newVersion);
             }
             docMapper.updateById(doc);
 
+            log.info("OT操作提交: docId={}, userId={}, baseVersion={}, newVersion={}", docId, userId, baseVersion, newVersion);
             return transformedOps;
         } finally {
             lock.unlock();

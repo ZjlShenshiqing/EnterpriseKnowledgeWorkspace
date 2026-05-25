@@ -1,5 +1,6 @@
 package com.zjl.collaboration.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 public class DocPresenceService {
 
@@ -21,6 +23,7 @@ public class DocPresenceService {
     public void join(Long docId, String sessionId, Long userId, String userName, WebSocketSession session) {
         docSessions.computeIfAbsent(docId, k -> new ConcurrentHashMap<>())
             .put(sessionId, new SessionInfo(userId, userName, session));
+        log.debug("用户加入文档: docId={}, userId={}, onlineCount={}", docId, userId, getOnlineCount(docId));
     }
 
     /** 移除会话 */
