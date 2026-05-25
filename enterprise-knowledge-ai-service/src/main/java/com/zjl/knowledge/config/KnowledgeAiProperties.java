@@ -21,4 +21,14 @@ public class KnowledgeAiProperties {
      * 是否启用向量写入（为 false 时跳过向量写入步骤）
      */
     private boolean vectorWriteEnabled = true;
+
+    /**
+     * Embedding API Key（百炼 DashScope）
+     */
+    private String embeddingApiKey = "";
+
+    /**
+     * Embedding API 地址（OpenAI 兼容格式）
+     */
+    private String embeddingBaseUrl = "https://dashscope.aliyuncs.com/compatible-mode";
 }
