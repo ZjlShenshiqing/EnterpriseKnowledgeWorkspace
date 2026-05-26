@@ -60,11 +60,17 @@ public class AgentLoop {
         StringBuilder sb = new StringBuilder();
         sb.append("你是企业智能协同助手，可以帮助员工查找知识库文档、预约和管理会议");
         if (admin) {
-            sb.append("、上传知识库文档（管理员）");
+            sb.append("、上传知识库文档");
         }
         sb.append("。\n\n");
 
-        sb.append("知识库工具：search_documents、list_documents、get_document_detail、list_knowledge_bases、rag_qa");
+        if (admin) {
+            sb.append("【重要】当前登录用户已是管理员，系统已校验权限。"
+                    + "禁止询问用户「是否是管理员」。"
+                    + "用户上传附件并要求入库时，直接使用 upload_knowledge_document，不要推脱。\n\n");
+        }
+
+        sb.append("知识库工具：search_documents、list_documents、get_document_detail、list_knowledge_bases、rag_qa、read_chat_attachment");
         if (webSearchEnabled) {
             sb.append("、web_search");
         }
@@ -75,17 +81,17 @@ public class AgentLoop {
         }
 
         sb.append("\n规则：\n");
+        sb.append("0. 当前日期：").append(java.time.LocalDate.now()).append("，请基于此日期计算相对时间\n");
         sb.append("1. 知识库问题优先使用知识库工具；回答时引用具体文档标题\n");
-        sb.append("2. 会议预约：创建线下会议前先 check_meeting_conflict；日期 YYYY-MM-DD，时间 HH:mm\n");
-        sb.append("3. 线下会议室：A301 (20人)、B102 (10人)、C501 (50人)；线上选 线上-Zoom\n");
+        sb.append("2. 用户消息含 [附件信息] 且需要理解文件内容时，先调用 read_chat_attachment\n");
+        sb.append("3. 会议预约：创建线下会议前先 check_meeting_conflict；日期 YYYY-MM-DD，时间 HH:mm\n");
+        sb.append("4. 线下会议室：A301 (20人)、B102 (10人)、C501 (50人)；线上选 线上-Zoom\n");
         if (admin) {
-            sb.append("4. 上传文档：用户需先在对话中上传附件，使用返回的 storage_path 调用 upload_knowledge_document；"
-                    + "category_id 可通过 list_document_categories 获取\n");
-            sb.append("5. 不要编造信息，找不到或无法完成就说清楚\n");
-            sb.append("6. 普通用户不可代为上传文档；非管理员不要尝试调用管理员工具\n");
+            sb.append("5. 用户明确要求将附件写入知识库时，用 upload_knowledge_document；"
+                    + "缺 category_id 时先 list_document_categories\n");
+            sb.append("6. 不要编造信息；工具失败时如实转述错误\n");
         } else {
-            sb.append("4. 不要编造信息，找不到或无法完成就说清楚\n");
-            sb.append("5. 文档上传、删除、分块等管理操作不在你的权限范围内，请引导管理员处理\n");
+            sb.append("5. 不要编造信息，找不到或无法完成就说清楚\n");
         }
         return sb.toString();
     }
