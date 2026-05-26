@@ -88,7 +88,7 @@ public class AgentLoop {
         sb.append("4. 线下会议室：A301 (20人)、B102 (10人)、C501 (50人)；线上选 线上-Zoom\n");
         if (admin) {
             sb.append("5. 用户明确要求将附件写入知识库时，用 upload_knowledge_document；"
-                    + "缺 category_id 时先 list_document_categories\n");
+                    + "缺 kb_id 时先 list_knowledge_bases，缺 category_id 时先 list_document_categories\n");
             sb.append("6. 不要编造信息；工具失败时如实转述错误\n");
         } else {
             sb.append("5. 不要编造信息，找不到或无法完成就说清楚\n");
