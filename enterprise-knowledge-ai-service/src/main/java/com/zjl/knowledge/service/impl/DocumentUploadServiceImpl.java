@@ -187,7 +187,8 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
     /**
      * 校验 JSON 格式并标准化
      */
-    String normalizeChunkConfigJson(ChunkingMode mode, String chunkConfigJson) {
+    @Override
+    public String normalizeChunkConfigJson(ChunkingMode mode, String chunkConfigJson) {
         if (!StringUtils.hasText(chunkConfigJson)) {
             return null;
         }

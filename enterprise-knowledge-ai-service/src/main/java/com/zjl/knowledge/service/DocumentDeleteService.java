@@ -1,6 +1,6 @@
 package com.zjl.knowledge.service;
 
-import com.zjl.common.context.UserContext;
+import com.zjl.knowledge.web.UserContext;
 
 /**
  * 文档删除服务

@@ -114,7 +114,6 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
      * 校验写权限后执行分块
      */
     @Override
-    @Override
     public void executeChunkAsUser(Long documentId, UserContext user) {
         KbDocument doc = kbDocumentMapper.selectById(documentId);
         if (doc == null) {

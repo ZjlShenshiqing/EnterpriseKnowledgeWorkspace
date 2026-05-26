@@ -128,6 +128,14 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         return chunkVectorStore.search(collection, vector, topK, null);
     }
 
+    private float[] toArray(List<Float> list) {
+        float[] arr = new float[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            arr[i] = list.get(i);
+        }
+        return arr;
+    }
+
     private List<VectorDocChunk> buildVectorChunks(KbDocument document, List<KbDocumentChunk> chunks) {
         List<String> texts = chunks.stream().map(KbDocumentChunk::getChunkText).collect(Collectors.toList());
         List<List<Float>> vectors = embedBatch(texts, document);
