@@ -22,6 +22,7 @@ import com.zjl.knowledge.mapper.KbDocumentChunkLogMapper;
 import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.milvus.VectorDocChunk;
+import com.zjl.knowledge.service.DocumentChunkingService;
 import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.service.TikaDocumentParser;
 import com.zjl.knowledge.service.VectorSyncService;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DocumentChunkingService {
+public class DocumentChunkingServiceImpl implements DocumentChunkingService {
 
     private final KbDocumentMapper kbDocumentMapper;
     private final KbDocumentChunkMapper kbDocumentChunkMapper;
@@ -71,6 +72,7 @@ public class DocumentChunkingService {
      * 提交异步分块：CAS 更新 status→RUNNING，事务提交后由监听器异步执行
      */
     @Transactional(rollbackFor = Exception.class)
+    @Override
     public void startChunk(Long documentId, UserContext user) {
         KbDocument current = kbDocumentMapper.selectById(documentId);
         if (current == null) {
@@ -98,6 +100,7 @@ public class DocumentChunkingService {
     /**
      * 同步执行分块（补偿用）
      */
+    @Override
     public void executeChunk(Long documentId, Long operatorUserId) {
         KbDocument document = kbDocumentMapper.selectById(documentId);
         if (document == null) {
@@ -110,6 +113,8 @@ public class DocumentChunkingService {
     /**
      * 校验写权限后执行分块
      */
+    @Override
+    @Override
     public void executeChunkAsUser(Long documentId, UserContext user) {
         KbDocument doc = kbDocumentMapper.selectById(documentId);
         if (doc == null) {

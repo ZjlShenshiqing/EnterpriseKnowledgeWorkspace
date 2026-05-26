@@ -1,215 +1,30 @@
 package com.zjl.knowledge.agent;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.zjl.common.enums.ErrorCode;
-import com.zjl.common.exception.BizException;
-import com.zjl.knowledge.agent.entity.KbAgentMessage;
 import com.zjl.knowledge.agent.entity.KbAgentSession;
-import com.zjl.knowledge.agent.mapper.KbAgentMessageMapper;
-import com.zjl.knowledge.agent.mapper.KbAgentSessionMapper;
 import com.zjl.knowledge.agent.model.ChatMessage;
-import com.zjl.knowledge.agent.model.ToolCall;
-import com.zjl.knowledge.agent.mcp.ToolResult;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Agent 会话与消息持久化服务
  */
-@Service
-@RequiredArgsConstructor
-public class AgentSessionService {
+public interface AgentSessionService {
 
-    private final KbAgentSessionMapper sessionMapper;
-    private final KbAgentMessageMapper messageMapper;
+    KbAgentSession getOrCreateSession(Long sessionId, Long userId, String title);
 
-    /**
-     * 创建或加载会话
-     *
-     * @param sessionId 会话 ID（null 则创建新会话）
-     * @param userId    用户 ID
-     * @param title     会话标题（新会话时使用）
-     * @return 会话
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public KbAgentSession getOrCreateSession(Long sessionId, Long userId, String title) {
-        if (sessionId != null) {
-            KbAgentSession session = sessionMapper.selectById(sessionId);
-            if (session != null && session.getUserId().equals(userId)) {
-                return session;
-            }
-        }
+    KbAgentSession requireSession(Long sessionId, Long userId);
 
-        KbAgentSession session = new KbAgentSession();
-        session.setUserId(userId);
-        session.setTitle(title != null && title.length() > 100
-                ? title.substring(0, 100) : title);
-        session.setStatus("ACTIVE");
-        session.setCreatedAt(LocalDateTime.now());
-        session.setUpdatedAt(LocalDateTime.now());
-        sessionMapper.insert(session);
-        return session;
-    }
+    void saveUserMessage(Long sessionId, String content);
 
-    /**
-     * 加载已存在的会话，不存在或不属于当前用户时抛出异常。
-     *
-     * @param sessionId 会话 ID
-     * @param userId    用户 ID
-     * @return 会话实体
-     */
-    public KbAgentSession requireSession(Long sessionId, Long userId) {
-        if (sessionId == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "会话不存在");
-        }
-        KbAgentSession session = sessionMapper.selectById(sessionId);
-        if (session == null || !session.getUserId().equals(userId)) {
-            throw new BizException(ErrorCode.NOT_FOUND, "会话不存在");
-        }
-        return session;
-    }
+    Long saveAssistantMessage(Long sessionId, String content, Integer tokenCount);
 
-    /**
-     * 保存用户消息
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void saveUserMessage(Long sessionId, String content) {
-        KbAgentMessage msg = new KbAgentMessage();
-        msg.setSessionId(sessionId);
-        msg.setRole("user");
-        msg.setContent(content);
-        msg.setCreatedAt(LocalDateTime.now());
-        messageMapper.insert(msg);
-    }
+    void saveToolMessage(Long sessionId, String toolName, Map<String, Object> input, Object output);
 
-    /**
-     * 保存助手消息
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public Long saveAssistantMessage(Long sessionId, String content, Integer tokenCount) {
-        KbAgentMessage msg = new KbAgentMessage();
-        msg.setSessionId(sessionId);
-        msg.setRole("assistant");
-        msg.setContent(content);
-        msg.setTokenCount(tokenCount);
-        msg.setCreatedAt(LocalDateTime.now());
-        messageMapper.insert(msg);
-        return msg.getId();
-    }
+    List<ChatMessage> loadHistory(Long sessionId, int maxMessages);
 
-    /**
-     * 保存 tool 调用消息
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void saveToolMessage(Long sessionId, String toolName,
-                                 Map<String, Object> input, Object output) {
-        KbAgentMessage msg = new KbAgentMessage();
-        msg.setSessionId(sessionId);
-        msg.setRole("tool");
-        msg.setToolName(toolName);
-        msg.setToolInput(toJson(input));
-        msg.setToolOutput(toJson(output));
-        msg.setCreatedAt(LocalDateTime.now());
-        messageMapper.insert(msg);
-    }
+    List<ChatMessage> loadHistoryForLlm(Long sessionId, int maxMessages);
 
-    /**
-     * 加载会话历史消息，转为 ChatMessage 列表（供前端展示，包含 tool 消息）
-     */
-    public List<ChatMessage> loadHistory(Long sessionId, int maxMessages) {
-        return toChatMessages(fetchMessages(sessionId, maxMessages));
-    }
+    List<KbAgentSession> listUserSessions(Long userId);
 
-    /**
-     * 加载供 LLM 使用的会话历史。
-     *
-     * <p>数据库未持久化 {@code tool_call_id}，tool 角色消息无法按 OpenAI 格式回填给 LLM，
-     * 因此仅保留 user / assistant 文本消息，避免 DeepSeek 返回 400。</p>
-     */
-    public List<ChatMessage> loadHistoryForLlm(Long sessionId, int maxMessages) {
-        List<KbAgentMessage> messages = fetchMessages(sessionId, maxMessages);
-        List<ChatMessage> result = new ArrayList<>();
-        for (KbAgentMessage m : messages) {
-            if ("tool".equals(m.getRole())) {
-                continue;
-            }
-            if ("assistant".equals(m.getRole()) && (m.getContent() == null || m.getContent().isBlank())) {
-                continue;
-            }
-            result.add(toChatMessage(m));
-        }
-        return result;
-    }
-
-    private List<KbAgentMessage> fetchMessages(Long sessionId, int maxMessages) {
-        return messageMapper.selectList(
-                Wrappers.lambdaQuery(KbAgentMessage.class)
-                        .eq(KbAgentMessage::getSessionId, sessionId)
-                        .orderByAsc(KbAgentMessage::getCreatedAt)
-                        .last("LIMIT " + maxMessages)
-        );
-    }
-
-    private List<ChatMessage> toChatMessages(List<KbAgentMessage> messages) {
-        List<ChatMessage> result = new ArrayList<>();
-        for (KbAgentMessage m : messages) {
-            result.add(toChatMessage(m));
-        }
-        return result;
-    }
-
-    private ChatMessage toChatMessage(KbAgentMessage m) {
-        String content = m.getContent();
-        if ("tool".equals(m.getRole()) && (content == null || content.isBlank())) {
-            content = m.getToolOutput();
-        }
-        return ChatMessage.builder()
-                .role(m.getRole())
-                .content(content)
-                .toolName(m.getToolName())
-                .createdAt(m.getCreatedAt())
-                .build();
-    }
-
-    /**
-     * 查询用户的会话列表（按更新时间倒序）
-     */
-    public List<KbAgentSession> listUserSessions(Long userId) {
-        return sessionMapper.selectList(
-                Wrappers.lambdaQuery(KbAgentSession.class)
-                        .eq(KbAgentSession::getUserId, userId)
-                        .eq(KbAgentSession::getStatus, "ACTIVE")
-                        .orderByDesc(KbAgentSession::getUpdatedAt)
-        );
-    }
-
-    /**
-     * 归档会话
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void archiveSession(Long sessionId, Long userId) {
-        sessionMapper.update(null,
-                Wrappers.lambdaUpdate(KbAgentSession.class)
-                        .eq(KbAgentSession::getId, sessionId)
-                        .eq(KbAgentSession::getUserId, userId)
-                        .set(KbAgentSession::getStatus, "ARCHIVED")
-                        .set(KbAgentSession::getUpdatedAt, LocalDateTime.now()));
-    }
-
-    private String toJson(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj);
-        } catch (Exception e) {
-            return obj.toString();
-        }
-    }
+    void archiveSession(Long sessionId, Long userId);
 }

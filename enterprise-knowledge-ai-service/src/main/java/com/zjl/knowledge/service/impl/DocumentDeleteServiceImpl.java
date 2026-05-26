@@ -12,6 +12,7 @@ import com.zjl.knowledge.mapper.KbDocumentChunkLogMapper;
 import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
+import com.zjl.knowledge.service.DocumentDeleteService;
 import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.web.UserContext;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ import java.util.Objects;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DocumentDeleteService {
+public class DocumentDeleteServiceImpl implements DocumentDeleteService {
 
     private final KbDocumentMapper kbDocumentMapper;
     private final KbDocumentChunkMapper kbDocumentChunkMapper;
@@ -39,6 +40,7 @@ public class DocumentDeleteService {
      * 删除文档：校验权限与状态 → 删 Milvus 向量 → 删 chunk/log/permission → 逻辑删文档
      */
     @Transactional(rollbackFor = Exception.class)
+    @Override
     public void deleteVisible(Long id, UserContext user) {
         KbDocument doc = kbDocumentMapper.selectById(id);
         if (doc == null) {

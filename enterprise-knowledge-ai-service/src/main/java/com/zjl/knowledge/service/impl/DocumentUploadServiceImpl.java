@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import com.zjl.knowledge.service.DocumentUploadService;
 
 /**
  * 文档上传服务：校验 → 魔数检测 → INSERT kb_document (PENDING) → 落盘 → 权限行写入
@@ -41,7 +42,7 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DocumentUploadService {
+public class DocumentUploadServiceImpl implements DocumentUploadService {
 
     /**
      * 支持的 MIME 大类
@@ -75,6 +76,7 @@ public class DocumentUploadService {
      * 上传文档：魔数检测 → INSERT kb_document (PENDING) → 落盘 → 权限行
      */
     @Transactional(rollbackFor = Exception.class)
+    @Override
     public Long upload(UserContext user, KbDocumentUploadRequest meta, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BizException(ErrorCode.PARAM_INVALID, "文件不能为空");
