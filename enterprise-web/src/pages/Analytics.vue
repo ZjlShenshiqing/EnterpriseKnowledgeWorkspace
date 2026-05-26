@@ -30,6 +30,7 @@
             <div class="kv-grid">
               <div class="kv-item"><span class="kv-label">文档总数</span><span class="kv-value">{{ docStats.totalDocs }}</span></div>
               <div class="kv-item"><span class="kv-label">处理成功</span><span class="kv-value green">{{ docStats.successDocs }}</span></div>
+              <div class="kv-item"><span class="kv-label">处理中</span><span class="kv-value warn">{{ docStats.processingDocs }}</span></div>
               <div class="kv-item"><span class="kv-label">处理失败</span><span class="kv-value red">{{ docStats.failedDocs }}</span></div>
               <div class="kv-item"><span class="kv-label">知识库数</span><span class="kv-value">{{ docStats.kbCount }}</span></div>
             </div>
@@ -90,10 +91,29 @@
         </div>
 
         <div class="success-ring-wrap">
-          <div class="success-ring" :style="{ background: successRingGradient }">
-            <div class="success-ring-inner">
-              <div class="success-ring-value">{{ aiStats.successRate }}%</div>
-              <div class="success-ring-label">成功率</div>
+          <div class="success-ring-card">
+            <svg class="success-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+              <defs>
+                <linearGradient :id="ringGradientId" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" :stop-color="ringGradient.start" />
+                  <stop offset="100%" :stop-color="ringGradient.end" />
+                </linearGradient>
+              </defs>
+              <circle class="ring-track" cx="60" cy="60" r="52" />
+              <circle
+                class="ring-progress"
+                cx="60"
+                cy="60"
+                r="52"
+                :stroke="`url(#${ringGradientId})`"
+                :stroke-dasharray="ringDasharray"
+                transform="rotate(-90 60 60)"
+              />
+            </svg>
+            <div class="success-ring-center">
+              <div class="success-ring-value" :style="{ color: ringTheme.main }">{{ formattedDocRate }}<span class="success-ring-unit">%</span></div>
+              <div class="success-ring-label">文档成功率</div>
+              <div class="success-ring-sub">{{ docStats.successDocs }} / {{ docStats.totalDocs }} 已成功</div>
             </div>
           </div>
         </div>
@@ -112,16 +132,42 @@
         <div class="quality-box">
           <div class="quality-title-row">
             <span class="quality-title">文档处理</span>
-            <span class="quality-time">累计</span>
+            <span class="quality-time">共 {{ docStats.totalDocs }} 篇</span>
           </div>
-          <div class="quality-bars">
-            <div v-for="item in qualityCards" :key="item.label" class="quality-item">
-              <div class="quality-chart">
-                <div class="quality-bar" :style="{ height: item.height + '%', background: item.color }"></div>
+
+          <div v-if="docStats.totalDocs > 0" class="doc-stack-bar">
+            <div
+              v-if="docDistribution.success > 0"
+              class="doc-stack-seg doc-stack-seg--success"
+              :style="{ width: docDistribution.success + '%' }"
+            ></div>
+            <div
+              v-if="docDistribution.processing > 0"
+              class="doc-stack-seg doc-stack-seg--processing"
+              :style="{ width: docDistribution.processing + '%' }"
+            ></div>
+            <div
+              v-if="docDistribution.failed > 0"
+              class="doc-stack-seg doc-stack-seg--failed"
+              :style="{ width: docDistribution.failed + '%' }"
+            ></div>
+          </div>
+          <div v-else class="doc-stack-empty">暂无文档</div>
+
+          <div class="doc-status-list">
+            <div v-for="row in docStatusRows" :key="row.key" class="doc-status-row">
+              <div class="doc-status-head">
+                <span class="doc-status-dot" :style="{ background: row.color }"></span>
+                <span class="doc-status-label">{{ row.label }}</span>
+                <span class="doc-status-count" :style="{ color: row.color }">{{ row.value }}</span>
+                <span class="doc-status-pct">{{ row.percent }}%</span>
               </div>
-              <div class="quality-value" :style="{ color: item.color }">{{ item.value }}</div>
-              <div class="quality-label">{{ item.label }}</div>
-              <div class="quality-hint">{{ item.hint }}</div>
+              <div class="doc-status-track">
+                <div
+                  class="doc-status-fill"
+                  :style="{ width: row.percent + '%', background: row.color }"
+                ></div>
+              </div>
             </div>
           </div>
         </div>
@@ -156,18 +202,54 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { ChatLineSquare, Document, User, DataBoard } from '@element-plus/icons-vue'
+import { getAuthHeaders } from '../api/index.js'
 
 const userStats = ref({ total: 0, enabled: 0, admin: 0, disabled: 0 })
 const aiStats = ref({ successRate: 0, avgDurationMs: 0, p95DurationMs: 0, sessionCount: 0, messageCount: 0, avgMessagesPerSession: 0, totalTokens: 0 })
 const collabStats = ref({ taskTodo: 0, taskInProgress: 0, taskReview: 0, taskDone: 0, approvalPending: 0, approvalApproved: 0, meetingToday: 0, meetingTotal: 0 })
-const docStats = ref({ totalDocs: 0, successDocs: 0, failedDocs: 0, kbCount: 0 })
+const docStats = ref({
+  totalDocs: 0,
+  successDocs: 0,
+  pendingDocs: 0,
+  runningDocs: 0,
+  failedDocs: 0,
+  processingDocs: 0,
+  docSuccessRate: 0,
+  kbCount: 0
+})
 
-const aiHealthClass = computed(() => aiStats.value.successRate >= 95 ? '' : 'warn')
-const aiHealthText = computed(() => aiStats.value.successRate >= 95 ? '运行正常' : '需关注')
+const aiHealthClass = computed(() => docStats.value.docSuccessRate >= 95 ? '' : 'warn')
+const aiHealthText = computed(() => docStats.value.docSuccessRate >= 95 ? '运行正常' : '需关注')
 
-const successRingGradient = computed(() => {
-  const rate = aiStats.value.successRate
-  return `conic-gradient(#27b269 0deg ${rate * 3.6}deg, #dfe8f1 ${rate * 3.6}deg 360deg)`
+const RING_RADIUS = 52
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+const ringGradientId = 'doc-success-ring-grad'
+
+const formattedDocRate = computed(() => {
+  const rate = docStats.value.docSuccessRate || 0
+  return Number.isInteger(rate) ? rate : Number(rate).toFixed(1)
+})
+
+const ringTheme = computed(() => {
+  const rate = docStats.value.docSuccessRate || 0
+  if (rate >= 95) {
+    return { main: '#16a34a', start: '#4ade80', end: '#16a34a', glow: 'rgba(34, 197, 94, 0.35)' }
+  }
+  if (rate >= 80) {
+    return { main: '#d97706', start: '#fbbf24', end: '#f59e0b', glow: 'rgba(245, 158, 11, 0.35)' }
+  }
+  return { main: '#dc2626', start: '#f87171', end: '#ef4444', glow: 'rgba(239, 68, 68, 0.35)' }
+})
+
+const ringGradient = computed(() => ({
+  start: ringTheme.value.start,
+  end: ringTheme.value.end
+}))
+
+const ringDasharray = computed(() => {
+  const rate = Math.min(100, Math.max(0, docStats.value.docSuccessRate || 0))
+  const filled = (rate / 100) * RING_CIRCUMFERENCE
+  return `${filled} ${RING_CIRCUMFERENCE - filled}`
 })
 
 const metricCards = computed(() => [
@@ -177,12 +259,26 @@ const metricCards = computed(() => [
   { label: '会议数', value: collabStats.value.meetingTotal, icon: DataBoard, color: '#2f9bff', tint: 'rgba(93,177,255,0.2)', hint: `今日 ${collabStats.value.meetingToday} 场` }
 ])
 
-const qualityCards = computed(() => {
-  const total = docStats.value.totalDocs || 1
+const docDistribution = computed(() => {
+  const total = docStats.value.totalDocs || 0
+  if (total <= 0) {
+    return { success: 0, processing: 0, failed: 0 }
+  }
+  const pct = (n) => Math.round(n / total * 1000) / 10
+  return {
+    success: pct(docStats.value.successDocs),
+    processing: pct(docStats.value.processingDocs),
+    failed: pct(docStats.value.failedDocs)
+  }
+})
+
+const docStatusRows = computed(() => {
+  const total = docStats.value.totalDocs || 0
+  const pct = (n) => (total > 0 ? Math.round(n / total * 100) : 0)
   return [
-    { label: '成功率', value: aiStats.value.successRate + '%', color: '#22c55e', hint: '文档处理', height: aiStats.value.successRate },
-    { label: '处理中', value: docStats.value.totalDocs - docStats.value.successDocs - docStats.value.failedDocs, color: '#f59e0b', hint: '含待处理', height: Math.max(8, (docStats.value.totalDocs - docStats.value.successDocs - docStats.value.failedDocs) / total * 100) },
-    { label: '失败', value: docStats.value.failedDocs, color: '#ef4444', hint: '需排查', height: Math.max(8, docStats.value.failedDocs / total * 100) }
+    { key: 'success', label: '处理成功', value: docStats.value.successDocs, color: '#22c55e', percent: pct(docStats.value.successDocs) },
+    { key: 'processing', label: '处理中', value: docStats.value.processingDocs, color: '#f59e0b', percent: pct(docStats.value.processingDocs) },
+    { key: 'failed', label: '处理失败', value: docStats.value.failedDocs, color: '#ef4444', percent: pct(docStats.value.failedDocs) }
   ]
 })
 
@@ -199,34 +295,90 @@ function formatTokens(n) {
   return String(n)
 }
 
-async function fetchJson(url, headers) {
-  const resp = await fetch(url, { headers })
+async function fetchJson(url) {
+  const resp = await fetch(url, { headers: getAuthHeaders() })
   if (!resp.ok) throw new Error('HTTP ' + resp.status)
   const json = await resp.json()
+  if (String(json.code) !== '200') throw new Error(json.message || '请求失败')
   return json.data || {}
 }
 
-onMounted(async () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-  const headers = {
-    'X-User-Id': String(user.id || 1),
-    'X-Is-Admin': String(user.isAdmin ? 'true' : 'false'),
-    'X-Department-Id': String(user.departmentId || 1)
+function applyDocStats(data) {
+  if (!data) return
+  const num = (v) => (v === undefined || v === null ? undefined : Number(v))
+  const total = num(data.totalDocs)
+  const success = num(data.successDocs)
+  const pending = num(data.pendingDocs)
+  const running = num(data.runningDocs)
+  const failed = num(data.failedDocs)
+  const processing = num(data.processingDocs)
+  const rate = num(data.docSuccessRate)
+
+  if (total !== undefined) docStats.value.totalDocs = total
+  if (success !== undefined) docStats.value.successDocs = success
+  if (pending !== undefined) docStats.value.pendingDocs = pending
+  if (running !== undefined) docStats.value.runningDocs = running
+  if (failed !== undefined) docStats.value.failedDocs = failed
+  if (processing !== undefined) {
+    docStats.value.processingDocs = processing
+  } else if (pending !== undefined || running !== undefined) {
+    docStats.value.processingDocs = (pending || 0) + (running || 0)
   }
-  if (user.token) headers['Authorization'] = 'Bearer ' + user.token
+  if (rate !== undefined) docStats.value.docSuccessRate = rate
+}
+
+async function loadDocStats() {
+  try {
+    const data = await fetchJson('/api/kb/document-stats')
+    applyDocStats(data)
+    return
+  } catch { /* fallback below */ }
 
   try {
-    const data = await fetchJson('/api/system/users/stats', headers)
-    userStats.value = data
+    const data = await fetchJson('/api/kb/admin/stats')
+    if (data.totalDocs !== undefined && data.totalDocs !== null) {
+      applyDocStats(data)
+      return
+    }
+  } catch { /* fallback below */ }
+
+  try {
+    const resp = await fetch('/api/kb/documents?current=1&size=200', { headers: getAuthHeaders() })
+    const json = await resp.json()
+    if (String(json.code) !== '200' || !json.data) return
+    const records = json.data.records || []
+    const total = Number(json.data.total) || records.length
+    const count = (s) => records.filter(d => d.status === s).length
+    const successDocs = count('SUCCESS')
+    const pendingDocs = count('PENDING')
+    const runningDocs = count('RUNNING')
+    const failedDocs = count('FAILED')
+    applyDocStats({
+      totalDocs: total,
+      successDocs,
+      pendingDocs,
+      runningDocs,
+      failedDocs,
+      processingDocs: pendingDocs + runningDocs,
+      docSuccessRate: total > 0 ? Math.round(successDocs / total * 1000) / 10 : 100
+    })
+  } catch { /* ignore */ }
+}
+
+onMounted(async () => {
+  try {
+    userStats.value = await fetchJson('/api/system/users/stats')
   } catch { /* ignore */ }
 
   try {
-    const data = await fetchJson('/api/kb/admin/stats', headers)
+    const data = await fetchJson('/api/kb/admin/stats')
     aiStats.value = data
   } catch { /* ignore */ }
 
+  await loadDocStats()
+
   try {
-    const data = await fetchJson('/api/workbench/stats', headers)
+    const data = await fetchJson('/api/workbench/stats')
     if (data.taskStats) {
       collabStats.value.taskTodo = data.taskStats.todo || 0
       collabStats.value.taskInProgress = data.taskStats.inProgress || 0
@@ -241,21 +393,16 @@ onMounted(async () => {
       collabStats.value.meetingToday = data.meetingStats.today || 0
       collabStats.value.meetingTotal = data.meetingStats.total || 0
     }
-    docStats.value.totalDocs = data.docCount || 0
+    if (!docStats.value.totalDocs) {
+      docStats.value.totalDocs = data.docCount || 0
+    }
   } catch { /* ignore */ }
 
   try {
-    const resp = await fetch('/api/kb/documents?current=1&size=1', { headers })
-    const json = await resp.json()
-    docStats.value.totalDocs = docStats.value.totalDocs || (json.data?.total || 0)
-    docStats.value.successDocs = json.data?.records?.filter(d => d.status === 'SUCCESS').length || 0
-    docStats.value.failedDocs = json.data?.records?.filter(d => d.status === 'FAILED').length || 0
-  } catch { /* ignore */ }
-
-  try {
-    const resp = await fetch('/api/kb/bases?current=1&size=1', { headers })
-    const json = await resp.json()
-    docStats.value.kbCount = json.data?.total || 0
+    const json = await fetch('/api/kb/bases?current=1&size=1', { headers: getAuthHeaders() }).then(r => r.json())
+    if (String(json.code) === '200') {
+      docStats.value.kbCount = json.data?.total || 0
+    }
   } catch { /* ignore */ }
 })
 </script>
@@ -297,11 +444,65 @@ onMounted(async () => {
 .status-badge { padding: 6px 12px; border-radius: 999px; background: #def8e7; color: #179b54; font-size: 13px; font-weight: 600; }
 .status-badge.warn { background: #fff3cd; color: #b45309; }
 
-.success-ring-wrap { display: flex; justify-content: center; margin: 10px 0 18px; }
-.success-ring { width: 132px; height: 132px; border-radius: 50%; display: grid; place-items: center; }
-.success-ring-inner { width: 106px; height: 106px; border-radius: 50%; background: #fff; display: grid; place-items: center; text-align: center; }
-.success-ring-value { font-size: 22px; font-weight: 800; color: #1dae5e; }
-.success-ring-label { font-size: 13px; color: #7f8aa0; }
+.success-ring-wrap { display: flex; justify-content: center; margin: 4px 0 20px; }
+.success-ring-card {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  display: grid;
+  place-items: center;
+}
+.success-ring-svg {
+  width: 148px;
+  height: 148px;
+  filter: drop-shadow(0 4px 12px rgba(34, 197, 94, 0.12));
+}
+.ring-track {
+  fill: none;
+  stroke: #eef2f7;
+  stroke-width: 10;
+}
+.ring-progress {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.success-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+.success-ring-value {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.success-ring-unit {
+  font-size: 16px;
+  font-weight: 700;
+  margin-left: 1px;
+}
+.success-ring-label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+.success-ring-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
 
 .metric-list, .efficiency-box { margin-top: 14px; }
 .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 4px; border-bottom: 1px solid #edf2f8; color: #4f5d73; }
@@ -314,14 +515,52 @@ onMounted(async () => {
 .quality-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .quality-title { font-size: 14px; font-weight: 700; color: #1d2433; }
 .quality-time { color: #99a3b7; font-size: 12px; }
-.quality-bars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.quality-item { text-align: center; }
-.quality-chart { height: 100px; border-radius: 12px; border: 1px solid #dbe3ef; display: flex; align-items: flex-end; justify-content: center; padding: 8px; background: #fff; }
-.quality-bar { width: 84%; border-radius: 999px; min-height: 6px; }
-.quality-value { margin-top: 10px; font-size: 18px; font-weight: 800; }
-.quality-label { margin-top: 6px; font-size: 13px; color: #394559; }
-.quality-hint { margin-top: 4px; font-size: 12px; color: #8e98ab; }
+
+.doc-stack-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e8edf4;
+  margin-bottom: 16px;
+}
+.doc-stack-seg { height: 100%; min-width: 0; transition: width .3s ease; }
+.doc-stack-seg--success { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.doc-stack-seg--processing { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.doc-stack-seg--failed { background: linear-gradient(90deg, #ef4444, #f87171); }
+.doc-stack-empty {
+  padding: 12px 0 16px;
+  text-align: center;
+  color: #99a3b7;
+  font-size: 13px;
+}
+
+.doc-status-list { display: flex; flex-direction: column; gap: 14px; }
+.doc-status-row { display: flex; flex-direction: column; gap: 6px; }
+.doc-status-head {
+  display: grid;
+  grid-template-columns: 8px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.doc-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.doc-status-label { color: #4f5d73; }
+.doc-status-count { font-weight: 700; font-size: 15px; min-width: 24px; text-align: right; }
+.doc-status-pct { color: #99a3b7; font-size: 12px; min-width: 36px; text-align: right; }
+.doc-status-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #e8edf4;
+  overflow: hidden;
+}
+.doc-status-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .3s ease;
+  min-width: 0;
+}
 
 @media (max-width: 1280px) { .console-page { grid-template-columns: 1fr; } .console-side-panel { position: static; } }
-@media (max-width: 920px) { .metric-grid, .trend-grid, .quality-bars { grid-template-columns: 1fr; } }
+@media (max-width: 920px) { .metric-grid, .trend-grid { grid-template-columns: 1fr; } }
 </style>

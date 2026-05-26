@@ -13,6 +13,8 @@ import com.zjl.knowledge.dto.KbDocumentUpdateRequest;
 import com.zjl.knowledge.dto.KbDocumentUploadRequest;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.service.FileStorageService;
+import com.zjl.knowledge.dto.kb.KbDocumentStatsVO;
+import com.zjl.knowledge.service.KbAdminStatsService;
 import com.zjl.knowledge.service.KbDocumentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +51,8 @@ public class KbDocumentController {
      */
     private final KbDocumentService kbDocumentService;
 
+    private final KbAdminStatsService adminStatsService;
+
     /**
      * 文件存储服务
      */
@@ -70,6 +74,14 @@ public class KbDocumentController {
         Page<KbDocument> p = new Page<>(current, size);
         IPage<KbDocument> pageResult = kbDocumentService.pageVisible(p, user);
         return Results.success(PageResult.of(pageResult.getCurrent(), pageResult.getSize(), pageResult.getTotal(), pageResult.getRecords()));
+    }
+
+    /**
+     * 文档处理状态统计（按 status 聚合）。
+     */
+    @GetMapping("/document-stats")
+    public Result<KbDocumentStatsVO> documentStats() {
+        return Results.success(adminStatsService.computeDocumentStats());
     }
 
     /**

@@ -30,4 +30,22 @@ public class KbAdminStatsVO {
 
     /** 累计 token 消耗 */
     private long totalTokens;
+
+    /** 文档总数 */
+    private long totalDocs;
+
+    /** 处理成功文档数 */
+    private long successDocs;
+
+    /** 待处理文档数 */
+    private long pendingDocs;
+
+    /** 处理中文档数 */
+    private long runningDocs;
+
+    /** 处理失败文档数 */
+    private long failedDocs;
+
+    /** 文档维度成功率 (0-100) */
+    private double docSuccessRate;
 }
