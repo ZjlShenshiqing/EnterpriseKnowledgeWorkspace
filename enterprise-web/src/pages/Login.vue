@@ -8,12 +8,11 @@
         <div class="logo-icon pulse-ring">
           <span class="logo-text">E</span>
         </div>
-        <div class="title">{{ showRegister ? '注册账号' : '企业智能工作平台' }}</div>
-        <div class="subtitle">{{ showRegister ? 'Create Account' : 'Enterprise Work Platform' }}</div>
+        <div class="title">企业智能工作平台</div>
+        <div class="subtitle">Enterprise Work Platform</div>
       </div>
 
-      <!-- Login Form -->
-      <el-form v-if="!showRegister" :model="form" :rules="rules" ref="formRef">
+      <el-form :model="form" :rules="rules" ref="formRef">
         <el-form-item prop="username">
           <el-input v-model="form.username" placeholder="用户名" size="large" :prefix-icon="User" class="login-input" />
         </el-form-item>
@@ -26,26 +25,8 @@
           </el-button>
         </el-form-item>
       </el-form>
-      <!-- Register Form -->
-      <el-form v-if="showRegister" :model="regForm" :rules="regRules" ref="regFormRef">
-        <el-form-item prop="username">
-          <el-input v-model="regForm.username" placeholder="用户名" size="large" :prefix-icon="User" class="login-input" />
-        </el-form-item>
-        <el-form-item prop="realName">
-          <el-input v-model="regForm.realName" placeholder="真实姓名" size="large" :prefix-icon="User" class="login-input" />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input v-model="regForm.password" type="password" placeholder="密码" size="large" :prefix-icon="Lock" show-password class="login-input" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="success" size="large" class="login-btn" @click="doRegister" :loading="regLoading">注 册</el-button>
-        </el-form-item>
-      </el-form>
 
-      <div class="demo-link">
-        <el-button v-if="showRegister" link @click="showRegister=false">← 返回登录</el-button>
-        <el-button v-else link @click="showRegister = true">注册账号</el-button>
-      </div>
+      <div class="register-hint">账号由管理员创建，如需开通请联系系统管理员</div>
       <div class="footer-text">Enterprise Knowledge Workspace</div>
     </div>
   </div>
@@ -56,24 +37,16 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { saveStoredAuth } from '../api/index.js'
 
 const router = useRouter()
 const loading = ref(false)
-const regLoading = ref(false)
-const showRegister = ref(false)
 const formRef = ref(null)
-const regFormRef = ref(null)
 const cardRef = ref(null)
 const form = reactive({ username: '', password: '' })
-const regForm = reactive({ username: '', password: '', realName: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
-const regRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
 }
 
 const shapes = Array.from({length:6}, (_,i) => ({
@@ -88,17 +61,6 @@ onMounted(() => {
   }
 })
 
-function saveAuth(user) {
-  const token = user.token || ''
-  const payload = { ...user, token }
-  if (token) {
-    localStorage.setItem('token', token)
-  } else {
-    localStorage.removeItem('token')
-  }
-  localStorage.setItem('user', JSON.stringify(payload))
-}
-
 async function login() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
@@ -112,7 +74,7 @@ async function login() {
     const result = await resp.json()
     if (resp.ok && (result.code === 200 || result.code === '200')) {
       const data = result.data || {}
-      saveAuth({
+      saveStoredAuth({
         id: data.userId,
         username: data.username,
         realName: data.realName || data.username,
@@ -134,32 +96,6 @@ async function login() {
 }
 
 function shakeCard() { cardRef.value?.classList.add('shake'); setTimeout(() => cardRef.value?.classList.remove('shake'), 500) }
-
-async function doRegister() {
-  const valid = await regFormRef.value.validate().catch(() => false)
-  if (!valid) return
-  regLoading.value = true
-  try {
-    const resp = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(regForm)
-    })
-    if (resp.ok) {
-      ElMessage.success('注册成功，请登录')
-      showRegister.value = false
-      form.username = regForm.username
-      form.password = ''
-      regForm.username = ''; regForm.password = ''; regForm.realName = ''
-    } else {
-      const err = await resp.json()
-      ElMessage.error(err.message || '注册失败')
-    }
-  } catch (e) {
-    ElMessage.error('无法连接注册服务，请确认网关已启动（端口 8086）')
-  }
-  regLoading.value = false
-}
 </script>
 
 <style>
@@ -226,7 +162,6 @@ async function doRegister() {
 }
 .login-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(51,112,255,0.3); }
 
-.demo-link { text-align: center; margin-top: 4px; }
-.demo-link .dot { color: #ddd; margin: 0 8px; }
+.register-hint { text-align: center; margin-top: 8px; font-size: 12px; color: #9ca3af; }
 .footer-text { text-align: center; color: #c0c4cc; font-size: 12px; margin-top: 28px; }
 </style>

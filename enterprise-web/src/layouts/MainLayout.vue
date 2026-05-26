@@ -111,7 +111,7 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
-import { isAdminUser, readStoredAuth, getChatUnreadCount } from '../api/index.js'
+import { isAdminUser, readStoredAuth, getChatUnreadCount, logout as doLogout } from '../api/index.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -210,8 +210,10 @@ function isActive(path) {
   return p === path || p.startsWith(path + '/')
 }
 
-function handleCommand(cmd) {
-  if (cmd === 'logout') { localStorage.clear(); router.push('/login') }
+async function handleCommand(cmd) {
+  if (cmd === 'logout') {
+    await doLogout()
+  }
 }
 
 watch(() => route.path, () => {

@@ -35,6 +35,20 @@ export function readStoredAuth() {
 }
 
 /**
+ * 持久化登录态到 localStorage。
+ */
+export function saveStoredAuth(user) {
+  const token = user.token || ''
+  const payload = { ...user, token }
+  if (token) {
+    localStorage.setItem('token', token)
+  } else {
+    localStorage.removeItem('token')
+  }
+  localStorage.setItem('user', JSON.stringify(payload))
+}
+
+/**
  * 是否具备管理后台访问权限（登录时由网关根据 admin 角色写入 isAdmin）。
  */
 export function isAdminUser() {
@@ -65,6 +79,68 @@ export function forceLogout(message) {
     sessionStorage.setItem('login_redirect_message', message)
   }
   window.location.href = '/login'
+}
+
+/**
+ * 调用后端登出并将 Token 加入黑名单，随后清除本地登录态。
+ */
+export async function logout() {
+  const { token } = readStoredAuth()
+  try {
+    if (token) {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token }
+      })
+    }
+  } catch {
+    /* 网络异常时仍清除本地登录态 */
+  }
+  forceLogout()
+}
+
+/**
+ * 获取当前登录用户资料。
+ */
+export async function getProfile() {
+  const { token } = readStoredAuth()
+  if (!token) {
+    throw new Error('未登录')
+  }
+  const resp = await fetch('/api/auth/profile', {
+    headers: { Authorization: 'Bearer ' + token }
+  })
+  const result = await resp.json()
+  if (!resp.ok || !(result.code === 200 || result.code === '200')) {
+    throw new Error(result.message || '未登录或登录已过期')
+  }
+  return result.data || {}
+}
+
+/**
+ * 应用启动时校验 Token 并刷新本地用户信息。
+ */
+export async function checkAuth() {
+  const { token, user } = readStoredAuth()
+  if (!token) {
+    return false
+  }
+  try {
+    const data = await getProfile()
+    saveStoredAuth({
+      ...user,
+      id: data.userId,
+      username: data.username,
+      realName: data.realName || data.username,
+      isAdmin: !!data.isAdmin,
+      departmentId: data.deptId,
+      token
+    })
+    return true
+  } catch {
+    forceLogout('登录已过期，请重新登录')
+    return false
+  }
 }
 
 function attachResponseInterceptor(api) {

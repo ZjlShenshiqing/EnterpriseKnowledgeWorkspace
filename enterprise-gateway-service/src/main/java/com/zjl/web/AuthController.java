@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
@@ -100,6 +101,23 @@ public class AuthController {
     ) {}
 
     /**
+     * 当前用户信息（不含 token）
+     *
+     * @param userId 用户 ID
+     * @param username 用户名
+     * @param realName 姓名
+     * @param deptId 部门 ID
+     * @param isAdmin 是否具备管理员角色
+     */
+    public record ProfileResponse(
+            Long userId,
+            String username,
+            String realName,
+            Long deptId,
+            boolean isAdmin
+    ) {}
+
+    /**
      * 登录接口：校验用户名密码并签发 JWT
      *
      * @param req 登录请求
@@ -126,19 +144,48 @@ public class AuthController {
                     claims.put("authorities", authoritiesOf(user));
                     // 签发 JWT
                     String token = jwt.issueToken(user.getId(), user.getUsername(), claims);
-                    Long deptId = user.getDept() != null ? user.getDept().getId() : null;
-                    boolean isAdmin = user.getRoles().stream()
-                            .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode()));
+                    ProfileResponse profile = toProfile(user);
                     log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
                     return Mono.just(Results.success(new LoginResponse(
                             token,
-                            user.getId(),
-                            user.getUsername(),
-                            user.getRealName(),
-                            deptId,
-                            isAdmin
+                            profile.userId(),
+                            profile.username(),
+                            profile.realName(),
+                            profile.deptId(),
+                            profile.isAdmin()
                     )));
                 });
+    }
+
+    /**
+     * 获取当前登录用户信息
+     *
+     * @return 用户资料
+     */
+    @GetMapping("/profile")
+    public Mono<Result<ProfileResponse>> profile() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> ctx.getAuthentication())
+                .flatMap(auth -> {
+                    if (auth == null || !auth.isAuthenticated()) {
+                        return Mono.error(new BizException(ErrorCode.UNAUTHORIZED));
+                    }
+                    Long userId;
+                    try {
+                        userId = Long.parseLong(String.valueOf(auth.getPrincipal()));
+                    } catch (NumberFormatException ex) {
+                        return Mono.error(new BizException(ErrorCode.UNAUTHORIZED));
+                    }
+                    return Mono.fromCallable(() -> userRepository.findById(userId).orElse(null))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(user -> {
+                                if (user == null || !user.isEnabled()) {
+                                    return Mono.error(new BizException(ErrorCode.UNAUTHORIZED));
+                                }
+                                return Mono.just(Results.success(toProfile(user)));
+                            });
+                })
+                .switchIfEmpty(Mono.error(new BizException(ErrorCode.UNAUTHORIZED)));
     }
 
     /**
@@ -187,6 +234,25 @@ public class AuthController {
             role.getPermissions().forEach(p -> result.add(p.getCode()));
         }
         return result;
+    }
+
+    /**
+     * 将用户实体映射为对外资料对象
+     *
+     * @param user 用户
+     * @return 资料
+     */
+    private static ProfileResponse toProfile(SysUser user) {
+        Long deptId = user.getDept() != null ? user.getDept().getId() : null;
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode()));
+        return new ProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getRealName(),
+                deptId,
+                isAdmin
+        );
     }
 
 }
