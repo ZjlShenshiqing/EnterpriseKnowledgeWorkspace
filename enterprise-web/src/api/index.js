@@ -308,3 +308,12 @@ export function getPipelineDetail(id) {
 export function getPipelineTasks(params) {
   return kbApi.get('/pipelines/tasks', { params })
 }
+
+// ---- Chat / Notifications ----
+
+export function getChatUnreadCount() {
+  return fetch('/api/chat/unread-count', { headers: getAuthHeaders() })
+    .then(r => r.json())
+    .then(body => (String(body?.code) === '200' ? (body.data ?? 0) : 0))
+    .catch(() => 0)
+}

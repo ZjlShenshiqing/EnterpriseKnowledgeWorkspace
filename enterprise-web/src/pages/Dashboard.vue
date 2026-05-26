@@ -228,7 +228,7 @@ import { ref, computed, onMounted, onActivated, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Refresh, DocumentAdd, Calendar, List, Checked } from '@element-plus/icons-vue'
-import { isAdminUser } from '../api/index.js'
+import { isAdminUser, getAuthHeaders } from '../api/index.js'
 
 const route = useRoute()
 
@@ -265,7 +265,7 @@ const quickActions = computed(() => {
 const knowledgeDocs = computed(() => recentDocs.value.filter(d => d.docType === 'knowledge'))
 const collabDocs = computed(() => recentDocs.value.filter(d => d.docType === 'collaboration'))
 
-function headers() { const u=JSON.parse(localStorage.getItem('user')||'{}'); return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false')} }
+function headers() { return getAuthHeaders() }
 
 async function clearWorkbenchCache() {
   try {

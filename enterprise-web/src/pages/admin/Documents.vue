@@ -56,7 +56,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { getDocuments, getCategories, getKnowledgeBases, readStoredAuth } from '../../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -66,6 +67,8 @@ const categories = ref([]); const bases = ref([])
 const selectedFile = ref(null); const uploadRef = ref(null)
 
 const form = ref({ title:'', categoryId:null, kbId:null, permissionType:'ALL', tags:'' })
+
+const route = useRoute()
 
 function authHeaders() {
   const { user } = readStoredAuth()
@@ -174,5 +177,14 @@ async function toggleEnabled(row) {
   } catch(e) { ElMessage.error('操作失败') }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  if (route.query.upload === '1') {
+    openUpload()
+  }
+})
+
+watch(() => route.query.upload, (val) => {
+  if (val === '1') openUpload()
+})
 </script>

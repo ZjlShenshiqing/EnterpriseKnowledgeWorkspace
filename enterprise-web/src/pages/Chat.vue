@@ -315,7 +315,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed, onMounted } from 'vue'
+import { ref, nextTick, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { agentChat, getAgentSessions, getAgentSessionHistory, uploadAgentAttachment } from '../api'
 
@@ -502,6 +502,11 @@ async function openSession(session) {
 
 onMounted(() => {
   loadSessions()
+  window.addEventListener('chat:trigger-upload', triggerUpload)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('chat:trigger-upload', triggerUpload)
 })
 
 function sendQuick(q) { 

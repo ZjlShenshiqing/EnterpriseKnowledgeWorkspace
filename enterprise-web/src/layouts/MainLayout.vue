@@ -58,28 +58,38 @@
       <div class="main-header">
         <span style="font-size:15px;font-weight:600;color:#1f2937;">{{ title }}</span>
         <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
-          <button class="header-btn" title="上传">
+          <button class="header-btn" title="上传文件" @click="handleHeaderUpload">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
           </button>
-          <el-badge :value="unread" :max="99" v-if="unread>0">
-            <button class="header-btn" @click="$router.push('/notifications')">
+          <el-badge :value="unread" :max="99" :hidden="unread <= 0">
+            <button class="header-btn" title="未读消息" @click="$router.push('/chats')">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
             </button>
           </el-badge>
-          <button class="header-btn" title="设置">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="1"/>
-              <circle cx="19" cy="12" r="1"/>
-              <circle cx="5" cy="12" r="1"/>
-            </svg>
-          </button>
+          <el-dropdown trigger="click" @command="handleMoreCommand">
+            <button class="header-btn" title="更多">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"/>
+                <circle cx="19" cy="12" r="1"/>
+                <circle cx="5" cy="12" r="1"/>
+              </svg>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="announcements">公告通知</el-dropdown-item>
+                <el-dropdown-item command="chats">即时通讯</el-dropdown-item>
+                <el-dropdown-item v-if="canAccessAdmin" command="admin">管理后台</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
       <div
@@ -98,13 +108,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
-import { isAdminUser, readStoredAuth } from '../api/index.js'
+import { isAdminUser, readStoredAuth, getChatUnreadCount } from '../api/index.js'
+
 const route = useRoute()
 const router = useRouter()
-const unread = ref(3)
+const unread = ref(0)
 const title = computed(() => route.meta?.title || '工作台')
 
 /**
@@ -158,6 +169,36 @@ const navItems = [
 
 const isAdminActive = computed(() => route.path.startsWith('/admin'))
 
+let unreadTimer = null
+
+async function refreshUnread() {
+  unread.value = await getChatUnreadCount()
+}
+
+/**
+ * 顶栏上传：智能对话页触发附件上传；管理员跳转知识库文档上传；其余用户进入智能对话并打开上传。
+ */
+function handleHeaderUpload() {
+  if (route.path === '/chat') {
+    window.dispatchEvent(new CustomEvent('chat:trigger-upload'))
+    return
+  }
+  if (canAccessAdmin.value) {
+    router.push({ path: '/admin/documents', query: { upload: '1' } })
+    return
+  }
+  router.push('/chat').then(() => {
+    setTimeout(() => window.dispatchEvent(new CustomEvent('chat:trigger-upload')), 150)
+  })
+}
+
+function handleMoreCommand(cmd) {
+  if (cmd === 'announcements') router.push('/notifications')
+  else if (cmd === 'chats') router.push('/chats')
+  else if (cmd === 'admin') router.push('/admin')
+  else if (cmd === 'logout') handleCommand('logout')
+}
+
 /**
  * 高亮当前菜单：不能用 startsWith 单独判断，否则 /chats 会匹配 /chat，两个菜单同时高亮。
  */
@@ -172,6 +213,19 @@ function isActive(path) {
 function handleCommand(cmd) {
   if (cmd === 'logout') { localStorage.clear(); router.push('/login') }
 }
+
+watch(() => route.path, () => {
+  refreshUnread()
+})
+
+onMounted(() => {
+  refreshUnread()
+  unreadTimer = setInterval(refreshUnread, 60000)
+})
+
+onUnmounted(() => {
+  if (unreadTimer) clearInterval(unreadTimer)
+})
 </script>
 
 <style>

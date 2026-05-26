@@ -29,18 +29,23 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getAuthHeaders } from '../api/index.js'
 
 const todos = ref([]); const dlg = ref(false)
 const f = ref({ title:'',priority:'normal',dueDate:'' })
 
 function headers() {
-  const u = JSON.parse(localStorage.getItem('user')||'{}')
-  return {'X-User-Id':String(u.id||1),'Content-Type':'application/json'}
+  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
 }
 
 async function load() {
-  try { const r = await fetch('/api/todos',{headers:headers()}); todos.value = (await r.json()).data||[] }
-  catch(e) { todos.value = [{id:1,title:'完成Q2工作总结报告',priority:'high',due_date:'2026-05-15',done:0},{id:2,title:'审核新员工入职资料',priority:'normal',due_date:'2026-05-18',done:0},{id:3,title:'更新知识库文档分类',priority:'high',due_date:'2026-05-12',done:1}] }
+  try {
+    const r = await fetch('/api/todos', { headers: headers() })
+    const body = await r.json()
+    todos.value = String(body.code) === '200' ? (body.data || []) : []
+  } catch (e) {
+    todos.value = []
+  }
 }
 
 function openCreate() { f.value = { title:'',priority:'normal',dueDate:'' }; dlg.value = true }

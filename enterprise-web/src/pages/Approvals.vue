@@ -13,7 +13,7 @@
           @mouseenter="e=>e.target.style.background='var(--bg-hover)'" @mouseleave="e=>e.target.style.background='transparent'">
           <div style="flex:1">
             <div style="font-size:15px;font-weight:500">{{ r.title }}</div>
-            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">{{ typeLabel(r.type) }} · {{ r.user_name }} · {{ r.created_at }}</div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">{{ typeLabel(r.type) }} · {{ r.userName || r.user_name }} · {{ r.createdAt || r.created_at }}</div>
           </div>
           <el-tag :type="statusTag(r.status)" size="small">{{ statusLabel(r.status) }}</el-tag>
         </div>
@@ -23,7 +23,7 @@
         <div v-for="r in pendingList" :key="r.id" style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border-light)">
           <div style="flex:1">
             <div style="font-size:15px;font-weight:500">{{ r.title }}</div>
-            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">{{ typeLabel(r.type) }} · {{ r.user_name }} · {{ r.created_at }}</div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">{{ typeLabel(r.type) }} · {{ r.userName || r.user_name }} · {{ r.createdAt || r.created_at }}</div>
           </div>
           <div style="display:flex;gap:8px">
             <el-button size="small" type="success" @click="doApprove(r,'approve')">通过</el-button>
@@ -55,9 +55,9 @@
     <!-- Detail Dialog -->
     <el-dialog v-model="showDetail" title="审批详情" width="520px">
       <div v-if="detail" style="line-height:2">
-        <p><b>标题：</b>{{ detail.title }}</p><p><b>类型：</b>{{ typeLabel(detail.type) }}</p><p><b>申请人：</b>{{ detail.user_name }}</p>
+        <p><b>标题：</b>{{ detail.title }}</p><p><b>类型：</b>{{ typeLabel(detail.type) }}</p><p><b>申请人：</b>{{ detail.userName || detail.user_name }}</p>
         <p><b>状态：</b><el-tag :type="statusTag(detail.status)" size="small">{{ statusLabel(detail.status) }}</el-tag></p>
-        <p><b>提交时间：</b>{{ detail.created_at }}</p>
+        <p><b>提交时间：</b>{{ detail.createdAt || detail.created_at }}</p>
         <div style="margin-top:12px"><b>审批记录</b></div>
         <div v-for="r in detail.records" :key="r.id" style="padding:8px;background:var(--bg-body);border-radius:6px;margin:4px 0;font-size:13px;display:flex;justify-content:space-between">
           <span>{{ r.approver_name }} · {{ r.action==='approve'?'通过':'驳回' }}{{ r.comment?' - '+r.comment:'' }}</span>
@@ -71,20 +71,21 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getAuthHeaders, readStoredAuth } from '../api/index.js'
 
 const tab = ref('my'); const showCreate = ref(false); const showDetail = ref(false)
 const allList = ref([]); const detail = ref(null)
-const userId = JSON.parse(localStorage.getItem('user')||'{}').id||1
-const isAdmin = JSON.parse(localStorage.getItem('user')||'{}').isAdmin
+const { user: authUser } = readStoredAuth()
+const userId = authUser.id || 1
+const isAdmin = authUser.isAdmin
 const form = ref({ type:'leave',title:'' })
 const fd = ref({ leaveType:'annual',startDate:'',endDate:'',amount:0,expenseType:'travel',reason:'' })
 
-const myList = computed(() => allList.value.filter(r=>r.user_id==userId))
+const myList = computed(() => allList.value.filter(r => (r.userId ?? r.user_id) == userId))
 const pendingList = computed(() => allList.value.filter(r=>r.status==='pending'||r.status==='manager_approved'||r.status==='finance_approved'))
 
 function headers() {
-  const u = JSON.parse(localStorage.getItem('user')||'{}')
-  return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false'),'Content-Type':'application/json'}
+  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
 }
 
 function typeLabel(t) { return t==='leave'?'请假':'报销' }

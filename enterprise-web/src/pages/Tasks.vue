@@ -70,6 +70,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getAuthHeaders } from '../api/index.js'
 
 const tasks = ref([]); const comments = ref([]); const userList = ref([])
 const showCreate = ref(false); const showDetail = ref(false)
@@ -82,17 +83,30 @@ const columnDefs = [{key:'todo',label:'待开始',color:'#909399'},{key:'in_prog
 const columns = computed(() => columnDefs.map(c => ({...c, tasks: tasks.value.filter(t=>t.status===c.key)})))
 
 function headers() {
-  const u = JSON.parse(localStorage.getItem('user')||'{}')
-  return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false'),'Content-Type':'application/json'}
+  return { ...getAuthHeaders(), 'Content-Type': 'application/json' }
 }
 
 async function load() {
-  try { const r = await fetch('/api/tasks',{headers:headers()}); tasks.value = (await r.json()).data||[] }
-  catch(e) { tasks.value = mockTasks }
+  try {
+    const r = await fetch('/api/tasks', { headers: headers() })
+    const body = await r.json()
+    if (String(body.code) === '200') {
+      tasks.value = body.data || []
+    } else {
+      tasks.value = []
+    }
+  } catch (e) {
+    tasks.value = []
+  }
 }
 async function loadUsers() {
-  try { const r = await fetch('/api/contacts/users',{headers:headers()}); userList.value = (await r.json()).data||[] }
-  catch(e) { userList.value = [{id:1,realName:'管理员'},{id:2,realName:'张三'},{id:3,realName:'李四'}] }
+  try {
+    const r = await fetch('/api/contacts/users', { headers: headers() })
+    const body = await r.json()
+    userList.value = String(body.code) === '200' ? (body.data || []) : []
+  } catch (e) {
+    userList.value = []
+  }
 }
 
 async function doCreate() {
@@ -121,12 +135,4 @@ async function addComment() {
 }
 
 onMounted(()=>{load();loadUsers()})
-
-const mockTasks = [
-  {id:1,title:'系统架构升级方案',assignee_name:'张三',priority:'high',status:'todo',due_date:'2026-05-20'},
-  {id:2,title:'数据库迁移计划',assignee_name:'李四',priority:'medium',status:'todo',due_date:'2026-05-25'},
-  {id:3,title:'知识库检索优化',assignee_name:'王五',priority:'high',status:'in_progress',due_date:'2026-05-15'},
-  {id:4,title:'前端性能优化',assignee_name:'赵六',priority:'medium',status:'review',due_date:'2026-05-10'},
-  {id:5,title:'文档上传流程优化',assignee_name:'张三',priority:'medium',status:'done',due_date:'2026-05-05'},
-]
 </script>
