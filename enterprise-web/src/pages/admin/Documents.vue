@@ -127,14 +127,14 @@ async function doUpload() {
       headers: authHeaders(),
       body: fd
     })
-    if (resp.ok) {
+    const body = await resp.json()
+    if (resp.ok && String(body.code) === '200') {
       ElMessage.success('上传成功')
       uploadVisible.value = false
       resetForm()
       await load()
     } else {
-      const err = await resp.json()
-      ElMessage.error(err.message || '上传失败')
+      ElMessage.error(body.message || '上传失败')
     }
   } catch(e) {
     ElMessage.error('上传失败: ' + e.message)

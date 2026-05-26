@@ -57,6 +57,7 @@ public class DocumentUploadService {
             "text/plain",
             "text/csv",
             "text/markdown",
+            "text/x-web-markdown",
             "text/html",
             "image/png",
             "image/jpeg"
