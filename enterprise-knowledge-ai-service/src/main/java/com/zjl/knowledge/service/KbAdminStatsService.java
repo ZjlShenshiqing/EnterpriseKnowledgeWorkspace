@@ -5,7 +5,9 @@ import com.zjl.knowledge.agent.mapper.KbAgentMessageMapper;
 import com.zjl.knowledge.domain.DocumentStatus;
 import com.zjl.knowledge.dto.kb.KbAdminStatsVO;
 import com.zjl.knowledge.entity.KbDocument;
+import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.mapper.KbDocumentChunkLogMapper;
+import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ public class KbAdminStatsService {
     private final KbDocumentChunkLogMapper chunkLogMapper;
     private final KbAgentMessageMapper messageMapper;
     private final KbDocumentMapper documentMapper;
+    private final KbDocumentChunkMapper documentChunkMapper;
 
     public KbAdminStatsVO compute() {
         List<Map<String, Object>> statusRows = chunkLogMapper.countByStatus();
@@ -71,6 +74,7 @@ public class KbAdminStatsService {
                 .runningDocs(docStats.getRunningDocs())
                 .failedDocs(docStats.getFailedDocs())
                 .docSuccessRate(docStats.getDocSuccessRate())
+                .totalChunks(docStats.getTotalChunks())
                 .build();
     }
 
@@ -104,6 +108,12 @@ public class KbAdminStatsService {
                 .failedDocs(failedDocs)
                 .processingDocs(processingDocs)
                 .docSuccessRate(docSuccessRate)
+                .totalChunks(countChunks())
                 .build();
+    }
+
+    private long countChunks() {
+        Long count = documentChunkMapper.selectCount(Wrappers.lambdaQuery(KbDocumentChunk.class));
+        return count != null ? count : 0;
     }
 }

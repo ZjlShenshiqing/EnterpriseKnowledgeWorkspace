@@ -48,4 +48,7 @@ public class KbAdminStatsVO {
 
     /** 文档维度成功率 (0-100) */
     private double docSuccessRate;
+
+    /** 全库切片总数 */
+    private long totalChunks;
 }

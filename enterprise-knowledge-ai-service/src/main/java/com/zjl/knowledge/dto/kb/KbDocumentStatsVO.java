@@ -23,4 +23,7 @@ public class KbDocumentStatsVO {
     private long processingDocs;
 
     private double docSuccessRate;
+
+    /** 全库切片总数（kb_document_chunk 行数） */
+    private long totalChunks;
 }
