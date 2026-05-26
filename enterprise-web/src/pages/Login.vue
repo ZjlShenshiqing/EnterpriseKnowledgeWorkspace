@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -79,6 +79,14 @@ const regRules = {
 const shapes = Array.from({length:6}, (_,i) => ({
   i, style: { left: (15+i*13)%80+'%', top: (10+i*15)%80+'%', animationDelay: i*0.8+'s', animationDuration: (6+i*2)+'s' }
 }))
+
+onMounted(() => {
+  const tip = sessionStorage.getItem('login_redirect_message')
+  if (tip) {
+    sessionStorage.removeItem('login_redirect_message')
+    ElMessage.warning(tip)
+  }
+})
 
 function saveAuth(user) {
   const token = user.token || ''

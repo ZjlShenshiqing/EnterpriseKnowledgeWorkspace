@@ -2,6 +2,7 @@ package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.SysMeeting;
+import com.zjl.collaboration.integration.WorkbenchCacheNotifier;
 import com.zjl.collaboration.integration.ZoomMeetingClient;
 import com.zjl.collaboration.mapper.SysMeetingMapper;
 import com.zjl.common.response.Result;
@@ -25,6 +26,7 @@ public class MeetingController {
 
     private final SysMeetingMapper meetingMapper;
     private final ZoomMeetingClient zoomClient;
+    private final WorkbenchCacheNotifier workbenchCacheNotifier;
 
     @GetMapping
     public Result<List<SysMeeting>> list() {
@@ -83,6 +85,7 @@ public class MeetingController {
         }
 
         meetingMapper.insert(m);
+        workbenchCacheNotifier.evictOverview(userId);
         return Results.success(m.getId());
     }
 
@@ -98,11 +101,19 @@ public class MeetingController {
         m.setAttendees(req.getAttendees());
         m.setDescription(req.getDescription());
         meetingMapper.updateById(m);
+        workbenchCacheNotifier.evictOverview(m.getCreatorId());
         return Results.success();
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) { meetingMapper.deleteById(id); return Results.success(); }
+    public Result<Void> delete(@PathVariable Long id) {
+        SysMeeting existing = meetingMapper.selectById(id);
+        meetingMapper.deleteById(id);
+        if (existing != null) {
+            workbenchCacheNotifier.evictOverview(existing.getCreatorId());
+        }
+        return Results.success();
+    }
 
     /**
      * 检测会议室时间冲突（同一线下会议室、同一日期、时间段重叠）。

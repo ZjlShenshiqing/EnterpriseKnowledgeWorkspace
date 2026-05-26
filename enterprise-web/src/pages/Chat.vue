@@ -105,7 +105,7 @@
           />
           <div class="composer-bar">
             <div class="composer-bar-left">
-              <button v-if="canUploadToKb" type="button" class="btn-icon-circle" title="上传文件" @click="triggerUpload" :disabled="uploading">
+              <button type="button" class="btn-icon-circle" title="上传文件" @click="triggerUpload" :disabled="uploading">
                 <svg v-if="!uploading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
@@ -140,7 +140,7 @@
             </div>
           </div>
           <!-- Attachments -->
-          <div v-if="canUploadToKb && attachments.length" class="attachments-row">
+          <div v-if="attachments.length" class="attachments-row">
             <div v-for="(att, i) in attachments" :key="i" class="attachment-chip">
               <span class="attachment-chip-name">{{ att.name }}</span>
               <span class="attachment-chip-size">{{ formatSize(att.size) }}</span>
@@ -260,7 +260,7 @@
         />
         <div class="composer-bar">
           <div class="composer-bar-left">
-            <button v-if="canUploadToKb" type="button" class="btn-icon-circle" title="上传文件" @click="triggerUpload" :disabled="uploading">
+            <button type="button" class="btn-icon-circle" title="上传文件" @click="triggerUpload" :disabled="uploading">
               <svg v-if="!uploading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
@@ -295,7 +295,7 @@
           </div>
         </div>
         <!-- Attachments -->
-        <div v-if="canUploadToKb && attachments.length" class="attachments-row">
+        <div v-if="attachments.length" class="attachments-row">
           <div v-for="(att, i) in attachments" :key="i" class="attachment-chip">
             <span class="attachment-chip-name">{{ att.name }}</span>
             <span class="attachment-chip-size">{{ formatSize(att.size) }}</span>
@@ -317,7 +317,7 @@
 <script setup>
 import { ref, nextTick, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { agentChat, getAgentSessions, getAgentSessionHistory, uploadAgentAttachment, isAdminUser } from '../api'
+import { agentChat, getAgentSessions, getAgentSessionHistory, uploadAgentAttachment } from '../api'
 
 const input = ref('')
 const messages = ref([])
@@ -336,7 +336,6 @@ const textarea = ref(null)
 const fileInput = ref(null)
 const uploading = ref(false)
 const attachments = ref([])
-const canUploadToKb = computed(() => isAdminUser())
 
 const suggestionCards = [
   {
@@ -554,7 +553,7 @@ async function send() {
   const sendText = text
 
   try {
-    const resp = await agentChat(sessionId.value, sendText, webSearchEnabled.value, canUploadToKb.value ? files : [])
+    const resp = await agentChat(sessionId.value, sendText, webSearchEnabled.value, files)
     if (!resp.ok) throw new Error('HTTP ' + resp.status)
     const reader = resp.body.getReader()
     const decoder = new TextDecoder()

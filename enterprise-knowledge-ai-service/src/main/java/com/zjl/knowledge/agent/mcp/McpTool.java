@@ -8,6 +8,16 @@ import com.zjl.knowledge.web.UserContext;
 public interface McpTool {
 
     /**
+     * 当前用户是否可使用该 Tool（默认全部用户可用，管理类 Tool 可覆写）。
+     *
+     * @param user 当前用户
+     * @return 是否允许
+     */
+    default boolean isAllowed(UserContext user) {
+        return true;
+    }
+
+    /**
      * 返回 Tool 的定义（name / description / inputSchema）
      *
      * @return ToolDefinition

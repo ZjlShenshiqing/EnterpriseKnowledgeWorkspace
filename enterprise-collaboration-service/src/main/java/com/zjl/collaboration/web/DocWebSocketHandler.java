@@ -7,6 +7,7 @@ import com.zjl.collaboration.service.DocOTService;
 import com.zjl.collaboration.service.DocPermissionService;
 import com.zjl.collaboration.service.DocPermissionService.Permission;
 import com.zjl.collaboration.service.DocPresenceService;
+import com.zjl.collaboration.util.JwtClaimsSupport;
 import com.zjl.collaboration.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -63,8 +64,11 @@ public class DocWebSocketHandler extends TextWebSocketHandler {
             }
 
             Claims claims = jwtUtil.parse(token);
-            Long userId = claims.get("userId", Long.class);
+            Long userId = JwtClaimsSupport.resolveUserId(claims);
             String userName = claims.get("realName", String.class);
+            if (userName == null) {
+                userName = claims.get("username", String.class);
+            }
             sessionUsers.put(session.getId(), new UserContext(userId, userName));
             log.info("WS连接建立: sessionId={}, userId={}", session.getId(), userId);
         } catch (Exception e) {

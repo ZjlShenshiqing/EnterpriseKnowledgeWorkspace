@@ -156,13 +156,17 @@ const filteredList = computed(() => {
 
 function auth() { return { ...getAuthHeaders(), 'Content-Type': 'application/json' } }
 
+function isApiSuccess(body) {
+  return body && String(body.code) === '200'
+}
+
 async function loadData() {
   loading.value = true
   try {
     const r = await fetch('/api/intents/nodes', { headers: auth() })
     const body = await r.json()
     if (body.code === 40100) { forceLogout(); return }
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       tree.value = body.data || []
       flattenTree(body.data || [])
     } else {
@@ -247,7 +251,7 @@ async function deleteNode(row) {
   try {
     const r = await fetch(`/api/intents/nodes/${row.id}`, { method: 'DELETE', headers: auth() })
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       ElMessage.success('删除成功')
       loadData()
     } else {

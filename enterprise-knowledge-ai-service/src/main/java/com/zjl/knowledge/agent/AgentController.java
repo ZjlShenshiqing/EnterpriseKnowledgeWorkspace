@@ -99,7 +99,7 @@ public class AgentController {
                         truncate(request.getMessage(), 100));
                 
                 // 保存用户消息到历史记录
-                sessionService.saveUserMessage(session.getId(), buildUserMessageText(request));
+                sessionService.saveUserMessage(session.getId(), buildUserMessageText(request, user));
 
                 // 执行 Agent 核心循环（LLM 调用 + 工具调用）
                 agentLoop.run(session, user, emitter, request.isWebSearch());
@@ -236,22 +236,28 @@ public class AgentController {
     }
 
     /**
-     * 组装发给 LLM 的用户消息（含附件 storage_path，供管理员上传文档 Tool 使用）。
+     * 组装发给 LLM 的用户消息。全员可见附件；管理员额外标注入库能力。
      */
-    private String buildUserMessageText(ChatRequest request) {
+    private String buildUserMessageText(ChatRequest request, UserContext user) {
         String message = request.getMessage() != null ? request.getMessage().trim() : "";
         if (request.getAttachments() == null || request.getAttachments().isEmpty()) {
             return message;
         }
         StringBuilder sb = new StringBuilder(message);
-        sb.append("\n\n[附件信息]\n");
+        sb.append("\n\n[附件信息");
+        if (user.isAdmin()) {
+            sb.append(" — 解析用 read_chat_attachment；入库用 upload_knowledge_document");
+        } else {
+            sb.append(" — 解析/总结请用 read_chat_attachment");
+        }
+        sb.append("]\n");
         for (ChatAttachment attachment : request.getAttachments()) {
-            sb.append("- 文件: ").append(attachment.getName());
+            sb.append("- 文件名: ").append(attachment.getName());
             if (attachment.getSize() != null) {
                 sb.append(" (").append(attachment.getSize()).append(" bytes)");
             }
             if (attachment.getPath() != null && !attachment.getPath().isBlank()) {
-                sb.append(", storage_path: ").append(attachment.getPath());
+                sb.append("\n  storage_path: ").append(attachment.getPath());
             }
             sb.append('\n');
         }

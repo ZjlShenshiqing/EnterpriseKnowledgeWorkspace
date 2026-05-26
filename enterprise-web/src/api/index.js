@@ -58,9 +58,12 @@ export function getAuthHeaders() {
  * 清除登录态并跳转登录页。
  * 可被各模块调用或作为 401 回调统一使用。
  */
-export function forceLogout() {
+export function forceLogout(message) {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  if (message) {
+    sessionStorage.setItem('login_redirect_message', message)
+  }
   window.location.href = '/login'
 }
 
@@ -69,7 +72,7 @@ function attachResponseInterceptor(api) {
     response => {
       const data = response.data
       if (data && (data.code === 40100 || data.code === '40100')) {
-        forceLogout()
+        forceLogout('登录已过期，请重新登录')
         return Promise.reject({
           response: { status: 401, data },
           message: data.message || '未登录或登录已过期'
@@ -80,7 +83,7 @@ function attachResponseInterceptor(api) {
     error => {
       const status = error?.response?.status
       if (status === 401) {
-        forceLogout()
+        forceLogout('登录已过期，请重新登录')
       }
       return Promise.reject(error)
     }
@@ -135,14 +138,19 @@ export function createKnowledgeBase(body) {
 
 // ---- Agent Chat (SSE) ----
 
-export function agentChat(sessionId, message, webSearch = false) {
+export function agentChat(sessionId, message, webSearch = false, attachments = []) {
   return fetch('/api/kb/agent/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({
       sessionId: sessionId != null && sessionId !== '' ? String(sessionId) : null,
       message,
-      webSearch
+      webSearch,
+      attachments: attachments.map(a => ({
+        name: a.name,
+        size: a.size,
+        path: a.path
+      }))
     })
   })
 }
@@ -264,4 +272,39 @@ export function deleteMeeting(id) {
     method: 'DELETE',
     headers: getAuthHeaders()
   })
+}
+
+// ---- Favorites ----
+
+export function getFavorites() {
+  return fetch('/api/workbench/favorites', { headers: getAuthHeaders() }).then(r => r.json())
+}
+
+export function addFavorite(body) {
+  return fetch('/api/workbench/favorites', {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).then(r => r.json())
+}
+
+export function removeFavorite(id) {
+  return fetch(`/api/workbench/favorites/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  }).then(r => r.json())
+}
+
+// ---- Pipelines ----
+
+export function getPipelines(params) {
+  return kbApi.get('/pipelines', { params })
+}
+
+export function getPipelineDetail(id) {
+  return kbApi.get(`/pipelines/${id}`)
+}
+
+export function getPipelineTasks(params) {
+  return kbApi.get('/pipelines/tasks', { params })
 }

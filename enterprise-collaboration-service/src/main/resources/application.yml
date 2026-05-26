@@ -41,6 +41,8 @@ rocketmq:
     retry-times-when-send-failed: 1
 
 app:
+  workbench:
+    service-url: ${WORKBENCH_SERVICE_URL:http://localhost:8084}
   im:
     oss:
       endpoint: ${OSS_ENDPOINT:https://oss-cn-shenzhen.aliyuncs.com}

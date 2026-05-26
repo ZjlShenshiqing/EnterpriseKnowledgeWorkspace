@@ -3,6 +3,8 @@
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.16.0",
     "element-plus": "^2.14.0",
+    "quill": "^2.0.3",
+    "quill-cursors": "^4.3.0",
     "vue-router": "^4.6.4"
   }
 }

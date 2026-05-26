@@ -13,6 +13,9 @@ import com.zjl.knowledge.dto.kb.KbKnowledgeBaseUpdateRequest;
 import com.zjl.knowledge.dto.kb.KbKnowledgeBaseVO;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbKnowledgeBase;
+import com.zjl.knowledge.event.KnowledgeBaseCreatedEvent;
+import com.zjl.knowledge.event.KnowledgeBaseDeletedEvent;
+import com.zjl.knowledge.event.KnowledgeBaseUpdatedEvent;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.mapper.KbKnowledgeBaseMapper;
 import com.zjl.knowledge.milvus.MilvusCollectionHelper;
@@ -20,6 +23,7 @@ import com.zjl.knowledge.service.KbKnowledgeBaseService;
 import com.zjl.knowledge.web.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -42,6 +46,7 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
     private final KbKnowledgeBaseMapper kbKnowledgeBaseMapper;
     private final KbDocumentMapper kbDocumentMapper;
     private final MilvusCollectionHelper milvusCollectionHelper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -86,6 +91,7 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
         kbKnowledgeBaseMapper.insert(row);
 
         milvusCollectionHelper.ensureCollectionLoaded(collection);
+        applicationEventPublisher.publishEvent(new KnowledgeBaseCreatedEvent(row.getId()));
         log.info("创建知识库成功 id={}, collection={}", row.getId(), collection);
         return row.getId();
     }
@@ -126,6 +132,7 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
 
         kb.setUpdatedAt(LocalDateTime.now());
         kbKnowledgeBaseMapper.updateById(kb);
+        applicationEventPublisher.publishEvent(new KnowledgeBaseUpdatedEvent(id));
     }
 
     @Override
@@ -148,6 +155,7 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
         kb.setName(nm);
         kb.setUpdatedAt(LocalDateTime.now());
         kbKnowledgeBaseMapper.updateById(kb);
+        applicationEventPublisher.publishEvent(new KnowledgeBaseUpdatedEvent(id));
         log.info("重命名知识库 kbId={}, newName={}", id, nm);
     }
 
@@ -166,6 +174,7 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
         }
 
         kbKnowledgeBaseMapper.deleteById(id);
+        applicationEventPublisher.publishEvent(new KnowledgeBaseDeletedEvent(id));
     }
 
     @Override

@@ -116,7 +116,8 @@ public class McpServerController {
      */
     @PostMapping("/tools/list")
     public Result<Map<String, Object>> listTools() {
-        List<ToolDefinition> tools = toolRegistry.getAllDefinitions();
+        UserContext user = UserContextHolder.get();
+        List<ToolDefinition> tools = toolRegistry.getDefinitionsFor(user);
 
         return Results.success(Map.of(
                 "tools", tools.stream()

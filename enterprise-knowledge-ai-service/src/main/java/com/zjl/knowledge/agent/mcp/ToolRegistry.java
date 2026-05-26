@@ -42,6 +42,19 @@ public class ToolRegistry {
     }
 
     /**
+     * 获取当前用户可用的 Tool 定义（按 {@link McpTool#isAllowed} 过滤）。
+     *
+     * @param user 当前用户
+     * @return ToolDefinition 列表
+     */
+    public List<ToolDefinition> getDefinitionsFor(UserContext user) {
+        return tools.values().stream()
+                .filter(tool -> tool.isAllowed(user))
+                .map(McpTool::getDefinition)
+                .toList();
+    }
+
+    /**
      * 按名称获取 Tool
      *
      * @param name 工具名
@@ -67,6 +80,9 @@ public class ToolRegistry {
     public ToolResult execute(String name, Map<String, Object> args, UserContext user) {
         try {
             McpTool tool = requireTool(name);
+            if (!tool.isAllowed(user)) {
+                return ToolResult.failure("权限不足：仅管理员可使用工具 " + name);
+            }
             return tool.execute(args, user);
         } catch (BizException e) {
             log.warn("工具执行失败: name={}, error={}", name, e.getMessage());

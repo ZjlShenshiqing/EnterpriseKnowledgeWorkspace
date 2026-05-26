@@ -5,6 +5,7 @@ import com.zjl.collaboration.entity.SysUser;
 import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.collaboration.service.ImMessageConsumer;
 import com.zjl.collaboration.service.ImMessageService;
+import com.zjl.collaboration.util.JwtClaimsSupport;
 import com.zjl.collaboration.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -88,7 +89,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         if (query != null && query.startsWith("token=")) {
             try {
                 Claims c = jwtUtil.parse(query.substring(6));
-                return c.get("userId", Long.class);
+                return JwtClaimsSupport.resolveUserId(c);
             } catch (ExpiredJwtException e) {
                 try { session.close(TOKEN_EXPIRED); } catch (Exception ignored) {}
             } catch (Exception ignored) {}

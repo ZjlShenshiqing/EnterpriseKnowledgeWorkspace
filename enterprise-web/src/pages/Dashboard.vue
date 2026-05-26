@@ -159,9 +159,9 @@
             <div v-if="!knowledgeDocs.length && !collabDocs.length" class="empty-state">暂无文档</div>
           </template>
           <template v-else>
-            <div v-if="!collabDocs.length" class="empty-state">暂无文档</div>
+            <div v-if="!recentDocs.length" class="empty-state">暂无文档</div>
             <div v-else class="doc-list">
-              <div v-for="doc in collabDocs.slice(0,5)" :key="doc.id" class="doc-item">
+              <div v-for="doc in recentDocs.slice(0,5)" :key="doc.id" class="doc-item">
                 <div class="doc-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8f959e" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
@@ -224,10 +224,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Refresh, DocumentAdd, Calendar, List, Checked } from '@element-plus/icons-vue'
 import { isAdminUser } from '../api/index.js'
+
+const route = useRoute()
 
 const isAdmin = computed(() => isAdminUser())
 
@@ -260,13 +263,31 @@ const quickActions = computed(() => {
 })
 
 const knowledgeDocs = computed(() => recentDocs.value.filter(d => d.docType === 'knowledge'))
-const collabDocs = computed(() => recentDocs.value.filter(d => d.docType === 'collaboration' || !d.docType))
+const collabDocs = computed(() => recentDocs.value.filter(d => d.docType === 'collaboration'))
 
 function headers() { const u=JSON.parse(localStorage.getItem('user')||'{}'); return {'X-User-Id':String(u.id||1),'X-Is-Admin':String(u.isAdmin?'true':'false')} }
 
+async function clearWorkbenchCache() {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}')
+    const url = u.id
+      ? `/api/workbench/cache/user/${u.id}`
+      : '/api/workbench/cache'
+    await fetch(url, { method: 'DELETE', headers: headers() })
+  } catch (e) {
+    console.warn('清除工作台缓存失败', e)
+  }
+}
+
 async function refreshData() {
+  await clearWorkbenchCache()
   await loadData()
   ElMessage.success('刷新成功')
+}
+
+function todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 async function loadData() {
@@ -275,7 +296,8 @@ async function loadData() {
     const data = (await resp.json()).data||{}
     recentDocs.value = data.recentDocs||[]
     todos.value = (data.todos||[]).map(t=>({...t,done:t.done===1||t.done===true}))
-    if (data.meetings) todayMeetings.value = data.meetings.filter(m=>m.date===new Date().toISOString().split('T')[0])
+    todayMeetings.value = data.todayMeetings
+      || (data.meetings || []).filter(m => m.date === todayStr())
 
     collabStats.value = {
       todos: data.todoCount || 0,
@@ -297,7 +319,12 @@ async function loadData() {
 
 function toggleTodo(t) { t.done = !t.done }
 
+watch(() => route.path, (path) => {
+  if (path === '/') loadData()
+})
+
 onMounted(() => { loadData() })
+onActivated(() => { loadData() })
 </script>
 
 <style scoped>

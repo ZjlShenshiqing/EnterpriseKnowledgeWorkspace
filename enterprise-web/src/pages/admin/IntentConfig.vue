@@ -23,37 +23,109 @@
     </section>
 
     <section class="admin-grid-2">
-      <article class="admin-card">
-        <div class="admin-card-header">
-          <div class="admin-card-title">意图树结构</div>
-          <div class="admin-card-subtitle">点击节点查看详情或进行编辑</div>
-        </div>
-        <div class="admin-card-body" style="min-height: 400px">
-          <el-tree
-            v-if="tree.length > 0"
-            :data="tree"
-            :highlight-current="true"
-            :default-expanded-keys="expandedIds"
-            @node-click="handleNodeClick"
-            @node-expand="handleNodeExpand"
-            @node-collapse="handleNodeCollapse"
-            node-key="id"
-            class="intent-tree"
-          >
-            <template #default="{ node, data }">
-              <span class="tree-node-content">
-                <span class="node-icon">
-                  <Folder v-if="data.children && data.children.length > 0" />
-                  <Document v-else />
+      <article class="admin-card tree-card">
+        <div class="admin-card-header tree-card-header">
+          <div class="tree-header-left">
+            <div class="tree-header-icon">
+              <el-icon :size="18"><Guide /></el-icon>
+            </div>
+            <div class="tree-header-content">
+              <div class="tree-header-title">意图树</div>
+              <div class="tree-flow">
+                <span class="flow-item scene">
+                  <el-icon><Folder /></el-icon>
+                  场景
                 </span>
-                <span class="node-name">{{ data.name }}</span>
-                <el-tag v-if="!data.enabled" size="small" type="info">停用</el-tag>
-              </span>
-            </template>
-          </el-tree>
+                <span class="flow-arrow">
+                  <el-icon><ArrowRight /></el-icon>
+                </span>
+                <span class="flow-item intent">
+                  <el-icon><Document /></el-icon>
+                  意图
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="tree-header-right">
+            <div class="tree-stats">
+              <span class="stat-badge scene">{{ sceneCount }} 场景</span>
+              <span class="stat-badge intent">{{ intentCount }} 意图</span>
+            </div>
+            <div class="tree-header-tip">点击节点 · 右侧编辑详情</div>
+          </div>
+        </div>
+        <div class="admin-card-body tree-card-body">
+          <div class="tree-toolbar">
+            <el-input
+              v-model="treeFilter"
+              placeholder="搜索节点名称..."
+              clearable
+              class="tree-search"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button text type="primary" @click="expandAll">全部展开</el-button>
+            <el-button text @click="collapseAll">全部收起</el-button>
+          </div>
+
+          <div v-if="tree.length > 0" class="tree-scroll">
+            <el-tree
+              ref="treeRef"
+              :data="tree"
+              :props="treeProps"
+              highlight-current
+              :expand-on-click-node="false"
+              :default-expanded-keys="expandedIds"
+              :current-node-key="selectedNode?.id"
+              :filter-node-method="filterNode"
+              node-key="id"
+              class="intent-tree"
+              @node-click="handleNodeClick"
+              @node-expand="handleNodeExpand"
+              @node-collapse="handleNodeCollapse"
+            >
+              <template #default="{ data }">
+                <div
+                  class="tree-node-row"
+                  :class="{
+                    'is-scene': data.level === 1,
+                    'is-intent': data.level === 2,
+                    'is-disabled': !data.enabled
+                  }"
+                >
+                  <div class="tree-node-icon" :class="data.level === 1 ? 'scene' : 'intent'">
+                    <el-icon><Folder v-if="data.level === 1" /><Document v-else /></el-icon>
+                  </div>
+                  <div class="tree-node-main">
+                    <div class="tree-node-title">{{ data.name }}</div>
+                    <div class="tree-node-meta">
+                      <span class="level-pill" :class="data.level === 1 ? 'scene' : 'intent'">
+                        {{ data.level === 1 ? '场景' : '意图' }}
+                      </span>
+                      <span v-if="data.level === 1 && data.children?.length" class="child-count">
+                        {{ data.children.length }} 个子意图
+                      </span>
+                      <span v-else-if="data.level === 2" class="child-count">叶子节点</span>
+                    </div>
+                  </div>
+                  <el-tag v-if="!data.enabled" size="small" type="info" round effect="plain">停用</el-tag>
+                </div>
+              </template>
+            </el-tree>
+          </div>
+
           <div v-else class="empty-state">
-            <div class="empty-icon">🌳</div>
-            <div class="empty-text">暂无节点，请先创建</div>
+            <div class="empty-icon-wrap">
+              <el-icon :size="28"><FolderOpened /></el-icon>
+            </div>
+            <div class="empty-title">还没有意图节点</div>
+            <div class="empty-text">先创建一个场景（如「会议预约」「人事流程」），再添加子意图</div>
+            <el-button type="primary" @click="addRoot">
+              <template #icon><Plus /></template>
+              创建第一个场景
+            </el-button>
           </div>
         </div>
       </article>
@@ -64,9 +136,9 @@
           <div class="admin-card-subtitle">查看并管理当前选择的节点</div>
         </div>
         <div class="admin-card-body" style="min-height: 400px">
-          <div v-if="!selectedNode" class="empty-state">
-            <div class="empty-icon">👈</div>
-            <div class="empty-text">请选择左侧节点</div>
+          <div v-if="!selectedNode" class="detail-empty">
+            <div class="detail-empty-icon">👈</div>
+            <div class="detail-empty-text">请选择左侧节点</div>
           </div>
           <template v-else>
             <el-form :model="form" label-width="90px" style="max-width: 100%">
@@ -222,10 +294,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Folder, Document } from '@element-plus/icons-vue'
+import { Plus, Refresh, Folder, Document, Search, FolderOpened, ArrowRight, Guide } from '@element-plus/icons-vue'
 import { getAuthHeaders, forceLogout } from '../../api'
+
+const treeRef = ref(null)
+const treeFilter = ref('')
+const treeProps = { label: 'name', children: 'children' }
 
 const tree = ref([])
 const selectedNode = ref(null)
@@ -253,15 +329,75 @@ const availableKbs = computed(() => {
   return kbList.value.filter(kb => !boundKbIds.includes(kb.id))
 })
 
+const sceneCount = computed(() => countNodesByLevel(tree.value, 1))
+const intentCount = computed(() => countNodesByLevel(tree.value, 2))
+
+function countNodesByLevel(nodes, level) {
+  let total = 0
+  for (const node of nodes || []) {
+    if (node.level === level) total += 1
+    if (node.children?.length) total += countNodesByLevel(node.children, level)
+  }
+  return total
+}
+
+watch(treeFilter, (val) => {
+  treeRef.value?.filter(val)
+})
+
+function filterNode(value, data) {
+  if (!value) return true
+  return String(data.name || '').includes(value.trim())
+}
+
+function collectNodeIds(nodes, ids = []) {
+  for (const node of nodes || []) {
+    ids.push(node.id)
+    if (node.children?.length) collectNodeIds(node.children, ids)
+  }
+  return ids
+}
+
+function expandAll() {
+  const store = treeRef.value?.store
+  if (store?.nodesMap) {
+    Object.values(store.nodesMap).forEach(node => node.expand?.())
+  }
+  expandedIds.value = collectNodeIds(tree.value)
+}
+
+function collapseAll() {
+  const store = treeRef.value?.store
+  if (store?.nodesMap) {
+    Object.values(store.nodesMap).forEach(node => node.collapse?.())
+  }
+  expandedIds.value = []
+}
+
+async function expandNodeById(nodeId) {
+  await nextTick()
+  treeRef.value?.getNode(nodeId)?.expand()
+  if (nodeId && !expandedIds.value.includes(nodeId)) {
+    expandedIds.value.push(nodeId)
+  }
+}
+
 function auth() { return { ...getAuthHeaders(), 'Content-Type': 'application/json' } }
+
+function isApiSuccess(body) {
+  return body && String(body.code) === '200'
+}
 
 async function loadTree() {
   try {
     const r = await fetch('/api/intents/nodes', { headers: auth() })
     const body = await r.json()
     if (body.code === 40100) { forceLogout(); return }
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       tree.value = body.data || []
+      if (tree.value.length && expandedIds.value.length === 0) {
+        expandedIds.value = tree.value.map(n => n.id)
+      }
     } else {
       ElMessage.error(body.message || '加载失败')
     }
@@ -279,7 +415,7 @@ async function loadKbList() {
   try {
     const r = await fetch('/api/kb/bases', { headers: auth() })
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       kbList.value = body.data?.records || []
     }
   } catch (e) {
@@ -314,7 +450,7 @@ async function loadNodeDetail(nodeId) {
   try {
     const r = await fetch(`/api/intents/nodes/${nodeId}`, { headers: auth() })
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       rules.value = body.data.rules || []
       kbRels.value = body.data.kbRels || []
     }
@@ -350,7 +486,7 @@ async function saveNode() {
     })
     if (r.status === 401) { forceLogout(); return }
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       ElMessage.success('保存成功')
       await loadTree()
       const findNode = (nodes) => {
@@ -387,7 +523,7 @@ async function deleteSelected() {
     const r = await fetch(`/api/intents/nodes/${selectedNode.value.id}`, { method: 'DELETE', headers: auth() })
     if (r.status === 401) { forceLogout(); return }
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       ElMessage.success('删除成功')
       selectedNode.value = null
       await loadTree()
@@ -400,29 +536,31 @@ async function deleteSelected() {
 }
 
 async function addRoot() {
-  const { value: name } = await ElMessageBox.prompt('请输入场景名称', '新建根节点', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputPlaceholder: '如：人事流程、财务报销'
-  })
-  if (!name || !name.trim()) {
-    ElMessage.warning('请输入名称')
-    return
-  }
   try {
+    const { value: name } = await ElMessageBox.prompt('请输入场景名称', '新建根节点', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPlaceholder: '如：人事流程、财务报销'
+    })
+    if (!name || !name.trim()) {
+      ElMessage.warning('请输入名称')
+      return
+    }
     const r = await fetch('/api/intents/nodes', {
       method: 'POST', headers: auth(), body: JSON.stringify({ name: name.trim(), level: 1, sortOrder: 0, enabled: 1 })
     })
     if (r.status === 401) { forceLogout(); return }
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       ElMessage.success('创建成功')
       await loadTree()
     } else {
       ElMessage.error(body.message || '创建失败')
     }
   } catch (e) {
-    ElMessage.error('创建失败')
+    if (e !== 'cancel' && e?.message !== 'cancel') {
+      ElMessage.error('创建失败')
+    }
   }
 }
 
@@ -451,13 +589,12 @@ async function createChildNode() {
     })
     if (r.status === 401) { forceLogout(); return }
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       ElMessage.success('创建成功')
       addChildDialogVisible.value = false
+      const parentId = selectedNode.value.id
       await loadTree()
-      if (!expandedIds.value.includes(selectedNode.value.id)) {
-        expandedIds.value.push(selectedNode.value.id)
-      }
+      await expandNodeById(parentId)
     } else {
       ElMessage.error(body.message || '创建失败')
     }
@@ -524,7 +661,7 @@ async function bindKb() {
     })
     if (r.status === 401) { forceLogout(); return }
     const body = await r.json()
-    if (body.code === 200) {
+    if (isApiSuccess(body)) {
       ElMessage.success('绑定成功')
       newKbId.value = null
       await loadNodeDetail(selectedNode.value.id)
@@ -556,46 +693,296 @@ onMounted(() => { loadTree(); loadKbList() })
 </script>
 
 <style scoped>
-.intent-tree {
-  --el-tree-node-hover-bg-color: #f0f5ff;
-  --el-tree-node-current-bg-color: #e8f3ff;
+.tree-card {
+  display: flex;
+  flex-direction: column;
 }
 
-.tree-node-content {
+.tree-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tree-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tree-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eef2ff 0%, #ecfeff 100%);
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tree-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.tree-flow {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.node-icon {
-  font-size: 14px;
-  color: #409eff;
+.flow-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
 }
 
-.node-name {
+.flow-item.scene {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.flow-item.intent {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.tree-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tree-stats {
+  display: flex;
+  gap: 6px;
+}
+
+.stat-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.stat-badge.scene {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.stat-badge.intent {
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.tree-header-tip {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.tree-card-body {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px !important;
+}
+
+.tree-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 4px;
+}
+
+.tree-search {
   flex: 1;
+}
+
+.tree-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  min-height: 420px;
+}
+
+.intent-tree {
+  --el-tree-node-hover-bg-color: transparent;
+  --el-tree-node-current-bg-color: transparent;
+  background: transparent;
+}
+
+.intent-tree :deep(.el-tree-node__content) {
+  height: auto;
+  min-height: 56px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.intent-tree :deep(.el-tree-node__content:hover) {
+  background: #f3f6fb;
+}
+
+.intent-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background: #eef4ff;
+  box-shadow: inset 0 0 0 1px #c7d7fe;
+}
+
+.intent-tree :deep(.el-tree-node__expand-icon) {
+  font-size: 14px;
+  color: #64748b;
+  padding: 4px;
+}
+
+.intent-tree :deep(.el-tree-node__expand-icon.is-leaf) {
+  color: transparent;
+}
+
+.tree-node-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.tree-node-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tree-node-icon.scene {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.tree-node-icon.intent {
+  background: #ecfeff;
+  color: #0891b2;
+}
+
+.tree-node-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.tree-node-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.tree-node-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.level-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 20px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.level-pill.scene {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.level-pill.intent {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.child-count {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.tree-node-row.is-disabled .tree-node-title {
+  color: #94a3b8;
+}
+
 .empty-state {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  color: #999;
+  padding: 48px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px dashed #dbe3ef;
+  border-radius: 12px;
 }
 
-.empty-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
+.empty-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #eef2ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
 }
 
 .empty-text {
-  color: #999;
+  color: #94a3b8;
   font-size: 13px;
+  line-height: 1.6;
+  max-width: 280px;
+  margin-bottom: 16px;
 }
 
 .section-title {
@@ -611,5 +998,23 @@ onMounted(() => { loadTree(); loadKbList() })
   align-items: center;
   padding: 30px;
   color: #999;
+}
+
+.detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  color: #94a3b8;
+}
+
+.detail-empty-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.detail-empty-text {
+  font-size: 13px;
 }
 </style>

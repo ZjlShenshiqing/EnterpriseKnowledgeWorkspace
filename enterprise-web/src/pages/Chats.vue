@@ -393,8 +393,11 @@ function connectWs() {
       } catch {}
     }
     ws.onclose = (e) => {
-      if (e && (e.code === 4001 || e.code === 4002)) {
+      if (e && e.code === 4001) {
         forceLogout()
+        return
+      }
+      if (e && e.code === 4002) {
         return
       }
       wsTimer = setTimeout(connectWs, 3000)
