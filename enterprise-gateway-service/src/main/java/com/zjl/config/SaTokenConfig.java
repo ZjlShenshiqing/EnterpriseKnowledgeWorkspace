@@ -57,6 +57,11 @@ public class SaTokenConfig {
 
                     StpUtil.checkLogin();
 
+                    // admin 角色拥有所有权限，跳过权限码检查
+                    if (StpUtil.hasRole("admin")) {
+                        return;
+                    }
+
                     // ── Knowledge Base ──
                     SaRouter.match("/api/kb/documents/**", () -> {
                         if (SaHolder.getRequest().isMethod("GET")) {
