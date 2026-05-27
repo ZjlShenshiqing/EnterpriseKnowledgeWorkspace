@@ -1,18 +1,16 @@
 import axios from 'axios'
 
 /**
- * 是否为合法 JWT 紧凑格式（三段 Base64，用两个 '.' 分隔）。
+ * 规范化 Sa-Token 字符串（去掉 Bearer 前缀，兼容历史 JWT 本地缓存）。
  */
-function isJwtFormat(token) {
-  const t = (token || '').trim()
-  if (!t) return false
-  const parts = t.split('.')
-  return parts.length === 3 && parts.every((p) => p.length > 0)
+function normalizeToken(raw) {
+  const t = (raw || '').trim()
+  if (!t) return ''
+  return t.startsWith('Bearer ') ? t.substring(7).trim() : t
 }
 
 /**
- * 读取本地登录态。token 优先 user.token，其次 localStorage.token（与 Login.saveAuth 双写一致）。
- * 非 JWT 字符串（如历史的 demo-token）会被丢弃，避免网关 MalformedJwtException。
+ * 读取本地登录态。token 优先 user.token，其次 localStorage.token。
  */
 export function readStoredAuth() {
   let user = {}
@@ -21,16 +19,7 @@ export function readStoredAuth() {
   } catch {
     user = {}
   }
-  const rawToken = user.token || localStorage.getItem('token') || ''
-  const token = isJwtFormat(rawToken) ? rawToken.trim() : ''
-  if (rawToken && !token) {
-    localStorage.removeItem('token')
-    if (user.token) {
-      const cleaned = { ...user }
-      delete cleaned.token
-      localStorage.setItem('user', JSON.stringify(cleaned))
-    }
-  }
+  const token = normalizeToken(user.token || localStorage.getItem('token') || '')
   return { user, token, hasValidToken: !!token }
 }
 
@@ -63,7 +52,7 @@ export function getAuthHeaders() {
     'X-Is-Admin': String(user.isAdmin ? 'true' : 'false')
   }
   if (token) {
-    headers['Authorization'] = 'Bearer ' + token
+    headers['Authorization'] = token
   }
   return headers
 }
@@ -82,7 +71,7 @@ export function forceLogout(message) {
 }
 
 /**
- * 调用后端登出并将 Token 加入黑名单，随后清除本地登录态。
+ * 调用后端登出并销毁 Sa-Token 会话，随后清除本地登录态。
  */
 export async function logout() {
   const { token } = readStoredAuth()
@@ -90,7 +79,7 @@ export async function logout() {
     if (token) {
       await fetch('/api/auth/logout', {
         method: 'POST',
-        headers: { Authorization: 'Bearer ' + token }
+        headers: { Authorization: token }
       })
     }
   } catch {
@@ -108,7 +97,7 @@ export async function getProfile() {
     throw new Error('未登录')
   }
   const resp = await fetch('/api/auth/profile', {
-    headers: { Authorization: 'Bearer ' + token }
+    headers: { Authorization: token }
   })
   const result = await resp.json()
   if (!resp.ok || !(result.code === 200 || result.code === '200')) {

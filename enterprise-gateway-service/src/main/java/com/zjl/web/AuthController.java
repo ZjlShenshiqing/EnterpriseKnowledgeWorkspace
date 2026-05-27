@@ -1,30 +1,23 @@
 package com.zjl.web;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import com.zjl.domain.SysRole;
 import com.zjl.domain.SysUser;
 import com.zjl.repository.SysUserRepository;
-import com.zjl.security.JwtUtil;
-import com.zjl.security.TokenBlacklistService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.*;
-
 /**
- * 认证相关接口（登录、退出）。
+ * 认证相关接口（登录、退出、当前用户）。
  */
 @Slf4j
 @Validated
@@ -43,34 +36,17 @@ public class AuthController {
     private final BCryptPasswordEncoder passwordEncoder;
 
     /**
-     * JWT 服务（签发、解析）
-     */
-    private final JwtUtil jwt;
-
-    /**
-     * token 黑名单服务（用于退出后使 token 失效）
-     */
-    private final TokenBlacklistService tokenBlacklistService;
-
-    /**
      * 构造器注入
      *
      * @param userRepository 用户仓库
      * @param passwordEncoder 密码编码器
-     * @param jwtService JWT 服务
-     * @param tokenBlacklistService token 黑名单服务
      */
     public AuthController(
             SysUserRepository userRepository,
-            BCryptPasswordEncoder passwordEncoder,
-            JwtUtil jwtService,
-            TokenBlacklistService tokenBlacklistService
-    )
-    {
+            BCryptPasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwt = jwtService;
-        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     /**
@@ -118,7 +94,7 @@ public class AuthController {
     ) {}
 
     /**
-     * 登录接口：校验用户名密码并签发 JWT
+     * 登录接口：校验用户名密码并创建 Sa-Token 会话
      *
      * @param req 登录请求
      * @return token
@@ -126,25 +102,19 @@ public class AuthController {
     @PostMapping("/login")
     public Mono<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest req) {
         return Mono.fromCallable(() -> userRepository.findByUsername(req.username()).orElse(null))
-                // 数据库查询放到弹性线程池，避免阻塞 Netty IO 线程
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(user -> {
-                    // 用户不存在或已被禁用
                     if (user == null || !user.isEnabled()) {
                         log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
                         return Mono.error(new BizException(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
                     }
-                    // BCrypt 密文比对
                     if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
                         log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
                         return Mono.error(new BizException(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
                     }
-                    // 从用户角色和权限生成 JWT authorities 列表
-                    Map<String, Object> claims = new HashMap<>();
-                    claims.put("authorities", authoritiesOf(user));
-                    // 签发 JWT
-                    String token = jwt.issueToken(user.getId(), user.getUsername(), claims);
+                    StpUtil.login(user.getId());
                     ProfileResponse profile = toProfile(user);
+                    String token = StpUtil.getTokenValue();
                     log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
                     return Mono.just(Results.success(new LoginResponse(
                             token,
@@ -164,76 +134,27 @@ public class AuthController {
      */
     @GetMapping("/profile")
     public Mono<Result<ProfileResponse>> profile() {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(ctx -> ctx.getAuthentication())
-                .flatMap(auth -> {
-                    if (auth == null || !auth.isAuthenticated()) {
-                        return Mono.error(new BizException(ErrorCode.UNAUTHORIZED));
+        StpUtil.checkLogin();
+        Long userId = Long.parseLong(StpUtil.getLoginIdAsString());
+        return Mono.fromCallable(() -> {
+                    SysUser user = userRepository.findById(userId).orElse(null);
+                    if (user == null || !user.isEnabled()) {
+                        throw new BizException(ErrorCode.UNAUTHORIZED);
                     }
-                    Long userId;
-                    try {
-                        userId = Long.parseLong(String.valueOf(auth.getPrincipal()));
-                    } catch (NumberFormatException ex) {
-                        return Mono.error(new BizException(ErrorCode.UNAUTHORIZED));
-                    }
-                    return Mono.fromCallable(() -> userRepository.findById(userId).orElse(null))
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(user -> {
-                                if (user == null || !user.isEnabled()) {
-                                    return Mono.error(new BizException(ErrorCode.UNAUTHORIZED));
-                                }
-                                return Mono.just(Results.success(toProfile(user)));
-                            });
+                    return Results.success(toProfile(user));
                 })
-                .switchIfEmpty(Mono.error(new BizException(ErrorCode.UNAUTHORIZED)));
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
-     * 退出接口：将当前 token 置入黑名单
+     * 退出接口：销毁当前 Sa-Token 会话
      *
-     * @param authorization Authorization 头（Bearer token）
      * @return 成功响应
      */
     @PostMapping("/logout")
-    public Mono<Result<Void>> logout(@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
-        String token = extractBearerToken(authorization);
-        // 无 token 也返回成功，幂等
-        if (!StringUtils.hasText(token)) {
-            return Mono.just(Results.success());
-        }
-        return tokenBlacklistService.blacklist(token)
-                .thenReturn(Results.success());
-    }
-
-    /**
-     * 提取 Bearer token。
-     *
-     * @param authorization Authorization 头
-     * @return token（可能为空）
-     */
-    private static String extractBearerToken(String authorization) {
-        if (!StringUtils.hasText(authorization) || !authorization.startsWith("Bearer ")) {
-            return null;
-        }
-        // 去掉前缀 "Bearer "，返回纯 token
-        return authorization.substring(7);
-    }
-
-    /**
-     * 从用户角色/权限生成 JWT authorities。
-     *
-     * @param user 用户
-     * @return authorities 列表
-     */
-    private static List<String> authoritiesOf(SysUser user) {
-        List<String> result = new ArrayList<>();
-        for (SysRole role : user.getRoles()) {
-            // 角色编码转大写并加 ROLE_ 前缀，与 @PreAuthorize("hasRole('ADMIN')") 一致
-            result.add("ROLE_" + role.getCode().toUpperCase());
-            // 角色下的每个权限直接放入列表，如 PERM_doc_delete
-            role.getPermissions().forEach(p -> result.add(p.getCode()));
-        }
-        return result;
+    public Mono<Result<Void>> logout() {
+        StpUtil.logout();
+        return Mono.just(Results.success());
     }
 
     /**
@@ -256,4 +177,3 @@ public class AuthController {
     }
 
 }
-

@@ -1,0 +1,171 @@
+<h2>创建群聊 — 三大厂设计参考</h2>
+<p class="subtitle">微信（轻量）vs 飞书/钉钉（企业级）vs 推荐混合方案</p>
+
+<div style="display:flex;gap:16px;align-items:flex-start">
+  <!-- WeChat style -->
+  <div class="mockup" style="flex:1">
+    <div class="mockup-header">微信风格 — 极简勾选</div>
+    <div class="mockup-body">
+      <div style="height:440px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <div style="padding:14px 16px;border-bottom:1px solid #e5e6eb;display:flex;align-items:center;gap:8px">
+          <span style="cursor:pointer">←</span>
+          <span style="font-weight:500;font-size:14px;flex:1;text-align:center">选择联系人</span>
+          <span style="font-size:12px;color:#3370ff;cursor:pointer">确定</span>
+        </div>
+        <div style="padding:8px 12px">
+          <div style="background:#f2f3f5;border-radius:6px;padding:6px 10px;font-size:11px;color:#999">🔍 搜索</div>
+        </div>
+        <!-- Selected chips -->
+        <div style="padding:6px 12px;display:flex;flex-wrap:wrap;gap:4px;min-height:24px">
+          <div style="background:#3370ff;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;display:flex;align-items:center;gap:3px">张三 ✕</div>
+          <div style="background:#3370ff;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;display:flex;align-items:center;gap:3px">李四 ✕</div>
+        </div>
+        <!-- Contact list -->
+        <div style="padding:8px 12px;font-size:11px;color:#999">最近联系人</div>
+        <div style="padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+          <input type="checkbox" checked style="accent-color:#3370ff" />
+          <div style="width:36px;height:36px;border-radius:6px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">张</div>
+          <div><div style="font-size:13px;font-weight:500">张三</div></div>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+          <input type="checkbox" checked style="accent-color:#3370ff" />
+          <div style="width:36px;height:36px;border-radius:6px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">王</div>
+          <div><div style="font-size:13px;font-weight:500">王五</div></div>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+          <input type="checkbox" style="accent-color:#3370ff" />
+          <div style="width:36px;height:36px;border-radius:6px;background:#ff9500;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">李</div>
+          <div><div style="font-size:13px;font-weight:500">李四</div></div>
+        </div>
+        <div style="padding:8px 12px;font-size:11px;color:#999">产品部</div>
+        <div style="padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+          <input type="checkbox" style="accent-color:#3370ff" />
+          <div style="width:36px;height:36px;border-radius:6px;background:#e6a23c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">赵</div>
+          <div><div style="font-size:13px;font-weight:500">赵六</div></div>
+        </div>
+        <div style="text-align:center;padding:16px;color:#3370ff;font-size:12px;cursor:pointer">确定创建 (2人)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feishu style -->
+  <div class="mockup" style="flex:1">
+    <div class="mockup-header">飞书风格 — 左右分栏</div>
+    <div class="mockup-body">
+      <div style="height:440px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px;display:flex">
+        <!-- Left: member select -->
+        <div style="flex:1;border-right:1px solid #e5e6eb;display:flex;flex-direction:column">
+          <div style="padding:14px 16px;font-weight:600;font-size:14px;border-bottom:1px solid #e5e6eb">选择成员</div>
+          <div style="padding:8px 12px"><div style="background:#f2f3f5;border-radius:6px;padding:6px 10px;font-size:11px;color:#999">🔍 搜索</div></div>
+          <div style="display:flex;border-bottom:1px solid #e5e6eb">
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;color:#3370ff;border-bottom:2px solid #3370ff;cursor:pointer">最近</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;color:#999;cursor:pointer">组织</div>
+          </div>
+          <div style="flex:1;overflow-y:auto">
+            <div style="padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+              <input type="checkbox" checked style="accent-color:#3370ff" />
+              <div style="width:32px;height:32px;border-radius:6px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">张</div>
+              <span style="font-size:13px">张三</span>
+            </div>
+            <div style="padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+              <input type="checkbox" checked style="accent-color:#3370ff" />
+              <div style="width:32px;height:32px;border-radius:6px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">王</div>
+              <span style="font-size:13px">王五</span>
+            </div>
+            <div style="padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:1px solid #f5f6f7">
+              <input type="checkbox" style="accent-color:#3370ff" />
+              <div style="width:32px;height:32px;border-radius:6px;background:#ff9500;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">李</div>
+              <span style="font-size:13px">李四</span>
+            </div>
+          </div>
+        </div>
+        <!-- Right: preview + settings -->
+        <div style="width:220px;display:flex;flex-direction:column;background:#fafafa">
+          <div style="padding:14px 16px;font-size:12px;color:#999;font-weight:500">已选择 2 人</div>
+          <div style="padding:0 16px;display:flex;flex-wrap:wrap;gap:4px">
+            <div style="display:flex;align-items:center;gap:3px;background:#e8f3ff;color:#3370ff;padding:3px 8px;border-radius:12px;font-size:11px">张三 ✕</div>
+            <div style="display:flex;align-items:center;gap:3px;background:#e8f3ff;color:#3370ff;padding:3px 8px;border-radius:12px;font-size:11px">王五 ✕</div>
+          </div>
+          <div style="padding:16px">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">群名称</div>
+            <input style="width:100%;border:1px solid #e5e6eb;border-radius:6px;padding:7px 10px;font-size:12px;outline:none;box-sizing:border-box" placeholder="输入群名称" />
+          </div>
+          <div style="flex:1"></div>
+          <div style="padding:14px 16px"><div style="background:#3370ff;color:#fff;text-align:center;padding:8px;border-radius:6px;font-size:12px;cursor:pointer;width:100%;box-sizing:border-box">创建群聊</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommended hybrid -->
+  <div class="mockup" style="flex:1;border:2px solid #3370ff">
+    <div class="mockup-header" style="background:#e8f3ff;color:#3370ff">推荐方案 — 居中弹窗</div>
+    <div class="mockup-body">
+      <div style="height:440px;background:#fff;border-radius:10px;overflow:hidden;font-size:12px;display:flex;flex-direction:column">
+        <div style="padding:16px 20px;border-bottom:1px solid #e5e6eb;display:flex;align-items:center">
+          <span style="font-weight:600;font-size:15px">发起群聊</span>
+          <div style="flex:1"></div>
+          <span style="font-size:18px;color:#999;cursor:pointer">✕</span>
+        </div>
+        <!-- Search -->
+        <div style="padding:12px 20px"><div style="background:#f2f3f5;border-radius:8px;padding:9px 14px;font-size:12px;color:#999">🔍 搜索成员或部门</div></div>
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:1px solid #e5e6eb;padding:0 20px">
+          <div style="padding:8px 16px;font-size:13px;color:#3370ff;border-bottom:2px solid #3370ff;cursor:pointer;font-weight:500">最近联系人</div>
+          <div style="padding:8px 16px;font-size:13px;color:#999;cursor:pointer">组织架构</div>
+        </div>
+        <!-- Contact grid -->
+        <div style="flex:1;overflow-y:auto;padding:12px 20px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:12px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;position:relative;width:64px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#e8f3ff;border:2px solid #3370ff;color:#3370ff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;position:relative">张<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#3370ff;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center">✓</div></div>
+            <span style="font-size:11px;text-align:center;line-height:1.3">张三</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;width:64px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#e8f3ff;border:2px solid #3370ff;color:#3370ff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;position:relative">李<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#3370ff;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center">✓</div></div>
+            <span style="font-size:11px;text-align:center;line-height:1.3">李四</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;width:64px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#f2f3f5;color:#999;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">王</div>
+            <span style="font-size:11px;text-align:center;line-height:1.3">王五</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;width:64px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#f2f3f5;color:#999;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">赵</div>
+            <span style="font-size:11px;text-align:center;line-height:1.3">赵六</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;width:64px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#f2f3f5;color:#999;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">孙</div>
+            <span style="font-size:11px;text-align:center;line-height:1.3">孙七</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;width:64px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#f2f3f5;color:#999;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">周</div>
+            <span style="font-size:11px;text-align:center;line-height:1.3">周八</span>
+          </div>
+        </div>
+        <!-- Selected bar + create -->
+        <div style="padding:12px 20px;border-top:1px solid #e5e6eb;display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;color:#999;flex-shrink:0">已选<span style="color:#3370ff;font-weight:600">2</span>人</span>
+          <div style="flex:1;display:flex;gap:4px">
+            <div style="background:#e8f3ff;color:#3370ff;padding:3px 10px;border-radius:12px;font-size:11px;display:flex;align-items:center;gap:3px">张三</div>
+            <div style="background:#e8f3ff;color:#3370ff;padding:3px 10px;border-radius:12px;font-size:11px;display:flex;align-items:center;gap:3px">李四</div>
+          </div>
+          <div style="background:#3370ff;color:#fff;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;flex-shrink:0">创建群聊</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;margin-top:16px">
+  <div style="flex:1;background:#fff;border-radius:8px;padding:14px;border:1px solid #e5e6eb">
+    <div style="font-weight:600;font-size:13px;margin-bottom:6px">微信方案</div>
+    <div style="font-size:12px;color:#666">优点：轻量、快、手机端熟悉<br>缺点：没有组织视角、不适合企业场景</div>
+  </div>
+  <div style="flex:1;background:#fff;border-radius:8px;padding:14px;border:1px solid #e5e6eb">
+    <div style="font-weight:600;font-size:13px;margin-bottom:6px">飞书方案</div>
+    <div style="font-size:12px;color:#666">优点：组织架构清晰、可设置群名称<br>缺点：左右分栏在小屏幕上拥挤</div>
+  </div>
+  <div style="flex:1;background:#e8f3ff;border-radius:8px;padding:14px;border:2px solid #3370ff">
+    <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#3370ff">推荐方案 ⭐</div>
+    <div style="font-size:12px;color:#666">居中弹窗 + 网格头像点选 + 最近/组织双Tab<br>兼顾轻量和企业场景，创建成功后自动跳转到群聊</div>
+  </div>
+</div>

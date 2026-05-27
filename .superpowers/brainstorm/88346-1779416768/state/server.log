@@ -1,0 +1,8 @@
+{"type":"server-started","port":61944,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:61944","screen_dir":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content","state_dir":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/state"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content/compare.html"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content/separate-msg-contacts.html"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content/flow.html"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content/create-group.html"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content/group-compare.html"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/88346-1779416768/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

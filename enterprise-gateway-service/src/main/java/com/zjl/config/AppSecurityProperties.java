@@ -14,29 +14,9 @@ import java.util.List;
 public class AppSecurityProperties {
 
     /**
-     * JWT 配置
-     */
-    private Jwt jwt = new Jwt();
-    /**
      * 鉴权白名单配置
      */
     private Whitelist whitelist = new Whitelist();
-
-    /**
-     * JWT 配置项
-     */
-    @Data
-    public static class Jwt {
-        /**
-         * HS256 secret（开发环境配置在 application.yml；生产需改为安全存储）
-         */
-        private String secret;
-
-        /**
-         * token 有效期（秒）
-         */
-        private long ttlSeconds = 7200;
-    }
 
     /**
      * 鉴权白名单配置项
@@ -49,4 +29,3 @@ public class AppSecurityProperties {
         private List<String> paths = new ArrayList<>();
     }
 }
-

@@ -1,0 +1,127 @@
+[2026-05-27 00:10:22.115] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m34s356ms).
+[2026-05-27 00:26:47.918] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s766ms).
+[2026-05-27 00:43:13.579] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s654ms).
+[2026-05-27 00:51:52.369] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8m38s791ms).
+[2026-05-27 00:51:59.304] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779803464088_172.17.0.1_61886]Request stream onCompleted, switch server
+[2026-05-27 00:51:59.326] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 00:51:59.326] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 01:09:26.074] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=17m3s701ms).
+[2026-05-27 01:25:51.874] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s797ms).
+[2026-05-27 01:33:05.284] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m13s410ms).
+[2026-05-27 01:49:30.259] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s966ms).
+[2026-05-27 02:05:25.943] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s684ms).
+[2026-05-27 02:21:51.742] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s792ms).
+[2026-05-27 02:38:17.531] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s779ms).
+[2026-05-27 02:54:13.221] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s690ms).
+[2026-05-27 03:10:39.086] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s856ms).
+[2026-05-27 03:26:34.727] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s641ms).
+[2026-05-27 03:42:59.753] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s2ms).
+[2026-05-27 03:59:24.758] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s998ms).
+[2026-05-27 04:15:20.476] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s718ms).
+[2026-05-27 04:31:46.210] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s730ms).
+[2026-05-27 04:47:39.559] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m53s350ms).
+[2026-05-27 05:04:04.522] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s952ms).
+[2026-05-27 05:20:30.262] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s747ms).
+[2026-05-27 05:31:29.684] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=10m59s422ms).
+[2026-05-27 05:47:55.436] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s747ms).
+[2026-05-27 06:03:51.198] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s761ms).
+[2026-05-27 06:19:50.856] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m29s647ms).
+[2026-05-27 06:36:15.845] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s979ms).
+[2026-05-27 06:52:11.589] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s744ms).
+[2026-05-27 07:08:07.334] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s745ms).
+[2026-05-27 07:24:22.603] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m45s267ms).
+[2026-05-27 07:24:30.005] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779814319319_172.17.0.1_59532]Request stream onCompleted, switch server
+[2026-05-27 07:24:30.025] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 07:24:30.025] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 07:32:21.314] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m58s711ms).
+[2026-05-27 07:48:46.254] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s932ms).
+[2026-05-27 07:58:28.007] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m41s753ms).
+[2026-05-27 08:14:53.746] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s728ms).
+[2026-05-27 08:30:48.731] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s985ms).
+[2026-05-27 08:48:57.614] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=17m38s869ms).
+[2026-05-27 09:05:05.852] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m38s236ms).
+[2026-05-27 09:21:31.648] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s786ms).
+[2026-05-27 09:34:26.875] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=12m55s227ms).
+[2026-05-27 09:50:52.578] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s696ms).
+[2026-05-27 09:55:51.776] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=4m59s197ms).
+[2026-05-27 09:56:41.827] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=50s52ms).
+[2026-05-27 15:03:14.497] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m29s335ms).
+[2026-05-27 15:04:20.442] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m5s945ms).
+[2026-05-27 15:20:15.363] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s921ms).
+[2026-05-27 15:48:31.957] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=28m16s594ms).
+[2026-05-27 15:53:12.880] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=4m40s923ms).
+[2026-05-27 15:55:47.428] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m34s548ms).
+[2026-05-27 17:52:27.043] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.043] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.043] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.043] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.043] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.042] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.043] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.061] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:94] De-registering from Nacos Server now...
+[2026-05-27 17:52:27.085] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:114] De-registration finished.
+[2026-05-27 17:52:27.103] [ERROR] [] [c.a.c.n.r.NacosGracefulShutdownDelegate:79] Error occurred while performing Nacos client graceful shutdown
+java.lang.NullPointerException: Cannot read field "sharePublisher" because "com.alibaba.nacos.common.notify.NotifyCenter.INSTANCE" is null
+	at com.alibaba.nacos.common.notify.NotifyCenter.deregisterSubscriber(NotifyCenter.java:242)
+	at com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.shutdown(NamingGrpcClientProxy.java:537)
+	at com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate.shutdown(NamingClientProxyDelegate.java:212)
+	at com.alibaba.nacos.client.naming.NacosNamingService.shutDown(NacosNamingService.java:637)
+	at com.alibaba.cloud.nacos.NacosServiceManager.nacosServiceShutDown(NacosServiceManager.java:117)
+	at com.alibaba.cloud.nacos.registry.NacosServiceRegistry.close(NacosServiceRegistry.java:120)
+	at org.springframework.cloud.client.serviceregistry.AbstractAutoServiceRegistration.stop(AbstractAutoServiceRegistration.java:311)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.doGracefulShutdown(NacosGracefulShutdownDelegate.java:69)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.onApplicationEvent(NacosGracefulShutdownDelegate.java:64)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.onApplicationEvent(NacosGracefulShutdownDelegate.java:34)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.doInvokeListener(SimpleApplicationEventMulticaster.java:185)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.invokeListener(SimpleApplicationEventMulticaster.java:178)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:156)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:454)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:387)
+	at org.springframework.context.support.AbstractApplicationContext.doClose(AbstractApplicationContext.java:1163)
+	at org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext.doClose(ReactiveWebServerApplicationContext.java:155)
+	at org.springframework.context.support.AbstractApplicationContext.close(AbstractApplicationContext.java:1126)
+	at org.springframework.boot.SpringApplicationShutdownHook.closeAndWait(SpringApplicationShutdownHook.java:147)
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75)
+	at org.springframework.boot.SpringApplicationShutdownHook.run(SpringApplicationShutdownHook.java:116)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+[2026-05-27 17:52:27.162] [INFO ] [] [o.s.b.w.e.netty.GracefulShutdown:53] Commencing graceful shutdown. Waiting for active requests to complete
+[2026-05-27 17:52:27.166] [INFO ] [] [o.s.b.w.e.netty.GracefulShutdown:62] Graceful shutdown complete
+[2026-05-27 17:52:29.256] [WARN ] [] [o.s.b.f.s.DisposableBeanAdapter:354] Custom destroy method 'close' on bean with name 'nacosServiceRegistry' propagated an exception: java.lang.NullPointerException: Cannot read field "sharePublisher" because "com.alibaba.nacos.common.notify.NotifyCenter.INSTANCE" is null
+[2026-05-27 17:52:29.260] [INFO ] [] [o.s.o.j.LocalContainerEntityManagerFactoryBean:660] Closing JPA EntityManagerFactory for persistence unit 'default'
+[2026-05-27 17:52:29.263] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:349] HikariPool-1 - Shutdown initiated...
+[2026-05-27 17:52:29.264] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:351] HikariPool-1 - Shutdown completed.

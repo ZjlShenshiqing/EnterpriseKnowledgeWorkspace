@@ -1,0 +1,172 @@
+[2026-05-27 00:10:43.876] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m34s355ms).
+[2026-05-27 00:26:39.646] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s771ms).
+[2026-05-27 00:43:05.295] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s647ms).
+[2026-05-27 00:51:59.303] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779806558683_172.17.0.1_63138]Request stream onCompleted, switch server
+[2026-05-27 00:51:59.326] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 00:51:59.326] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 00:52:14.095] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8m38s790ms).
+[2026-05-27 00:53:52.110] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m38s15ms).
+[2026-05-27 01:09:47.798] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s688ms).
+[2026-05-27 01:25:43.594] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s796ms).
+[2026-05-27 01:33:27.008] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m13s399ms).
+[2026-05-27 01:49:21.962] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s954ms).
+[2026-05-27 02:05:47.667] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s680ms).
+[2026-05-27 02:21:43.452] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s785ms).
+[2026-05-27 02:38:09.235] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s777ms).
+[2026-05-27 02:54:04.924] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s689ms).
+[2026-05-27 02:54:20.347] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779814319319_172.17.0.1_59530]Request stream onCompleted, switch server
+[2026-05-27 02:54:20.353] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 02:54:20.353] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 03:10:16.222] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779821660350_172.17.0.1_60590]Request stream onCompleted, switch server
+[2026-05-27 03:10:16.237] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 03:10:16.238] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 03:10:30.877] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s859ms).
+[2026-05-27 03:26:56.540] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s657ms).
+[2026-05-27 03:42:51.543] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s3ms).
+[2026-05-27 03:59:16.545] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s988ms).
+[2026-05-27 04:15:12.269] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s723ms).
+[2026-05-27 04:31:38.004] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s731ms).
+[2026-05-27 04:48:01.357] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m53s343ms).
+[2026-05-27 05:03:56.328] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s971ms).
+[2026-05-27 05:20:22.066] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s746ms).
+[2026-05-27 05:31:21.482] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=10m59s416ms).
+[2026-05-27 05:47:47.230] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s747ms).
+[2026-05-27 06:03:58.522] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779822616229_172.17.0.1_58092]Request stream onCompleted, switch server
+[2026-05-27 06:03:58.546] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 06:03:58.547] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 06:04:12.993] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s761ms).
+[2026-05-27 06:19:42.650] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m29s657ms).
+[2026-05-27 06:36:07.646] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s985ms).
+[2026-05-27 06:52:03.391] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s745ms).
+[2026-05-27 07:08:29.125] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s740ms).
+[2026-05-27 07:24:14.397] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m45s272ms).
+[2026-05-27 07:32:43.117] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m58s716ms).
+[2026-05-27 07:48:38.052] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s935ms).
+[2026-05-27 07:58:49.819] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m41s751ms).
+[2026-05-27 08:14:45.548] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s729ms).
+[2026-05-27 08:30:56.247] [ERROR] [] [c.a.n.c.r.client.grpc.GrpcClient:102] [1779833038537_172.17.0.1_62406]Request stream onCompleted, switch server
+[2026-05-27 08:30:56.279] [WARN ] [] [com.alibaba.nacos.client.naming:102] Grpc connection disconnect, mark to redo
+[2026-05-27 08:30:56.280] [WARN ] [] [com.alibaba.nacos.client.naming:112] mark to redo completed
+[2026-05-27 08:31:10.549] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s992ms).
+[2026-05-27 08:33:23.650] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m13s101ms).
+[2026-05-27 08:49:19.422] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s772ms).
+[2026-05-27 09:04:57.658] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m38s236ms).
+[2026-05-27 09:21:23.452] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s787ms).
+[2026-05-27 09:34:18.689] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=12m55s236ms).
+[2026-05-27 09:50:44.490] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s696ms).
+[2026-05-27 09:56:33.743] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m19s243ms).
+[2026-05-27 15:02:29.072] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m52s66ms).
+[2026-05-27 15:03:55.401] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m26s328ms).
+[2026-05-27 15:11:27.447] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m32s47ms).
+[2026-05-27 15:43:49.831] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=32m22s384ms).
+[2026-05-27 15:52:43.079] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8m53s248ms).
+[2026-05-27 15:54:16.685] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m33s605ms).
+[2026-05-27 15:56:09.461] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m52s777ms).
+[2026-05-27 17:52:27.053] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.053] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.053] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.053] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.055] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.053] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.053] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.071] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:94] De-registering from Nacos Server now...
+[2026-05-27 17:52:27.085] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:114] De-registration finished.
+[2026-05-27 17:52:27.096] [ERROR] [] [c.a.c.n.r.NacosGracefulShutdownDelegate:79] Error occurred while performing Nacos client graceful shutdown
+java.lang.NullPointerException: Cannot read field "sharePublisher" because "com.alibaba.nacos.common.notify.NotifyCenter.INSTANCE" is null
+	at com.alibaba.nacos.common.notify.NotifyCenter.deregisterSubscriber(NotifyCenter.java:242)
+	at com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.shutdown(NamingGrpcClientProxy.java:537)
+	at com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate.shutdown(NamingClientProxyDelegate.java:212)
+	at com.alibaba.nacos.client.naming.NacosNamingService.shutDown(NacosNamingService.java:637)
+	at com.alibaba.cloud.nacos.NacosServiceManager.nacosServiceShutDown(NacosServiceManager.java:117)
+	at com.alibaba.cloud.nacos.registry.NacosServiceRegistry.close(NacosServiceRegistry.java:120)
+	at org.springframework.cloud.client.serviceregistry.AbstractAutoServiceRegistration.stop(AbstractAutoServiceRegistration.java:311)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.doGracefulShutdown(NacosGracefulShutdownDelegate.java:69)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.onApplicationEvent(NacosGracefulShutdownDelegate.java:64)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.onApplicationEvent(NacosGracefulShutdownDelegate.java:34)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.doInvokeListener(SimpleApplicationEventMulticaster.java:185)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.invokeListener(SimpleApplicationEventMulticaster.java:178)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:156)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:454)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:387)
+	at org.springframework.context.support.AbstractApplicationContext.doClose(AbstractApplicationContext.java:1163)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.doClose(ServletWebServerApplicationContext.java:179)
+	at org.springframework.context.support.AbstractApplicationContext.close(AbstractApplicationContext.java:1126)
+	at org.springframework.boot.SpringApplicationShutdownHook.closeAndWait(SpringApplicationShutdownHook.java:147)
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75)
+	at org.springframework.boot.SpringApplicationShutdownHook.run(SpringApplicationShutdownHook.java:116)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+[2026-05-27 17:52:27.163] [INFO ] [] [o.s.b.w.e.tomcat.GracefulShutdown:54] Commencing graceful shutdown. Waiting for active requests to complete
+[2026-05-27 17:52:27.174] [INFO ] [] [o.s.b.w.e.tomcat.GracefulShutdown:76] Graceful shutdown complete
+[2026-05-27 17:52:27.199] [WARN ] [] [o.s.b.f.s.DisposableBeanAdapter:354] Custom destroy method 'close' on bean with name 'nacosServiceRegistry' propagated an exception: java.lang.NullPointerException: Cannot read field "sharePublisher" because "com.alibaba.nacos.common.notify.NotifyCenter.INSTANCE" is null
+[2026-05-27 17:52:27.200] [INFO ] [] [o.a.r.s.s.DefaultRocketMQListenerContainer:332] container destroyed, DefaultRocketMQListenerContainer{consumerGroup='im-consumer-group', namespace='', namespaceV2='', nameServer='localhost:9876', topic='im-message', consumeMode=CONCURRENTLY, selectorType=TAG, selectorExpression='*', messageModel=CLUSTERING', tlsEnable=false, instanceName=DEFAULT}
+[2026-05-27 17:52:29.985] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:349] HikariPool-1 - Shutdown initiated...
+[2026-05-27 17:52:29.992] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:351] HikariPool-1 - Shutdown completed.
+[2026-05-27 17:52:39.171] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-27 17:52:39.189] [INFO ] [] [c.z.c.CollaborationApplication:53] Starting CollaborationApplication using Java 17.0.18 with PID 89642 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-collaboration-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace)
+[2026-05-27 17:52:39.190] [INFO ] [] [c.z.c.CollaborationApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-27 17:52:39.204] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-27 17:52:39.205] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-collaboration-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-27 17:52:39.535] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-27 17:52:39.537] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-27 17:52:39.552] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 8 ms. Found 0 Redis repository interfaces.
+[2026-05-27 17:52:39.632] [INFO ] [] [o.s.cloud.context.scope.GenericScope:280] BeanFactory id=61e6b114-46d5-36d3-934c-4be74c468f53
+[2026-05-27 17:52:39.762] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'org.apache.rocketmq.spring.autoconfigure.ListenerContainerConfiguration' of type [org.apache.rocketmq.spring.autoconfigure.ListenerContainerConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.763] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'org.apache.rocketmq.spring.autoconfigure.MessageConverterConfiguration' of type [org.apache.rocketmq.spring.autoconfigure.MessageConverterConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.815] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'createRocketMQMessageConverter' of type [org.apache.rocketmq.spring.support.RocketMQMessageConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.817] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'org.springframework.cloud.commons.config.CommonsConfigAutoConfiguration' of type [org.springframework.cloud.commons.config.CommonsConfigAutoConfiguration] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.820] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'org.springframework.cloud.client.loadbalancer.LoadBalancerDefaultMappingsProviderAutoConfiguration' of type [org.springframework.cloud.client.loadbalancer.LoadBalancerDefaultMappingsProviderAutoConfiguration] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.821] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'loadBalancerClientsDefaultsMappingsProvider' of type [org.springframework.cloud.client.loadbalancer.LoadBalancerDefaultMappingsProviderAutoConfiguration$$Lambda$922/0x000000700174d400] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.821] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'defaultsBindHandlerAdvisor' of type [org.springframework.cloud.commons.config.DefaultsBindHandlerAdvisor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.824] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'rocketmq-org.apache.rocketmq.spring.autoconfigure.RocketMQProperties' of type [org.apache.rocketmq.spring.autoconfigure.RocketMQProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.826] [WARN ] [] [o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker:437] Bean 'rocketMQMessageListenerContainerRegistrar' of type [org.apache.rocketmq.spring.support.RocketMQMessageListenerContainerRegistrar] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [org.apache.rocketmq.spring.annotation.RocketMQMessageListenerBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+[2026-05-27 17:52:39.926] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8090 (http)
+[2026-05-27 17:52:39.931] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8090"]
+[2026-05-27 17:52:39.932] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-27 17:52:39.932] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-27 17:52:39.951] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-27 17:52:39.952] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 746 ms
+[2026-05-27 17:52:40.238] [INFO ] [] [o.a.r.s.a.RocketMQAutoConfiguration:125] a producer (im-producer-group) init on namesrv localhost:9876
+[2026-05-27 17:52:40.600] [INFO ] [] [c.z.c.service.impl.ImFileServiceImpl:43] IM OSS 已初始化: endpoint=https://oss-cn-shenzhen.aliyuncs.com, bucket=im-files
+[2026-05-27 17:52:40.609] [INFO ] [] [o.a.r.s.s.RocketMQMessageListenerContainerRegistrar:107] Register the listener to container, listenerBeanName:imMessageConsumerImpl, containerBeanName:org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer_1
+[2026-05-27 17:52:41.713] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8090"]
+[2026-05-27 17:52:41.717] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8090 (http) with context path '/'
+[2026-05-27 17:52:41.742] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-collaboration-service 10.242.64.163:8090 register finished
+[2026-05-27 17:52:41.807] [INFO ] [] [o.a.r.s.s.DefaultRocketMQListenerContainer:359] running container: DefaultRocketMQListenerContainer{consumerGroup='im-consumer-group', namespace='', namespaceV2='', nameServer='localhost:9876', topic='im-message', consumeMode=CONCURRENTLY, selectorType=TAG, selectorExpression='*', messageModel=CLUSTERING', tlsEnable=false, instanceName=DEFAULT}
+[2026-05-27 17:52:41.812] [INFO ] [] [c.z.c.CollaborationApplication:59] Started CollaborationApplication in 3.239 seconds (process running for 3.484)
+[2026-05-27 17:52:41.818] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-collaboration-service.yaml, group=DEFAULT_GROUP
+[2026-05-27 17:52:41.818] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP

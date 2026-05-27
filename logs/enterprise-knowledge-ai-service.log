@@ -1,0 +1,455 @@
+[2026-05-27 00:10:41.752] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m34s349ms).
+[2026-05-27 00:26:37.457] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s705ms).
+[2026-05-27 00:43:03.183] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s653ms).
+[2026-05-27 00:52:11.971] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8m38s782ms).
+[2026-05-27 00:53:49.992] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m38s21ms).
+[2026-05-27 01:09:45.680] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s688ms).
+[2026-05-27 01:25:41.465] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s785ms).
+[2026-05-27 01:33:24.877] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m13s400ms).
+[2026-05-27 01:49:19.826] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s949ms).
+[2026-05-27 02:05:45.527] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s680ms).
+[2026-05-27 02:21:41.314] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s787ms).
+[2026-05-27 02:38:07.095] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s772ms).
+[2026-05-27 02:54:32.789] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s692ms).
+[2026-05-27 03:10:28.647] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s858ms).
+[2026-05-27 03:26:54.306] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s651ms).
+[2026-05-27 03:42:49.301] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s995ms).
+[2026-05-27 03:59:14.303] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s988ms).
+[2026-05-27 04:15:40.030] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s722ms).
+[2026-05-27 04:31:35.756] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s726ms).
+[2026-05-27 04:47:59.109] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m53s348ms).
+[2026-05-27 05:03:54.083] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s974ms).
+[2026-05-27 05:20:19.816] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s746ms).
+[2026-05-27 05:31:19.236] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=10m59s419ms).
+[2026-05-27 05:47:44.983] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s750ms).
+[2026-05-27 06:04:10.752] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s761ms).
+[2026-05-27 06:19:40.404] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m29s652ms).
+[2026-05-27 06:36:05.391] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s979ms).
+[2026-05-27 06:52:01.146] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s755ms).
+[2026-05-27 07:08:26.894] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s749ms).
+[2026-05-27 07:24:12.163] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m45s270ms).
+[2026-05-27 07:32:40.869] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m58s708ms).
+[2026-05-27 07:48:35.803] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s934ms).
+[2026-05-27 07:58:47.562] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m41s742ms).
+[2026-05-27 08:14:43.291] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s729ms).
+[2026-05-27 08:31:08.293] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s992ms).
+[2026-05-27 08:33:21.394] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m13s100ms).
+[2026-05-27 08:49:17.165] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s772ms).
+[2026-05-27 09:04:55.401] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m38s236ms).
+[2026-05-27 09:21:21.198] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s786ms).
+[2026-05-27 09:34:46.426] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=12m55s220ms).
+[2026-05-27 09:50:42.122] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s696ms).
+[2026-05-27 09:56:31.371] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m19s244ms).
+[2026-05-27 15:02:26.928] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m52s64ms).
+[2026-05-27 15:03:53.260] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m26s333ms).
+[2026-05-27 15:11:25.306] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7m32s46ms).
+[2026-05-27 15:43:47.690] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=32m22s384ms).
+[2026-05-27 15:52:40.937] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8m53s247ms).
+[2026-05-27 15:54:14.552] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m33s615ms).
+[2026-05-27 15:56:07.334] [WARN ] [] [com.zaxxer.hikari.pool.HikariPool:797] HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m52s782ms).
+[2026-05-27 17:52:27.017] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.016] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.017] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.017] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.015] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.016] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.024] [ERROR] [] [c.a.nacos.common.notify.NotifyCenter:116] Event listener exception : 
+java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1645)
+	at java.base/java.util.concurrent.ArrayBlockingQueue.take(ArrayBlockingQueue.java:420)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.openEventHandler(DefaultPublisher.java:111)
+	at com.alibaba.nacos.common.notify.DefaultPublisher.run(DefaultPublisher.java:95)
+[2026-05-27 17:52:27.057] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:94] De-registering from Nacos Server now...
+[2026-05-27 17:52:27.085] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:114] De-registration finished.
+[2026-05-27 17:52:27.109] [ERROR] [] [c.a.c.n.r.NacosGracefulShutdownDelegate:79] Error occurred while performing Nacos client graceful shutdown
+java.lang.NullPointerException: Cannot read field "sharePublisher" because "com.alibaba.nacos.common.notify.NotifyCenter.INSTANCE" is null
+	at com.alibaba.nacos.common.notify.NotifyCenter.deregisterSubscriber(NotifyCenter.java:242)
+	at com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.shutdown(NamingGrpcClientProxy.java:537)
+	at com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate.shutdown(NamingClientProxyDelegate.java:212)
+	at com.alibaba.nacos.client.naming.NacosNamingService.shutDown(NacosNamingService.java:637)
+	at com.alibaba.cloud.nacos.NacosServiceManager.nacosServiceShutDown(NacosServiceManager.java:117)
+	at com.alibaba.cloud.nacos.registry.NacosServiceRegistry.close(NacosServiceRegistry.java:120)
+	at org.springframework.cloud.client.serviceregistry.AbstractAutoServiceRegistration.stop(AbstractAutoServiceRegistration.java:311)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.doGracefulShutdown(NacosGracefulShutdownDelegate.java:69)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.onApplicationEvent(NacosGracefulShutdownDelegate.java:64)
+	at com.alibaba.cloud.nacos.registry.NacosGracefulShutdownDelegate.onApplicationEvent(NacosGracefulShutdownDelegate.java:34)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.doInvokeListener(SimpleApplicationEventMulticaster.java:185)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.invokeListener(SimpleApplicationEventMulticaster.java:178)
+	at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:156)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:454)
+	at org.springframework.context.support.AbstractApplicationContext.publishEvent(AbstractApplicationContext.java:387)
+	at org.springframework.context.support.AbstractApplicationContext.doClose(AbstractApplicationContext.java:1163)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.doClose(ServletWebServerApplicationContext.java:179)
+	at org.springframework.context.support.AbstractApplicationContext.close(AbstractApplicationContext.java:1126)
+	at org.springframework.boot.SpringApplicationShutdownHook.closeAndWait(SpringApplicationShutdownHook.java:147)
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75)
+	at org.springframework.boot.SpringApplicationShutdownHook.run(SpringApplicationShutdownHook.java:116)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+[2026-05-27 17:52:27.163] [INFO ] [] [o.s.b.w.e.tomcat.GracefulShutdown:54] Commencing graceful shutdown. Waiting for active requests to complete
+[2026-05-27 17:52:27.171] [INFO ] [] [o.s.b.w.e.tomcat.GracefulShutdown:76] Graceful shutdown complete
+[2026-05-27 17:52:27.197] [WARN ] [] [o.s.b.f.s.DisposableBeanAdapter:354] Custom destroy method 'close' on bean with name 'nacosServiceRegistry' propagated an exception: java.lang.NullPointerException: Cannot read field "sharePublisher" because "com.alibaba.nacos.common.notify.NotifyCenter.INSTANCE" is null
+[2026-05-27 17:52:27.206] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:349] HikariPool-1 - Shutdown initiated...
+[2026-05-27 17:52:27.212] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:351] HikariPool-1 - Shutdown completed.
+[2026-05-27 17:52:54.137] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-27 17:52:54.153] [INFO ] [] [c.z.knowledge.KnowledgeAiApplication:53] Starting KnowledgeAiApplication using Java 17.0.18 with PID 89760 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace)
+[2026-05-27 17:52:54.153] [INFO ] [] [c.z.knowledge.KnowledgeAiApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-27 17:52:54.169] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-27 17:52:54.169] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-knowledge-ai-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-27 17:52:54.699] [INFO ] [] [o.s.cloud.context.scope.GenericScope:280] BeanFactory id=35efb198-3752-3fd5-841a-4f3991cdb3c4
+[2026-05-27 17:52:54.968] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8083 (http)
+[2026-05-27 17:52:54.975] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8083"]
+[2026-05-27 17:52:54.975] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-27 17:52:54.975] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-27 17:52:55.004] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-27 17:52:55.004] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 835 ms
+[2026-05-27 17:52:55.279] [INFO ] [] [c.z.k.agent.llm.SpringAiLlmClient:74] SpringAiLlmClient 初始化完成, baseUrl=https://api.deepseek.com, model=deepseek-chat, apiKey=sk-c6d7a***
+[2026-05-27 17:52:55.931] [INFO ] [] [c.z.k.s.impl.S3FileStorageService:52] S3 存储已初始化: endpoint=https://oss-cn-shenzhen.aliyuncs.com, bucket=kb-documents
+[2026-05-27 17:52:56.138] [WARN ] [] [o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext:635] Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agentController' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/AgentController.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'agentLoop' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/AgentLoop.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'toolRegistry' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/mcp/ToolRegistry.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'getDocumentDetailTool' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/tool/GetDocumentDetailTool.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'kbDocumentServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/KbDocumentServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+[2026-05-27 17:52:56.140] [INFO ] [] [o.a.catalina.core.StandardService:173] Stopping service [Tomcat]
+[2026-05-27 17:52:56.160] [INFO ] [] [o.s.b.a.l.ConditionEvaluationReportLogger:82] 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+[2026-05-27 17:52:56.167] [ERROR] [] [o.s.boot.SpringApplication:857] Application run failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agentController' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/AgentController.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'agentLoop' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/AgentLoop.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'toolRegistry' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/mcp/ToolRegistry.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'getDocumentDetailTool' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/tool/GetDocumentDetailTool.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'kbDocumentServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/KbDocumentServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1155)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1121)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1056)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.zjl.knowledge.KnowledgeAiApplication.main(KnowledgeAiApplication.java:26)
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'agentLoop' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/AgentLoop.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'toolRegistry' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/mcp/ToolRegistry.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'getDocumentDetailTool' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/tool/GetDocumentDetailTool.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'kbDocumentServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/KbDocumentServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1609)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 21 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'toolRegistry' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/mcp/ToolRegistry.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'getDocumentDetailTool' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/tool/GetDocumentDetailTool.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'kbDocumentServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/KbDocumentServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1609)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 34 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'getDocumentDetailTool' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/agent/tool/GetDocumentDetailTool.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'kbDocumentServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/KbDocumentServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.addCandidateEntry(DefaultListableBeanFactory.java:1919)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1883)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveMultipleBeanCollection(DefaultListableBeanFactory.java:1773)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveMultipleBeans(DefaultListableBeanFactory.java:1741)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1616)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 47 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'kbDocumentServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/KbDocumentServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1667)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 65 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'documentChunkingServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/DocumentChunkingServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 5: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1667)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 79 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'vectorSyncServiceImpl' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/service/impl/VectorSyncServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1667)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 93 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'milvusChunkVectorStore' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusChunkVectorStore.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1667)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 107 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'milvusVectorWriter' defined in file [/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes/com/zjl/knowledge/milvus/MilvusVectorWriter.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804)
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1381)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1218)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1609)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 121 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'milvusClientV2' defined in class path resource [com/zjl/knowledge/config/MilvusClientConfiguration.class]: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:657)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:645)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1361)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1191)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1667)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1555)
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913)
+	at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791)
+	... 134 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.milvus.v2.client.MilvusClientV2]: Factory method 'milvusClientV2' threw exception with message: UNAVAILABLE: io exception
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:199)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiateWithFactoryMethod(SimpleInstantiationStrategy.java:88)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:168)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653)
+	... 148 common frames omitted
+Caused by: io.grpc.StatusRuntimeException: UNAVAILABLE: io exception
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:268)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:249)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:167)
+	at io.milvus.grpc.MilvusServiceGrpc$MilvusServiceBlockingStub.connect(MilvusServiceGrpc.java:4685)
+	at io.milvus.v2.client.MilvusClientV2.connect(MilvusClientV2.java:147)
+	at io.milvus.v2.client.MilvusClientV2.connect(MilvusClientV2.java:109)
+	at io.milvus.v2.client.MilvusClientV2.<init>(MilvusClientV2.java:88)
+	at com.zjl.knowledge.config.MilvusClientConfiguration.milvusClientV2(MilvusClientConfiguration.java:25)
+	at com.zjl.knowledge.config.MilvusClientConfiguration$$SpringCGLIB$$0.CGLIB$milvusClientV2$0(<generated>)
+	at com.zjl.knowledge.config.MilvusClientConfiguration$$SpringCGLIB$$FastClass$$1.invoke(<generated>)
+	at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:258)
+	at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:370)
+	at com.zjl.knowledge.config.MilvusClientConfiguration$$SpringCGLIB$$0.milvusClientV2(<generated>)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:171)
+	... 151 common frames omitted
+Caused by: io.grpc.netty.shaded.io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/[0:0:0:0:0:0:0:1]:19530
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:684)
+	at java.base/sun.nio.ch.SocketChannelImpl.finishConnect(SocketChannelImpl.java:946)
+	at io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel.doFinishConnect(NioSocketChannel.java:337)
+	at io.grpc.netty.shaded.io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.finishConnect(AbstractNioChannel.java:334)
+	at io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:776)
+	at io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)
+	at io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)
+	at io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+[2026-05-27 17:54:15.656] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-27 17:54:15.673] [INFO ] [] [c.z.knowledge.KnowledgeAiApplication:53] Starting KnowledgeAiApplication using Java 17.0.18 with PID 90280 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-knowledge-ai-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace)
+[2026-05-27 17:54:15.673] [INFO ] [] [c.z.knowledge.KnowledgeAiApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-27 17:54:15.690] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-27 17:54:15.690] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-knowledge-ai-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-27 17:54:16.209] [INFO ] [] [o.s.cloud.context.scope.GenericScope:280] BeanFactory id=35efb198-3752-3fd5-841a-4f3991cdb3c4
+[2026-05-27 17:54:16.466] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8083 (http)
+[2026-05-27 17:54:16.473] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8083"]
+[2026-05-27 17:54:16.473] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-27 17:54:16.473] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-27 17:54:16.500] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-27 17:54:16.500] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 808 ms
+[2026-05-27 17:54:16.761] [INFO ] [] [c.z.k.agent.llm.SpringAiLlmClient:74] SpringAiLlmClient 初始化完成, baseUrl=https://api.deepseek.com, model=deepseek-chat, apiKey=sk-c6d7a***
+[2026-05-27 17:54:17.383] [INFO ] [] [c.z.k.s.impl.S3FileStorageService:52] S3 存储已初始化: endpoint=https://oss-cn-shenzhen.aliyuncs.com, bucket=kb-documents
+[2026-05-27 17:54:17.744] [ERROR] [] [io.milvus.v2.utils.RpcUtils:50] LoadCollectionRequest collectionName:kb_chunk_embedding failed, error code: 2, reason: call query coordinator LoadCollection: when load 1 replica count: service resource insufficient[currentStreamingNode=0][expectedStreamingNode=1]
+[2026-05-27 17:54:17.745] [ERROR] [] [c.z.k.milvus.MilvusCollectionHelper:110] Milvus ensure collection failed, collection=kb_chunk_embedding
+io.milvus.v2.exception.MilvusClientException: call query coordinator LoadCollection: when load 1 replica count: service resource insufficient[currentStreamingNode=0][expectedStreamingNode=1]
+	at io.milvus.v2.utils.RpcUtils.handleResponse(RpcUtils.java:53)
+	at io.milvus.v2.service.collection.CollectionService.loadCollection(CollectionService.java:238)
+	at io.milvus.v2.client.MilvusClientV2.lambda$loadCollection$14(MilvusClientV2.java:405)
+	at io.milvus.v2.client.MilvusClientV2.retry(MilvusClientV2.java:188)
+	at io.milvus.v2.client.MilvusClientV2.loadCollection(MilvusClientV2.java:405)
+	at com.zjl.knowledge.milvus.MilvusCollectionHelper.ensureCollectionLoaded(MilvusCollectionHelper.java:102)
+	at com.zjl.knowledge.milvus.MilvusCollectionBootstrap.init(MilvusCollectionBootstrap.java:40)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMethod.invoke(InitDestroyAnnotationBeanPostProcessor.java:457)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:401)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:219)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:423)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:601)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1155)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1121)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1056)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.zjl.knowledge.KnowledgeAiApplication.main(KnowledgeAiApplication.java:26)
+[2026-05-27 17:54:17.746] [ERROR] [] [c.z.k.m.MilvusCollectionBootstrap:42] Milvus init failed, collection=kb_chunk_embedding
+com.zjl.common.exception.BizException: Milvus 集合初始化失败: call query coordinator LoadCollection: when load 1 replica count: service resource insufficient[currentStreamingNode=0][expectedStreamingNode=1]
+	at com.zjl.knowledge.milvus.MilvusCollectionHelper.ensureCollectionLoaded(MilvusCollectionHelper.java:111)
+	at com.zjl.knowledge.milvus.MilvusCollectionBootstrap.init(MilvusCollectionBootstrap.java:40)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMethod.invoke(InitDestroyAnnotationBeanPostProcessor.java:457)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:401)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:219)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:423)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:601)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:347)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1155)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1121)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1056)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.zjl.knowledge.KnowledgeAiApplication.main(KnowledgeAiApplication.java:26)
+[2026-05-27 17:54:18.252] [INFO ] [] [o.s.b.a.e.web.EndpointLinksResolver:60] Exposing 2 endpoints beneath base path '/actuator'
+[2026-05-27 17:54:18.290] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8083"]
+[2026-05-27 17:54:18.293] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8083 (http) with context path '/'
+[2026-05-27 17:54:18.322] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-knowledge-ai-service 10.242.64.163:8083 register finished
+[2026-05-27 17:54:18.332] [INFO ] [] [c.z.knowledge.KnowledgeAiApplication:59] Started KnowledgeAiApplication in 3.315 seconds (process running for 3.835)
+[2026-05-27 17:54:18.340] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-knowledge-ai-service.yaml, group=DEFAULT_GROUP
+[2026-05-27 17:54:18.340] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-27 17:54:18.794] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-27 17:54:18.794] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-27 17:54:18.795] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 1 ms
+[2026-05-27 17:54:18.795] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:109] HikariPool-1 - Starting...
+[2026-05-27 17:54:18.905] [INFO ] [] [com.zaxxer.hikari.pool.HikariPool:554] HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1c657afe
+[2026-05-27 17:54:18.906] [INFO ] [] [com.zaxxer.hikari.HikariDataSource:122] HikariPool-1 - Start completed.

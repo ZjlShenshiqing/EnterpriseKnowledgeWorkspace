@@ -1,0 +1,7 @@
+{"type":"server-started","port":57240,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:57240","screen_dir":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/63134-1779693381/content","state_dir":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/63134-1779693381/state"}
+{"type":"screen-added","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/63134-1779693381/content/dashboard-styles.html"}
+{"type":"screen-updated","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/63134-1779693381/content/dashboard-styles.html"}
+{"source":"user-event","type":"click","text":"我的待办\n          5\n        \n        \n          今日会议\n          3\n        \n        \n          待审批\n          2\n        \n        \n          未读消息\n          12\n        \n      \n    \n    靛蓝稳重Tailwind 色系，专业内敛","choice":"indigo","id":null,"timestamp":1779693790611}
+{"source":"user-event","type":"click","text":"我的待办\n          5\n        \n        \n          今日会议\n          3\n        \n        \n          待审批\n          2\n        \n        \n          未读消息\n          12\n        \n      \n    \n    青翠商务Teal 主调，知性柔和","choice":"teal","id":null,"timestamp":1779693792145}
+{"type":"screen-updated","file":"/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/.superpowers/brainstorm/63134-1779693381/content/dashboard-styles.html"}
+{"type":"server-stopped","reason":"idle timeout"}

@@ -1,0 +1,197 @@
+<h2>即时通讯页面改造 — 从当前设计到飞书风格</h2>
+<p class="subtitle">左侧为当前页面结构，右侧为飞书风格目标设计</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">当前设计</div>
+    <div class="mockup-body">
+      <div style="display:flex;height:520px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <!-- Current left panel -->
+        <div style="width:280px;border-right:1px solid #e5e6eb;display:flex;flex-direction:column;flex-shrink:0">
+          <div style="padding:14px;border-bottom:1px solid #f0f1f3">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+              <span style="font-size:15px;font-weight:600;flex:1">消息</span>
+              <span style="width:28px;height:28px;border-radius:50%;background:#1677ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">+</span>
+            </div>
+            <div style="background:#f5f6f7;border-radius:6px;padding:6px 10px;font-size:11px;color:#999">搜索</div>
+          </div>
+          <div style="flex:1;overflow-y:auto">
+            <div style="padding:12px 14px;border-bottom:1px solid #f5f6f7;display:flex;align-items:center;gap:10px;cursor:pointer;background:#e8f3ff">
+              <div style="width:38px;height:38px;border-radius:50%;background:#1677ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">群</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;font-size:13px">全员群</div>
+                <div style="color:#999;font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">欢迎加入</div>
+              </div>
+              <div style="font-size:10px;color:#bbb">10:30</div>
+            </div>
+            <div style="padding:12px 14px;border-bottom:1px solid #f5f6f7;display:flex;align-items:center;gap:10px;cursor:pointer">
+              <div style="width:38px;height:38px;border-radius:50%;background:#67c23a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">张</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;font-size:13px">张三</div>
+                <div style="color:#999;font-size:11px;margin-top:2px">好的</div>
+              </div>
+              <div style="font-size:10px;color:#bbb">09:15</div>
+            </div>
+            <div style="padding:12px 14px;border-bottom:1px solid #f5f6f7;display:flex;align-items:center;gap:10px;cursor:pointer">
+              <div style="width:38px;height:38px;border-radius:50%;background:#e6a23c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">李</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;font-size:13px">李四</div>
+                <div style="color:#999;font-size:11px;margin-top:2px">文件收到了吗</div>
+              </div>
+              <div style="font-size:10px;color:#bbb">昨天</div>
+            </div>
+          </div>
+        </div>
+        <!-- Current chat area -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <div style="padding:12px 18px;border-bottom:1px solid #f0f1f3;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px">
+            <div style="width:30px;height:30px;border-radius:50%;background:#1677ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px">群</div>
+            全员群 <span style="font-size:11px;color:#999;font-weight:400">5人</span>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <div style="width:28px;height:28px;border-radius:50%;background:#67c23a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">张</div>
+              <div>
+                <div style="font-size:10px;color:#999;margin-bottom:2px">张三</div>
+                <div style="background:#f2f3f5;padding:7px 10px;border-radius:10px;font-size:12px;max-width:320px">大家好！新项目启动了吗？</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <div style="background:#e8f3ff;padding:7px 10px;border-radius:10px;font-size:12px;max-width:320px">开始了，下午开会讨论方案</div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <div style="width:28px;height:28px;border-radius:50%;background:#e6a23c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">李</div>
+              <div>
+                <div style="font-size:10px;color:#999;margin-bottom:2px">李四</div>
+                <div style="background:#f2f3f5;padding:7px 10px;border-radius:10px;font-size:12px;max-width:320px">好的，我准备一下资料</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:10px 18px;border-top:1px solid #f0f1f3;display:flex;gap:8px">
+            <div style="flex:1;border:1px solid #e5e6eb;border-radius:6px;padding:8px 10px;font-size:12px;color:#bbb">输入消息...</div>
+            <div style="background:#1677ff;color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer">发送</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">飞书风格目标设计</div>
+    <div class="mockup-body">
+      <div style="display:flex;height:520px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <!-- Feishu nav bar -->
+        <div style="width:60px;background:#1f2329;display:flex;flex-direction:column;align-items:center;padding-top:12px;flex-shrink:0;gap:6px">
+          <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">MSG</div>
+          <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8f959e;font-size:18px;cursor:pointer" title="通讯录">👤</div>
+          <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8f959e;font-size:18px;cursor:pointer" title="日历">📅</div>
+          <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8f959e;font-size:18px;cursor:pointer" title="文档">📄</div>
+          <div style="flex:1"></div>
+          <div style="width:36px;height:36px;border-radius:8px;margin-bottom:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">我</div>
+        </div>
+        <!-- Feishu conv list -->
+        <div style="width:260px;border-right:1px solid #e5e6eb;display:flex;flex-direction:column;flex-shrink:0;background:#fafafa">
+          <div style="padding:14px 16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span style="font-size:15px;font-weight:600;flex:1">消息</span>
+              <span style="color:#3370ff;font-size:22px;cursor:pointer;line-height:1">+</span>
+            </div>
+            <div style="background:#e5e6eb;border-radius:6px;padding:7px 12px;font-size:11px;color:#8f959e;display:flex;align-items:center;gap:6px">
+              <span>🔍</span> 搜索会话和消息
+            </div>
+          </div>
+          <div style="flex:1;overflow-y:auto">
+            <div style="padding:6px 16px;font-size:11px;color:#8f959e;font-weight:500">置顶</div>
+            <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;background:#e8f3ff;border-radius:0">
+              <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">全</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font-weight:500;font-size:13px">全员群</span>
+                  <span style="font-size:10px;color:#bbb">10:30</span>
+                </div>
+                <div style="color:#999;font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">张三: 下午开会讨论方案</div>
+              </div>
+              <div style="width:18px;height:18px;border-radius:50%;background:#f54a45;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+            </div>
+            <div style="padding:6px 16px;font-size:11px;color:#8f959e;font-weight:500;margin-top:4px">最近</div>
+            <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:8px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">张</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font-weight:500;font-size:13px">张三</span>
+                  <span style="font-size:10px;color:#bbb">09:15</span>
+                </div>
+                <div style="color:#999;font-size:11px;margin-top:2px">好的，我准备一下资料</div>
+              </div>
+            </div>
+            <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:8px;background:#ff9500;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">李</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font-weight:500;font-size:13px">李四</span>
+                  <span style="font-size:10px;color:#bbb">昨天</span>
+                </div>
+                <div style="color:#999;font-size:11px;margin-top:2px">文件收到了吗？</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Feishu chat window -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:#fff">
+          <div style="padding:12px 20px;border-bottom:1px solid #e5e6eb;display:flex;align-items:center;gap:10px">
+            <span style="font-weight:600;font-size:14px">全员群</span>
+            <span style="font-size:11px;color:#8f959e;background:#f2f3f5;padding:2px 8px;border-radius:10px">5人</span>
+            <div style="flex:1"></div>
+            <span style="color:#8f959e;cursor:pointer;font-size:16px">🔍</span>
+            <span style="color:#8f959e;cursor:pointer;font-size:16px">⋮</span>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:32px;height:32px;border-radius:6px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">张</div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
+                  <span style="font-weight:500;font-size:12px;color:#1f2329">张三</span>
+                  <span style="font-size:10px;color:#bbb">10:28</span>
+                </div>
+                <div style="background:#f2f3f5;padding:8px 12px;border-radius:4px 12px 12px 12px;font-size:13px;max-width:400px;line-height:1.5">大家好！新项目启动了吗？</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <div style="display:flex;flex-direction:column;align-items:flex-end">
+                <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
+                  <span style="font-size:10px;color:#bbb">10:30</span>
+                  <span style="font-weight:500;font-size:12px;color:#1f2329">我</span>
+                </div>
+                <div style="background:#d6e6ff;padding:8px 12px;border-radius:12px 4px 12px 12px;font-size:13px;max-width:400px;line-height:1.5">开始了，下午开会讨论方案</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:32px;height:32px;border-radius:6px;background:#ff9500;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">李</div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
+                  <span style="font-weight:500;font-size:12px;color:#1f2329">李四</span>
+                  <span style="font-size:10px;color:#bbb">10:32</span>
+                </div>
+                <div style="background:#f2f3f5;padding:8px 12px;border-radius:4px 12px 12px 12px;font-size:13px;max-width:400px;line-height:1.5">好的，我准备一下资料 📊</div>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #e5e6eb;padding:12px 20px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="color:#8f959e;cursor:pointer;font-size:14px">😊</span>
+              <span style="color:#8f959e;cursor:pointer;font-size:14px">📎</span>
+              <span style="color:#8f959e;cursor:pointer;font-size:14px">📷</span>
+              <span style="color:#8f959e;cursor:pointer;font-size:14px">@</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <textarea style="flex:1;border:1px solid #e5e6eb;border-radius:8px;padding:8px 12px;font-size:13px;resize:none;height:60px;outline:none;font-family:inherit" placeholder="输入消息..."></textarea>
+              <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:4px">
+                <div style="background:#3370ff;color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;text-align:center">发送</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

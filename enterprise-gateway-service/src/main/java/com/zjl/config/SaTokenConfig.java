@@ -48,9 +48,8 @@ public class SaTokenConfig {
                     // WebSocket: verify token from query param
                     if (path.startsWith("/ws/")) {
                         String token = exchange.getRequest().getQueryParams().getFirst("token");
-                        Object loginId = StpUtil.getLoginIdByToken(token);
-                        if (token == null || token.isBlank() || loginId == null) {
-                            throw new NotLoginException("WebSocket token 无效或已过期");
+                        if (token == null || token.isBlank() || StpUtil.getLoginIdByToken(token) == null) {
+                            StpUtil.checkLogin();
                         }
                         StpUtil.setTokenValue(token);
                         return;

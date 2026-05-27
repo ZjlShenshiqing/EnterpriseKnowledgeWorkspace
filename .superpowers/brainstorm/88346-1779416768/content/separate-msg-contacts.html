@@ -1,0 +1,107 @@
+<h2>消息与通讯录分开</h2>
+<p class="subtitle">左侧面板通过顶部 Tab 切换"消息"和"通讯录"，不再混在一起</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">消息 Tab（默认）</div>
+    <div class="mockup-body">
+      <div style="display:flex;flex-direction:column;height:480px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <!-- Tab bar -->
+        <div style="display:flex;border-bottom:1px solid #e5e6eb;flex-shrink:0">
+          <div style="flex:1;text-align:center;padding:12px;font-weight:600;font-size:13px;color:#3370ff;border-bottom:2px solid #3370ff;cursor:pointer">消息</div>
+          <div style="flex:1;text-align:center;padding:12px;font-weight:500;font-size:13px;color:#8f959e;cursor:pointer">通讯录</div>
+        </div>
+        <!-- Search -->
+        <div style="padding:10px 14px;flex-shrink:0">
+          <div style="background:#f2f3f5;border-radius:6px;padding:7px 12px;font-size:11px;color:#8f959e;display:flex;align-items:center;gap:6px">
+            <span>🔍</span> 搜索会话和消息
+          </div>
+        </div>
+        <!-- Pinned -->
+        <div style="padding:4px 14px;font-size:11px;color:#8f959e;font-weight:500;flex-shrink:0">置顶</div>
+        <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;background:#e8f3ff">
+          <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">全</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-weight:500;font-size:13px">全员群</span>
+              <span style="font-size:10px;color:#bbb">10:30</span>
+            </div>
+            <div style="color:#999;font-size:11px;margin-top:2px">张三: 下午开会讨论方案</div>
+          </div>
+          <div style="width:18px;height:18px;border-radius:50%;background:#f54a45;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center">3</div>
+        </div>
+        <!-- Recent -->
+        <div style="padding:8px 14px 4px;font-size:11px;color:#8f959e;font-weight:500;flex-shrink:0">最近</div>
+        <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">
+          <div style="width:36px;height:36px;border-radius:8px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">张</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-weight:500;font-size:13px">张三</span>
+              <span style="font-size:10px;color:#bbb">09:15</span>
+            </div>
+            <div style="color:#999;font-size:11px;margin-top:2px">好的</div>
+          </div>
+        </div>
+        <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">
+          <div style="width:36px;height:36px;border-radius:8px;background:#ff9500;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">李</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-weight:500;font-size:13px">李四</span>
+              <span style="font-size:10px;color:#bbb">昨天</span>
+            </div>
+            <div style="color:#999;font-size:11px;margin-top:2px">文件收到了吗？</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">通讯录 Tab</div>
+    <div class="mockup-body">
+      <div style="display:flex;flex-direction:column;height:480px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <!-- Tab bar -->
+        <div style="display:flex;border-bottom:1px solid #e5e6eb;flex-shrink:0">
+          <div style="flex:1;text-align:center;padding:12px;font-weight:500;font-size:13px;color:#8f959e;cursor:pointer">消息</div>
+          <div style="flex:1;text-align:center;padding:12px;font-weight:600;font-size:13px;color:#3370ff;border-bottom:2px solid #3370ff;cursor:pointer">通讯录</div>
+        </div>
+        <!-- Search -->
+        <div style="padding:10px 14px;flex-shrink:0">
+          <div style="background:#f2f3f5;border-radius:6px;padding:7px 12px;font-size:11px;color:#8f959e;display:flex;align-items:center;gap:6px">
+            <span>🔍</span> 搜索联系人
+          </div>
+        </div>
+        <!-- Org structure -->
+        <div style="flex:1;overflow-y:auto">
+          <div style="padding:8px 14px;font-size:11px;color:#8f959e;font-weight:500">常用联系人</div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">
+            <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">张</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500;font-size:13px">张三</div>
+              <div style="color:#999;font-size:11px;margin-top:1px">产品部 · 产品经理</div>
+            </div>
+            <div style="padding:4px 10px;border:1px solid #3370ff;color:#3370ff;border-radius:4px;font-size:11px;cursor:pointer">发消息</div>
+          </div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">
+            <div style="width:36px;height:36px;border-radius:8px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">王</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500;font-size:13px">王五</div>
+              <div style="color:#999;font-size:11px;margin-top:1px">技术部 · 工程师</div>
+            </div>
+            <div style="padding:4px 10px;border:1px solid #3370ff;color:#3370ff;border-radius:4px;font-size:11px;cursor:pointer">发消息</div>
+          </div>
+          <div style="padding:12px 14px 4px;font-size:11px;color:#8f959e;font-weight:500">组织架构</div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <span style="font-size:14px;color:#8f959e">▸</span> <span style="font-size:13px">产品部</span><span style="font-size:11px;color:#bbb">(8人)</span>
+          </div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <span style="font-size:14px;color:#8f959e">▸</span> <span style="font-size:13px">技术部</span><span style="font-size:11px;color:#bbb">(15人)</span>
+          </div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <span style="font-size:14px;color:#8f959e">▸</span> <span style="font-size:13px">设计部</span><span style="font-size:11px;color:#bbb">(5人)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

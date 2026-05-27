@@ -1,0 +1,208 @@
+[2026-05-25 11:12:25.142] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 11:12:25.159] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 10231 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 11:12:25.160] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 11:12:25.172] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 11:12:25.172] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 11:12:25.505] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 11:12:25.507] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 11:12:25.517] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 2 ms. Found 0 Redis repository interfaces.
+[2026-05-25 11:12:25.581] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 11:12:25.625] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 11:12:25.836] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 11:12:25.842] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 11:12:25.843] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 11:12:25.843] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 11:12:25.877] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 11:12:25.878] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 705 ms
+[2026-05-25 11:12:26.301] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 11:12:26.308] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 11:12:26.312] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 11:12:26.349] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 11:12:26.361] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 1.793 seconds (process running for 2.107)
+[2026-05-25 11:12:26.374] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 11:12:26.376] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 11:13:32.835] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 11:13:32.837] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 11:13:32.844] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 7 ms
+[2026-05-25 11:13:33.122] [WARN ] [78661e12-0749-4f78-a239-a86d1d1ffa35] [o.s.c.l.core.RoundRobinLoadBalancer:101] No servers available for service: localhost
+[2026-05-25 11:13:33.125] [WARN ] [78661e12-0749-4f78-a239-a86d1d1ffa35] [o.s.c.l.core.RoundRobinLoadBalancer:101] No servers available for service: localhost
+[2026-05-25 11:13:33.166] [WARN ] [78661e12-0749-4f78-a239-a86d1d1ffa35] [o.s.c.l.core.RoundRobinLoadBalancer:101] No servers available for service: localhost
+[2026-05-25 11:13:33.166] [WARN ] [78661e12-0749-4f78-a239-a86d1d1ffa35] [o.s.c.l.core.RoundRobinLoadBalancer:101] No servers available for service: localhost
+[2026-05-25 11:13:33.166] [WARN ] [78661e12-0749-4f78-a239-a86d1d1ffa35] [o.s.c.l.core.RoundRobinLoadBalancer:101] No servers available for service: localhost
+[2026-05-25 11:14:20.891] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:122] [Nacos Config] Receive Nacos config change: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 11:14:21.017] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:152] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 11:14:21.049] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:152] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 11:14:21.179] [INFO ] [] [o.s.c.e.event.RefreshEventListener:73] Refresh keys changed: [collab.service.url]
+[2026-05-25 11:14:33.782] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 11:14:33.797] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 10713 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 11:14:33.797] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 11:14:33.812] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 11:14:33.812] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 11:14:34.042] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 11:14:34.044] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 11:14:34.051] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 1 ms. Found 0 Redis repository interfaces.
+[2026-05-25 11:14:34.095] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 11:14:34.119] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 11:14:34.280] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 11:14:34.284] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 11:14:34.285] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 11:14:34.285] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 11:14:34.307] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 11:14:34.308] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 496 ms
+[2026-05-25 11:14:34.671] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 11:14:34.677] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 11:14:34.681] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 11:14:34.707] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 11:14:34.714] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 1.442 seconds (process running for 1.611)
+[2026-05-25 11:14:34.718] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 11:14:34.719] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 11:16:28.759] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 11:16:28.762] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 11:16:28.769] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 7 ms
+[2026-05-25 13:29:13.044] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 13:29:13.059] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 24429 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 13:29:13.060] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 13:29:13.073] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:29:13.073] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:29:13.314] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 13:29:13.315] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 13:29:13.323] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 1 ms. Found 0 Redis repository interfaces.
+[2026-05-25 13:29:13.367] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 13:29:13.391] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 13:29:13.561] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 13:29:13.566] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:29:13.567] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 13:29:13.567] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 13:29:13.593] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 13:29:13.593] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 519 ms
+[2026-05-25 13:29:13.955] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 13:29:13.961] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:29:13.965] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 13:29:14.007] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 13:29:14.013] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 1.577 seconds (process running for 1.776)
+[2026-05-25 13:29:14.018] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:29:14.019] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:29:44.879] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 13:29:44.880] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 13:29:44.881] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 1 ms
+[2026-05-25 13:29:45.043] [INFO ] [6fa40fa5-67f2-4a4a-ae3d-a1010891d00b] [c.z.w.web.WorkbenchController:37] 工作台概览查询: userId=1
+[2026-05-25 13:29:45.185] [INFO ] [6fa40fa5-67f2-4a4a-ae3d-a1010891d00b] [c.z.w.web.WorkbenchController:77] 工作台概览查询完成: userId=1, elapsed=142ms
+[2026-05-25 13:36:35.668] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 13:36:35.683] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 25744 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 13:36:35.684] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 13:36:35.698] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:36:35.698] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:36:35.928] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 13:36:35.929] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 13:36:35.937] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 1 ms. Found 0 Redis repository interfaces.
+[2026-05-25 13:36:35.982] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 13:36:36.008] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 13:36:36.163] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 13:36:36.168] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:36:36.168] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 13:36:36.169] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 13:36:36.189] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 13:36:36.190] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 491 ms
+[2026-05-25 13:36:36.599] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 13:36:36.606] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:36:36.611] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 13:36:36.651] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 13:36:36.659] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 1.512 seconds (process running for 1.666)
+[2026-05-25 13:36:36.665] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:36:36.665] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:38:03.957] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 13:38:03.958] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 13:38:03.959] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 1 ms
+[2026-05-25 13:38:04.146] [INFO ] [739ee500-89c8-4558-8418-2e3167418817] [c.z.w.web.WorkbenchController:37] 工作台概览查询: userId=6
+[2026-05-25 13:38:04.218] [INFO ] [739ee500-89c8-4558-8418-2e3167418817] [c.z.w.web.WorkbenchController:47] KB_URL: http://enterprise-knowledge-ai-service/api/kb/documents?current=1&size=5
+[2026-05-25 13:38:04.235] [INFO ] [739ee500-89c8-4558-8418-2e3167418817] [c.z.w.web.WorkbenchController:49] KB_RESP class=java.util.LinkedHashMap value={code=40100, message=未登录或登录已过期, data=null, traceId=05ed6bcc-c787-40ff-b3a7-6d7508126ddf}
+[2026-05-25 13:38:04.235] [INFO ] [739ee500-89c8-4558-8418-2e3167418817] [c.z.w.web.WorkbenchController:52] KB_DATA type=null value=null
+[2026-05-25 13:38:04.248] [INFO ] [739ee500-89c8-4558-8418-2e3167418817] [c.z.w.web.WorkbenchController:86] 工作台概览查询完成: userId=6, elapsed=102ms
+[2026-05-25 13:40:59.243] [INFO ] [b9f9a362-aeda-4d2b-9664-bc70ef0acbe5] [c.z.w.web.WorkbenchController:37] 工作台概览查询: userId=1
+[2026-05-25 13:40:59.329] [INFO ] [b9f9a362-aeda-4d2b-9664-bc70ef0acbe5] [c.z.w.web.WorkbenchController:47] KB_URL: http://enterprise-knowledge-ai-service/api/kb/documents?current=1&size=5
+[2026-05-25 13:40:59.340] [INFO ] [b9f9a362-aeda-4d2b-9664-bc70ef0acbe5] [c.z.w.web.WorkbenchController:49] KB_RESP class=java.util.LinkedHashMap value={code=40100, message=未登录或登录已过期, data=null, traceId=e258f757-7965-4dec-ae0b-2c817cea5bd5}
+[2026-05-25 13:40:59.340] [INFO ] [b9f9a362-aeda-4d2b-9664-bc70ef0acbe5] [c.z.w.web.WorkbenchController:52] KB_DATA type=null value=null
+[2026-05-25 13:40:59.358] [INFO ] [b9f9a362-aeda-4d2b-9664-bc70ef0acbe5] [c.z.w.web.WorkbenchController:86] 工作台概览查询完成: userId=1, elapsed=115ms
+[2026-05-25 13:43:49.716] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 13:43:49.730] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 26689 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 13:43:49.731] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 13:43:49.744] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:43:49.744] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:43:49.962] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 13:43:49.963] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 13:43:49.970] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 1 ms. Found 0 Redis repository interfaces.
+[2026-05-25 13:43:50.011] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 13:43:50.036] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 13:43:50.206] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 13:43:50.211] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:43:50.211] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 13:43:50.211] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 13:43:50.232] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 13:43:50.232] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 487 ms
+[2026-05-25 13:43:50.652] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 13:43:50.659] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:43:50.663] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 13:43:50.701] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 13:43:50.707] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 1.514 seconds (process running for 1.672)
+[2026-05-25 13:43:50.714] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:43:50.714] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:44:25.209] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 13:44:25.211] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 13:44:25.213] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 1 ms
+[2026-05-25 13:47:45.535] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 13:47:45.554] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 27291 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 13:47:45.555] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 13:47:45.573] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:47:45.574] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:47:45.878] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 13:47:45.879] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 13:47:45.889] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 2 ms. Found 0 Redis repository interfaces.
+[2026-05-25 13:47:45.946] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 13:47:45.972] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 13:47:46.134] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 13:47:46.139] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:47:46.139] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 13:47:46.139] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 13:47:46.161] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 13:47:46.161] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 587 ms
+[2026-05-25 13:47:46.571] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 13:47:46.582] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:47:46.590] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 13:47:46.630] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 13:47:46.637] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 2.142 seconds (process running for 2.323)
+[2026-05-25 13:47:46.644] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:47:46.644] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:48:24.980] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 13:48:24.981] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 13:48:24.982] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 1 ms
+[2026-05-25 13:48:25.170] [INFO ] [43714dbb-c8ef-4f8a-977b-daa257bf9ccd] [c.z.w.web.WorkbenchController:40] 工作台概览查询: userId=1
+[2026-05-25 13:48:25.410] [INFO ] [43714dbb-c8ef-4f8a-977b-daa257bf9ccd] [c.z.w.web.WorkbenchController:50] KB_URL: http://enterprise-knowledge-ai-service/api/kb/documents?current=1&size=5
+[2026-05-25 13:48:25.530] [INFO ] [43714dbb-c8ef-4f8a-977b-daa257bf9ccd] [c.z.w.web.WorkbenchController:52] KB_RESP class=java.util.LinkedHashMap value={code=200, message=success, data={current=1, size=5, total=3, records=[{id=2057771826384199681, title=111, categoryId=1001, kbId=null, ownerId=6, departmentId=1, fileName=Lecture  8 Pretraining.pdf, fileUrl=2057771826384199681/Lecture  8 Pretraining.pdf, fileType=application/pdf, fileSize=5258286, summary=Lecture 8 Pretraining  Jing Li, Associate Professor  Department of Computing  The Hong Kong Polytechnic University  Slides from Prof Christopher Manning  and Prof Dan Jurafsky (both at Stanford)  1   ..., contentText=null, tags=, permissionType=ALL, status=SUCCESS, currentVersion=1, chunkCount=null, enabled=null, processMode=null, chunkStrategy=null, chunkConfig=null, pipelineId=null, sourceType=null, sourceLocation=null, scheduleEnabled=null, scheduleCron=null, createdAt=2026-05-22T18:33:30, updatedAt=2026-05-24T12:00:16, deleted=0, metadata=null, filterTags=null}, {id=2058386214413647873, title=11, categoryId=1001, kbId=null, ownerId=6, departmentId=1, fileName=Lecture  8 Pretraining.pdf, fileUrl=2058386214413647873/Lecture  8 Pretraining.pdf, fileType=application/pdf, fileSize=5258286, summary=Embedding 调用失败: Embedding API error: {"error":{"message":"<400> InternalError.Algo.InvalidParameter: Value error, batch size is invalid, it should not be larger than 10.: input.contents","type":"InvalidParameter","param":null,"code":"InvalidParameter"},"id":"28ba66b5-48a9-9b9c-b9af-36b31fd19266","request_id":"28ba66b5-48a9-9b9c-b9af-36b31fd19266"}, contentText=null, tags=, permissionType=ALL, status=FAILED, currentVersion=1, chunkCount=null, enabled=null, processMode=null, chunkStrategy=null, chunkConfig=null, pipelineId=null, sourceType=null, sourceLocation=null, scheduleEnabled=null, scheduleCron=null, createdAt=2026-05-24T11:14:51, updatedAt=2026-05-24T11:23:02, deleted=0, metadata=null, filterTags=null}, {id=2058377111578537986, title=客服手册, categoryId=1001, kbId=null, ownerId=6, departmentId=1, fileName=Lecture 11 RAG.pdf, fileUrl=2058377111578537986/Lecture 11 RAG.pdf, fileType=application/pdf, fileSize=4679109, summary=Embedding 调用失败: Embedding API error: {"error":{"message":"<400> InternalError.Algo.InvalidParameter: Value error, batch size is invalid, it should not be larger than 10.: input.contents","type":"InvalidParameter","param":null,"code":"InvalidParameter"},"id":"6b6c1c5c-ca6b-95d0-9bea-89aacab3ddf6","request_id":"6b6c1c5c-ca6b-95d0-9bea-89aacab3ddf6"}, contentText=null, tags=, permissionType=ALL, status=FAILED, currentVersion=1, chunkCount=null, enabled=null, processMode=null, chunkStrategy=null, chunkConfig=null, pipelineId=null, sourceType=null, sourceLocation=null, scheduleEnabled=null, scheduleCron=null, createdAt=2026-05-24T10:38:41, updatedAt=2026-05-24T11:22:56, deleted=0, metadata=null, filterTags=null}]}, traceId=3bf58971-1341-467e-9cc0-2f2daae031c5}
+[2026-05-25 13:48:25.530] [INFO ] [43714dbb-c8ef-4f8a-977b-daa257bf9ccd] [c.z.w.web.WorkbenchController:55] KB_DATA type=java.util.LinkedHashMap value={current=1, size=5, total=3, records=[{id=2057771826384199681, title=111, categoryId=1001, kbId=null, ownerId=6, departmentId=1, fileName=Lecture  8 Pretraining.pdf, fileUrl=2057771826384199681/Lecture  8 Pretraining.pdf, fileType=application/pdf, fileSize=5258286, summary=Lecture 8 Pretraining  Jing Li, Associate Professor  Department of Computing  The Hong Kong Polytechnic University  Slides from Prof Christopher Manning  and Prof Dan Jurafsky (both at Stanford)  1   ..., contentText=null, tags=, permissionType=ALL, status=SUCCESS, currentVersion=1, chunkCount=null, enabled=null, processMode=null, chunkStrategy=null, chunkConfig=null, pipelineId=null, sourceType=null, sourceLocation=null, scheduleEnabled=null, scheduleCron=null, createdAt=2026-05-22T18:33:30, updatedAt=2026-05-24T12:00:16, deleted=0, metadata=null, filterTags=null}, {id=2058386214413647873, title=11, categoryId=1001, kbId=null, ownerId=6, departmentId=1, fileName=Lecture  8 Pretraining.pdf, fileUrl=2058386214413647873/Lecture  8 Pretraining.pdf, fileType=application/pdf, fileSize=5258286, summary=Embedding 调用失败: Embedding API error: {"error":{"message":"<400> InternalError.Algo.InvalidParameter: Value error, batch size is invalid, it should not be larger than 10.: input.contents","type":"InvalidParameter","param":null,"code":"InvalidParameter"},"id":"28ba66b5-48a9-9b9c-b9af-36b31fd19266","request_id":"28ba66b5-48a9-9b9c-b9af-36b31fd19266"}, contentText=null, tags=, permissionType=ALL, status=FAILED, currentVersion=1, chunkCount=null, enabled=null, processMode=null, chunkStrategy=null, chunkConfig=null, pipelineId=null, sourceType=null, sourceLocation=null, scheduleEnabled=null, scheduleCron=null, createdAt=2026-05-24T11:14:51, updatedAt=2026-05-24T11:23:02, deleted=0, metadata=null, filterTags=null}, {id=2058377111578537986, title=客服手册, categoryId=1001, kbId=null, ownerId=6, departmentId=1, fileName=Lecture 11 RAG.pdf, fileUrl=2058377111578537986/Lecture 11 RAG.pdf, fileType=application/pdf, fileSize=4679109, summary=Embedding 调用失败: Embedding API error: {"error":{"message":"<400> InternalError.Algo.InvalidParameter: Value error, batch size is invalid, it should not be larger than 10.: input.contents","type":"InvalidParameter","param":null,"code":"InvalidParameter"},"id":"6b6c1c5c-ca6b-95d0-9bea-89aacab3ddf6","request_id":"6b6c1c5c-ca6b-95d0-9bea-89aacab3ddf6"}, contentText=null, tags=, permissionType=ALL, status=FAILED, currentVersion=1, chunkCount=null, enabled=null, processMode=null, chunkStrategy=null, chunkConfig=null, pipelineId=null, sourceType=null, sourceLocation=null, scheduleEnabled=null, scheduleCron=null, createdAt=2026-05-24T10:38:41, updatedAt=2026-05-24T11:22:56, deleted=0, metadata=null, filterTags=null}]}
+[2026-05-25 13:48:25.548] [INFO ] [43714dbb-c8ef-4f8a-977b-daa257bf9ccd] [c.z.w.web.WorkbenchController:89] 工作台概览查询完成: userId=1, elapsed=378ms
+[2026-05-25 13:58:07.566] [INFO ] [] [o.h.validator.internal.util.Version:21] HV000001: Hibernate Validator 8.0.2.Final
+[2026-05-25 13:58:07.662] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:53] Starting WorkbenchApplication using Java 17.0.18 with PID 31636 (/Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service/target/classes started by zjl in /Users/zjl/projectByZhangjilin/EnterpriseKnowledgeWorkspace/enterprise-workbench-service)
+[2026-05-25 13:58:07.665] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:652] No active profile set, falling back to 1 default profile: "default"
+[2026-05-25 13:58:07.786] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=common-config.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:58:07.788] [INFO ] [] [c.a.c.n.c.NacosConfigDataLoader:252] [Nacos Config] Load config[dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP] success
+[2026-05-25 13:58:08.348] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:295] Multiple Spring Data modules found, entering strict repository configuration mode
+[2026-05-25 13:58:08.350] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:143] Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[2026-05-25 13:58:08.366] [INFO ] [] [o.s.d.r.c.RepositoryConfigurationDelegate:211] Finished Spring Data repository scanning in 4 ms. Found 0 Redis repository interfaces.
+[2026-05-25 13:58:08.495] [WARN ] [] [o.m.s.mapper.ClassPathMapperScanner:44] No MyBatis mapper was found in '[com.zjl.workbench]' package. Please check your configuration.
+[2026-05-25 13:58:08.568] [INFO ] [] [o.s.cloud.context.scope.GenericScope:282] BeanFactory id=32807642-5b28-34a7-bc8c-003f58cc486b
+[2026-05-25 13:58:08.995] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:111] Tomcat initialized with port 8084 (http)
+[2026-05-25 13:58:09.005] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Initializing ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:58:09.006] [INFO ] [] [o.a.catalina.core.StandardService:173] Starting service [Tomcat]
+[2026-05-25 13:58:09.007] [INFO ] [] [o.a.catalina.core.StandardEngine:173] Starting Servlet engine: [Apache Tomcat/10.1.39]
+[2026-05-25 13:58:09.051] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring embedded WebApplicationContext
+[2026-05-25 13:58:09.051] [INFO ] [] [o.s.b.w.s.c.ServletWebServerApplicationContext:301] Root WebApplicationContext: initialization completed in 1258 ms
+[2026-05-25 13:58:09.677] [WARN ] [] [o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger:94] Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+[2026-05-25 13:58:09.686] [INFO ] [] [o.a.coyote.http11.Http11NioProtocol:173] Starting ProtocolHandler ["http-nio-8084"]
+[2026-05-25 13:58:09.692] [INFO ] [] [o.s.b.w.e.tomcat.TomcatWebServer:243] Tomcat started on port 8084 (http) with context path '/'
+[2026-05-25 13:58:09.746] [INFO ] [] [c.a.c.n.r.NacosServiceRegistry:75] nacos registry, DEFAULT_GROUP enterprise-workbench-service 192.168.3.98:8084 register finished
+[2026-05-25 13:58:09.755] [INFO ] [] [c.zjl.workbench.WorkbenchApplication:59] Started WorkbenchApplication in 4.819 seconds (process running for 5.423)
+[2026-05-25 13:58:09.767] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=enterprise-workbench-service.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:58:09.768] [INFO ] [] [c.a.c.n.r.NacosContextRefresher:145] [Nacos Config] Listening config: dataId=common-config.yaml, group=DEFAULT_GROUP
+[2026-05-25 13:58:40.490] [INFO ] [] [o.a.c.c.C.[Tomcat].[localhost].[/]:173] Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2026-05-25 13:58:40.491] [INFO ] [] [o.s.web.servlet.DispatcherServlet:532] Initializing Servlet 'dispatcherServlet'
+[2026-05-25 13:58:40.493] [INFO ] [] [o.s.web.servlet.DispatcherServlet:554] Completed initialization in 2 ms

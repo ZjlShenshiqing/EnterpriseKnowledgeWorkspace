@@ -1,0 +1,115 @@
+<h2>通讯录 → 即时通讯 的跳转流程</h2>
+<p class="subtitle">通讯录浏览用户，点击发消息后跳转到即时通讯并自动打开对应会话</p>
+
+<div style="display:flex;gap:20px;align-items:flex-start">
+  <!-- Step 1: Contacts -->
+  <div class="mockup" style="flex:1">
+    <div class="mockup-header">① 通讯录页面 — 浏览并选择联系人</div>
+    <div class="mockup-body">
+      <div style="display:flex;flex-direction:column;height:420px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <div style="padding:12px 16px;border-bottom:1px solid #e5e6eb;font-weight:600;font-size:14px">通讯录</div>
+        <div style="padding:10px 14px">
+          <div style="background:#f2f3f5;border-radius:6px;padding:7px 12px;font-size:11px;color:#8f959e">🔍 搜索联系人</div>
+        </div>
+        <div style="flex:1;overflow-y:auto">
+          <div style="padding:8px 14px;font-size:11px;color:#8f959e;font-weight:500">常用联系人</div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-left:3px solid transparent">
+            <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">张</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500;font-size:13px">张三</div>
+              <div style="color:#999;font-size:11px">产品部 · 产品经理</div>
+            </div>
+            <div style="padding:4px 10px;background:#3370ff;color:#fff;border-radius:4px;font-size:11px;cursor:pointer;font-weight:500">发消息</div>
+          </div>
+          <div style="padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-left:3px solid transparent">
+            <div style="width:36px;height:36px;border-radius:8px;background:#34c759;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">李</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500;font-size:13px">李四</div>
+              <div style="color:#999;font-size:11px">技术部 · 工程师</div>
+            </div>
+            <div style="padding:4px 10px;background:#3370ff;color:#fff;border-radius:4px;font-size:11px;cursor:pointer;font-weight:500">发消息</div>
+          </div>
+          <div style="padding:12px 14px 4px;font-size:11px;color:#8f959e;font-weight:500">组织架构</div>
+          <div style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px">
+            <span style="color:#8f959e;font-size:12px">▸</span> <span style="font-size:13px">产品部</span> <span style="font-size:11px;color:#bbb">8人</span>
+          </div>
+          <div style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px">
+            <span style="color:#8f959e;font-size:12px">▸</span> <span style="font-size:13px">技术部</span> <span style="font-size:11px;color:#bbb">15人</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrow -->
+  <div style="display:flex;align-items:center;padding-top:180px;flex-shrink:0">
+    <div style="font-size:28px;color:#3370ff">→</div>
+  </div>
+
+  <!-- Step 2: Chats -->
+  <div class="mockup" style="flex:1">
+    <div class="mockup-header">② 即时通讯页面 — 自动打开张三的会话</div>
+    <div class="mockup-body">
+      <div style="display:flex;height:420px;background:#fff;border-radius:8px;overflow:hidden;font-size:12px">
+        <!-- Conv list -->
+        <div style="width:250px;border-right:1px solid #e5e6eb;display:flex;flex-direction:column;flex-shrink:0">
+          <div style="padding:12px 16px;border-bottom:1px solid #e5e6eb">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+              <span style="font-weight:600;font-size:14px;flex:1">消息</span>
+              <span style="color:#3370ff;font-size:20px;cursor:pointer">+</span>
+            </div>
+            <div style="background:#f2f3f5;border-radius:6px;padding:7px 12px;font-size:11px;color:#8f959e">🔍 搜索</div>
+          </div>
+          <div style="flex:1;overflow-y:auto">
+            <div style="padding:8px 16px;font-size:11px;color:#8f959e;font-weight:500">置顶</div>
+            <div style="padding:9px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:0">
+              <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">全</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between"><span style="font-weight:500;font-size:13px">全员群</span><span style="font-size:10px;color:#bbb">10:30</span></div>
+                <div style="color:#999;font-size:11px">张三: 下午开会</div>
+              </div>
+              <div style="width:18px;height:18px;border-radius:50%;background:#f54a45;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center">3</div>
+            </div>
+            <div style="padding:8px 16px;font-size:11px;color:#8f959e;font-weight:500">最近</div>
+            <div style="padding:9px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;background:#e8f3ff">
+              <div style="width:36px;height:36px;border-radius:8px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">张</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between"><span style="font-weight:600;font-size:13px">张三</span><span style="font-size:10px;color:#bbb">09:15</span></div>
+                <div style="color:#999;font-size:11px">好的，我准备一下</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Chat window → highlighted, auto-opened for 张三 -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <div style="padding:12px 20px;border-bottom:1px solid #e5e6eb;display:flex;align-items:center;gap:8px">
+            <div style="width:30px;height:30px;border-radius:6px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px">张</div>
+            <span style="font-weight:600;font-size:14px">张三</span>
+            <span style="font-size:10px;color:#34c759;margin-left:4px">● 在线</span>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:32px;height:32px;border-radius:6px;background:#3370ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">张</div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px"><span style="font-weight:500;font-size:12px">张三</span><span style="font-size:10px;color:#bbb">09:14</span></div>
+                <div style="background:#f2f3f5;padding:8px 12px;border-radius:4px 12px 12px 12px;font-size:13px;max-width:360px">在吗？新项目需要你的方案</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <div style="display:flex;flex-direction:column;align-items:flex-end">
+                <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px"><span style="font-size:10px;color:#bbb">09:15</span><span style="font-weight:500;font-size:12px">我</span></div>
+                <div style="background:#d6e6ff;padding:8px 12px;border-radius:12px 4px 12px 12px;font-size:13px;max-width:360px">好的，我准备一下资料发你</div>
+              </div>
+            </div>
+            <!-- Hint: just navigated here -->
+            <div style="text-align:center;padding:8px;font-size:10px;color:#3370ff;background:#e8f3ff;border-radius:8px;margin:4px 0">↑ 从通讯录跳转而来，自动打开张三的会话</div>
+          </div>
+          <div style="border-top:1px solid #e5e6eb;padding:10px 20px;display:flex;gap:8px">
+            <div style="flex:1;background:#f2f3f5;border-radius:8px;padding:8px 12px;font-size:12px;color:#bbb">输入消息... (Enter 发送)</div>
+            <div style="background:#3370ff;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;cursor:pointer">发送</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

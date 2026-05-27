@@ -1,0 +1,77 @@
+<h2>仪表盘角色区分 — 设计总览</h2>
+<p class="subtitle">普通用户 vs 管理员，两套独立布局</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">👤 普通用户</div>
+    <div class="mockup-body">
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+        <div style="background:linear-gradient(135deg,#0d9488,#0f766e);border-radius:10px;padding:14px;color:#fff;"><div style="font-size:10px;opacity:0.8;">我的待办</div><div style="font-size:22px;font-weight:700;">5</div></div>
+        <div style="background:linear-gradient(135deg,#14b8a6,#06b6d4);border-radius:10px;padding:14px;color:#fff;"><div style="font-size:10px;opacity:0.8;">今日会议</div><div style="font-size:22px;font-weight:700;">3</div></div>
+        <div style="background:linear-gradient(135deg,#f97316,#ef4444);border-radius:10px;padding:14px;color:#fff;"><div style="font-size:10px;opacity:0.8;">待审批</div><div style="font-size:22px;font-weight:700;">2</div></div>
+        <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:10px;padding:14px;color:#fff;"><div style="font-size:10px;opacity:0.8;">未读消息</div><div style="font-size:22px;font-weight:700;">12</div></div>
+      </div>
+      <!-- Quick Actions -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;color:#9ca3af;font-weight:600;margin-bottom:8px;">快捷操作</div>
+        <div style="display:flex;gap:8px;">
+          <span class="mock-button" style="font-size:11px;">新建文档</span>
+          <span class="mock-button" style="font-size:11px;">新建会议</span>
+          <span class="mock-button" style="font-size:11px;">添加待办</span>
+        </div>
+      </div>
+      <!-- Recent Docs -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;color:#9ca3af;font-weight:600;margin-bottom:6px;">最近文档（协同）</div>
+        <div class="placeholder" style="height:60px;font-size:11px;">协作文档列表...</div>
+      </div>
+      <!-- Todos & Meetings -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="placeholder" style="height:80px;font-size:11px;">待办事项</div>
+        <div class="placeholder" style="height:80px;font-size:11px;">今日会议</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">🛠️ 管理员</div>
+    <div class="mockup-body">
+      <!-- Big knowledge cards -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+        <div style="background:linear-gradient(135deg,#1e40af,#3b82f6);border-radius:10px;padding:18px;color:#fff;">
+          <div style="font-size:10px;opacity:0.8;">知识库 · 文档</div><div style="font-size:28px;font-weight:700;">128</div><div style="font-size:10px;opacity:0.7;">6 个知识库</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#047857,#10b981);border-radius:10px;padding:18px;color:#fff;">
+          <div style="font-size:10px;opacity:0.8;">意图配置</div><div style="font-size:28px;font-weight:700;">24</div><div style="font-size:10px;opacity:0.7;">4 个领域</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:10px;padding:18px;color:#fff;">
+          <div style="font-size:10px;opacity:0.8;">今日智能会话</div><div style="font-size:28px;font-weight:700;">89</div><div style="font-size:10px;opacity:0.7;">较昨日 +12%</div>
+        </div>
+      </div>
+      <!-- Small collaborative cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center;"><div style="font-size:10px;color:#6b7280;">我的待办</div><div style="font-size:18px;font-weight:700;color:#0d9488;">5</div></div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center;"><div style="font-size:10px;color:#6b7280;">今日会议</div><div style="font-size:18px;font-weight:700;color:#0d9488;">3</div></div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center;"><div style="font-size:10px;color:#6b7280;">待审批</div><div style="font-size:18px;font-weight:700;color:#0d9488;">2</div></div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center;"><div style="font-size:10px;color:#6b7280;">未读消息</div><div style="font-size:18px;font-weight:700;color:#0d9488;">12</div></div>
+      </div>
+      <!-- Quick Actions -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;color:#9ca3af;font-weight:600;margin-bottom:8px;">快捷操作</div>
+        <div style="display:flex;gap:8px;">
+          <span class="mock-button" style="font-size:11px;">新建文档</span>
+          <span class="mock-button" style="font-size:11px;">新建会议</span>
+          <span class="mock-button" style="font-size:11px;">添加待办</span>
+          <span class="mock-button" style="font-size:11px;background:#047857;color:#fff;">意图配置</span>
+        </div>
+      </div>
+      <!-- Recent Docs & rest -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="placeholder" style="height:80px;font-size:11px;">最近文档（全部）</div>
+        <div class="placeholder" style="height:80px;font-size:11px;">待办事项</div>
+        <div class="placeholder" style="height:80px;font-size:11px;">今日会议</div>
+      </div>
+    </div>
+  </div>
+</div>

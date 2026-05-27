@@ -3,6 +3,9 @@ package com.zjl.web;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.response.Results;
 import com.zjl.common.trace.TraceIdHolder;
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotRoleException;
+import com.zjl.common.enums.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
@@ -43,6 +46,34 @@ public class GatewayExceptionHandler {
                 .orElse("参数校验失败");
         log.warn("网关参数校验失败: error={}", msg);
         return Mono.just(Results.failure(40000, msg, traceId()));
+    }
+
+    /**
+     * Sa-Token 未登录异常
+     */
+    @ExceptionHandler(NotLoginException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<com.zjl.common.response.Result<Void>> handleNotLogin(NotLoginException ex) {
+        log.warn("网关认证失败: {}", ex.getMessage());
+        return Mono.just(Results.failure(
+                ErrorCode.UNAUTHORIZED.getCode(),
+                ErrorCode.UNAUTHORIZED.getMessage(),
+                traceId()
+        ));
+    }
+
+    /**
+     * Sa-Token 无角色权限异常
+     */
+    @ExceptionHandler(NotRoleException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<com.zjl.common.response.Result<Void>> handleNotRole(NotRoleException ex) {
+        log.warn("网关权限不足: {}", ex.getMessage());
+        return Mono.just(Results.failure(
+                ErrorCode.FORBIDDEN.getCode(),
+                ErrorCode.FORBIDDEN.getMessage(),
+                traceId()
+        ));
     }
 
     private static String traceId() {
