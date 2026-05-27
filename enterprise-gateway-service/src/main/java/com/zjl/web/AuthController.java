@@ -104,11 +104,11 @@ public class AuthController {
         SysUser user = userRepository.findByUsername(req.username()).orElse(null);
         if (user == null || !user.isEnabled()) {
             log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
-            return Mono.just(Results.failure(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
+            throw new BizException(ErrorCode.UNAUTHORIZED, "用户名或密码错误");
         }
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
             log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
-            return Mono.just(Results.failure(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
+            throw new BizException(ErrorCode.UNAUTHORIZED, "用户名或密码错误");
         }
         StpUtil.login(user.getId());
         ProfileResponse profile = toProfile(user);
