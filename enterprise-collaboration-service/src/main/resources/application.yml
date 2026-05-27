@@ -29,10 +29,6 @@ mybatis-plus:
 flyway:
   enabled: false
 
-auth:
-  jwt:
-    expiration: 86400000
-
 rocketmq:
   name-server: localhost:9876
   producer:
@@ -41,6 +37,8 @@ rocketmq:
     retry-times-when-send-failed: 1
 
 app:
+  gateway:
+    url: ${GATEWAY_SERVICE_URL:http://localhost:8086}
   workbench:
     service-url: ${WORKBENCH_SERVICE_URL:http://localhost:8084}
   im:

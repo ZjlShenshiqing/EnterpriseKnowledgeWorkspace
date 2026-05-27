@@ -1,8 +1,12 @@
 package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.zjl.collaboration.entity.*;
-import com.zjl.collaboration.mapper.*;
+import com.zjl.collaboration.entity.SysTask;
+import com.zjl.collaboration.entity.SysTaskComment;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
+import com.zjl.collaboration.mapper.SysTaskMapper;
+import com.zjl.collaboration.mapper.SysTaskCommentMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
@@ -22,7 +26,7 @@ public class TaskController {
 
     private final SysTaskMapper taskMapper;
     private final SysTaskCommentMapper commentMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
 
     @GetMapping
     public Result<List<Map<String,Object>>> list(@RequestParam(required=false) String status) {
@@ -35,7 +39,7 @@ public class TaskController {
             m.put("id",t.getId()); m.put("title",t.getTitle()); m.put("description",t.getDescription());
             m.put("priority",t.getPriority()); m.put("status",t.getStatus()); m.put("due_date",t.getDueDate());
             m.put("created_at",t.getCreatedAt());
-            if (t.getAssigneeId() != null) { SysUser u = userMapper.selectById(t.getAssigneeId()); m.put("assignee_name", u!=null?u.getRealName():null); }
+            if (t.getAssigneeId() != null) { UserInfo u = gatewayUserClient.getById(t.getAssigneeId()); m.put("assignee_name", u!=null?u.realName():null); }
             else m.put("assignee_name", null);
             result.add(m);
         }
@@ -83,9 +87,9 @@ public class TaskController {
 
     @PostMapping("/{taskId}/comments")
     public Result<Void> addComment(@PathVariable Long taskId, @RequestBody Map<String,String> body, @RequestHeader("X-User-Id") Long userId) {
-        SysUser user = userMapper.selectById(userId);
+        UserInfo user = gatewayUserClient.getById(userId);
         SysTaskComment c = new SysTaskComment(); c.setTaskId(taskId); c.setUserId(userId);
-        c.setUserName(user!=null?user.getRealName():null); c.setContent(body.get("content")); c.setCreatedAt(LocalDateTime.now());
+        c.setUserName(user!=null?user.realName():null); c.setContent(body.get("content")); c.setCreatedAt(LocalDateTime.now());
         commentMapper.insert(c);
         return Results.success();
     }

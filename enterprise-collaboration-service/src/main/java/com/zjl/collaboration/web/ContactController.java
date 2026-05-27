@@ -1,15 +1,11 @@
 package com.zjl.collaboration.web;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.zjl.collaboration.entity.SysDept;
-import com.zjl.collaboration.entity.SysUser;
-import com.zjl.collaboration.mapper.SysDeptMapper;
-import com.zjl.collaboration.mapper.SysUserMapper;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -20,24 +16,35 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ContactController {
 
-    private final SysUserMapper sysUserMapper;
-    private final SysDeptMapper sysDeptMapper;
+    private final GatewayUserClient gatewayUserClient;
 
     @GetMapping("/departments")
-    public Result<List<SysDept>> listDepartments() {
-        return Results.success(sysDeptMapper.selectList(
-            Wrappers.lambdaQuery(SysDept.class).orderByAsc(SysDept::getId)));
+    public Result<List<Map<String, Object>>> listDepartments() {
+        return Results.success(Collections.emptyList());
     }
 
     @GetMapping("/users")
-    @Cacheable(value = "contacts_users", key = "#deptId != null ? #deptId : 'all'", unless = "#result.data.isEmpty()")
-    public Result<List<Map<String,Object>>> listUsers(@RequestParam(required=false) Long deptId) {
-        var q = Wrappers.lambdaQuery(SysUser.class).eq(SysUser::getEnabled, 1);
-        if (deptId != null) q.eq(SysUser::getDeptId, deptId);
-        return Results.success(sysUserMapper.selectList(q).stream().map(u -> {
-            Map<String,Object> m = new LinkedHashMap<>();
-            m.put("id", u.getId()); m.put("username", u.getUsername()); m.put("realName", u.getRealName());
-            m.put("deptId", u.getDeptId()); m.put("isAdmin", u.getIsAdmin()); return m;
-        }).toList());
+    public Result<List<Map<String, Object>>> listUsers(
+            @RequestParam(required = false) Long deptId,
+            @RequestParam(required = false, defaultValue = "") String keyword,
+            @RequestParam(required = false, defaultValue = "200") int limit) {
+        List<UserInfo> users;
+        if (keyword != null && !keyword.isBlank()) {
+            users = gatewayUserClient.search(keyword, limit);
+        } else {
+            users = gatewayUserClient.search("", limit);
+        }
+        List<Map<String, Object>> result = users.stream()
+                .filter(u -> deptId == null || deptId.equals(u.deptId()))
+                .map(u -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", u.userId());
+                    m.put("username", u.username());
+                    m.put("realName", u.realName());
+                    m.put("deptId", u.deptId());
+                    return m;
+                })
+                .toList();
+        return Results.success(result);
     }
 }

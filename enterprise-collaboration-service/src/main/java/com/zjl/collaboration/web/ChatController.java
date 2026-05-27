@@ -2,8 +2,14 @@ package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.zjl.collaboration.entity.*;
-import com.zjl.collaboration.mapper.*;
+import com.zjl.collaboration.entity.ImConversation;
+import com.zjl.collaboration.entity.ImConversationMember;
+import com.zjl.collaboration.entity.ImMessage;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
+import com.zjl.collaboration.mapper.ImConversationMapper;
+import com.zjl.collaboration.mapper.ImConversationMemberMapper;
+import com.zjl.collaboration.mapper.ImMessageMapper;
 import com.zjl.collaboration.service.ImFileService;
 import com.zjl.collaboration.service.ImReadService;
 import com.zjl.common.response.Result;
@@ -28,7 +34,7 @@ public class ChatController {
     private final ImConversationMapper convMapper;
     private final ImConversationMemberMapper memberMapper;
     private final ImMessageMapper msgMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
     private final ImReadService readService;
     private final ImFileService fileService;
 
@@ -158,23 +164,21 @@ public class ChatController {
                         Wrappers.lambdaQuery(ImConversationMember.class)
                                 .eq(ImConversationMember::getConversationId, convId))
                 .stream().map(ImConversationMember::getUserId).toList();
-        List<SysUser> users = userIds.isEmpty() ? List.of()
-                : userMapper.selectBatchIds(userIds);
-        Map<Long, SysUser> userMap = users.stream()
-                .collect(Collectors.toMap(SysUser::getId, u -> u, (a, b) -> a));
+        Map<Long, UserInfo> userMap = userIds.isEmpty() ? Collections.emptyMap()
+                : gatewayUserClient.batchQuery(userIds);
         return Results.success(userIds.stream().map(uid -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", uid);
-            SysUser u = userMap.get(uid);
+            UserInfo u = userMap.get(uid);
             if (u != null) {
-                m.put("username", u.getUsername());
-                m.put("realName", u.getRealName());
+                m.put("username", u.username());
+                m.put("realName", u.realName());
             } else {
                 m.put("username", "user" + uid);
                 m.put("realName", "用户" + uid);
             }
             return m;
-        }).collect(Collectors.toList()));
+        }).toList());
     }
 
     @Data

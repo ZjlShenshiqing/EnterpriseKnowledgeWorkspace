@@ -1,8 +1,12 @@
 package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.zjl.collaboration.entity.*;
-import com.zjl.collaboration.mapper.*;
+import com.zjl.collaboration.entity.SysApprovalRequest;
+import com.zjl.collaboration.entity.SysApprovalRecord;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
+import com.zjl.collaboration.mapper.SysApprovalRequestMapper;
+import com.zjl.collaboration.mapper.SysApprovalRecordMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
@@ -21,7 +25,7 @@ public class ApprovalController {
 
     private final SysApprovalRequestMapper requestMapper;
     private final SysApprovalRecordMapper recordMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
 
     @GetMapping
     public Result<List<SysApprovalRequest>> list(@RequestHeader("X-User-Id") Long userId, @RequestHeader("X-Is-Admin") String isAdmin) {
@@ -31,10 +35,10 @@ public class ApprovalController {
 
     @PostMapping
     public Result<Long> create(@RequestBody Map<String,Object> body, @RequestHeader("X-User-Id") Long userId) {
-        SysUser user = userMapper.selectById(userId);
+        UserInfo user = gatewayUserClient.getById(userId);
         SysApprovalRequest r = new SysApprovalRequest();
         r.setType(body.get("type").toString()); r.setUserId(userId);
-        r.setUserName(user != null ? user.getRealName() : null); r.setTitle(body.get("title").toString());
+        r.setUserName(user != null ? user.realName() : null); r.setTitle(body.get("title").toString());
         r.setFormData(body.get("formData") != null ? body.get("formData").toString() : "{}");
         r.setStatus("pending"); r.setCreatedAt(LocalDateTime.now());
         requestMapper.insert(r);
@@ -53,9 +57,9 @@ public class ApprovalController {
 
     @PostMapping("/{id}/approve")
     public Result<Void> approve(@PathVariable Long id, @RequestBody Map<String,String> body, @RequestHeader("X-User-Id") Long userId) {
-        SysUser user = userMapper.selectById(userId);
+        UserInfo user = gatewayUserClient.getById(userId);
         SysApprovalRecord rec = new SysApprovalRecord(); rec.setRequestId(id); rec.setApproverId(userId);
-        rec.setApproverName(user != null ? user.getRealName() : null); rec.setAction(body.get("action"));
+        rec.setApproverName(user != null ? user.realName() : null); rec.setAction(body.get("action"));
         rec.setComment(body.get("comment")); rec.setCreatedAt(LocalDateTime.now());
         recordMapper.insert(rec);
 

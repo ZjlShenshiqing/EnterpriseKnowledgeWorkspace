@@ -362,7 +362,7 @@ function connectWs() {
   try {
     const token = localStorage.getItem('token')||''
     const host = window.location.hostname || 'localhost'
-    ws = new WebSocket(`ws://${host}:8090/ws/chat?token=${encodeURIComponent(token)}`)
+    ws = new WebSocket(`ws://${host}:8086/ws/chat?token=${encodeURIComponent(token)}`)
     ws.onmessage = (e) => {
       try {
         const d = JSON.parse(e.data)

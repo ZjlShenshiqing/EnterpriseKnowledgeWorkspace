@@ -1,14 +1,10 @@
 package com.zjl.collaboration.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zjl.collaboration.entity.SysUser;
-import com.zjl.collaboration.mapper.SysUserMapper;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.collaboration.service.ImMessageConsumer;
 import com.zjl.collaboration.service.ImMessageService;
-import com.zjl.collaboration.util.JwtClaimsSupport;
-import com.zjl.collaboration.util.JwtUtil;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
@@ -20,26 +16,23 @@ import java.util.Map;
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
-    private static final CloseStatus TOKEN_EXPIRED = new CloseStatus(4001, "Token已过期");
-    private static final CloseStatus TOKEN_INVALID = new CloseStatus(4002, "Token无效");
+    private static final CloseStatus AUTH_FAILED = new CloseStatus(4002, "用户未认证");
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final JwtUtil jwtUtil;
     private final ImMessageService imMessageService;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
 
-    public ChatWebSocketHandler(JwtUtil jwtUtil, ImMessageService imMessageService,
-                                 SysUserMapper userMapper) {
-        this.jwtUtil = jwtUtil;
+    public ChatWebSocketHandler(ImMessageService imMessageService,
+                                 GatewayUserClient gatewayUserClient) {
         this.imMessageService = imMessageService;
-        this.userMapper = userMapper;
+        this.gatewayUserClient = gatewayUserClient;
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Long userId = getUserId(session);
         if (userId == null) {
-            session.close(TOKEN_INVALID);
+            session.close(AUTH_FAILED);
             return;
         }
         log.info("Chat WS连接: userId={}", userId);
@@ -56,8 +49,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String content = msg.get("content") != null ? msg.get("content").toString() : "";
         String clientMsgId = msg.get("clientMsgId") != null ? msg.get("clientMsgId").toString() : "";
 
-        SysUser sender = userMapper.selectById(senderId);
-        String senderName = sender != null ? sender.getRealName() : null;
+        UserInfo sender = gatewayUserClient.getById(senderId);
+        String senderName = sender != null ? sender.realName() : null;
 
         Map<String, Object> ack = imMessageService.send(senderId, senderName, convId, content, clientMsgId);
         String ackJson = mapper.writeValueAsString(ack);
@@ -85,14 +78,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private Long getUserId(WebSocketSession session) {
-        String query = session.getUri().getQuery();
-        if (query != null && query.startsWith("token=")) {
-            try {
-                Claims c = jwtUtil.parse(query.substring(6));
-                return JwtClaimsSupport.resolveUserId(c);
-            } catch (ExpiredJwtException e) {
-                try { session.close(TOKEN_EXPIRED); } catch (Exception ignored) {}
-            } catch (Exception ignored) {}
+        String userIdHeader = session.getHandshakeHeaders().getFirst("X-User-Id");
+        if (userIdHeader != null && !userIdHeader.isBlank()) {
+            return Long.parseLong(userIdHeader);
         }
         return null;
     }

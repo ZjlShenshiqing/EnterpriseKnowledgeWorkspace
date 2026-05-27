@@ -2,8 +2,9 @@ package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zjl.collaboration.entity.SysDocComment;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.collaboration.mapper.SysDocCommentMapper;
-import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class DocCommentController {
 
     private final SysDocCommentMapper commentMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
 
     @GetMapping("/{docId}/comments")
     public Result<List<Map<String, Object>>> list(@PathVariable Long docId) {
@@ -55,9 +55,9 @@ public class DocCommentController {
         }
 
         if (!userIds.isEmpty()) {
-            var users = userMapper.selectBatchIds(userIds);
-            Map<Long, String> nameMap = users.stream()
-                    .collect(Collectors.toMap(u -> u.getId(), u -> u.getRealName(), (a, b) -> a));
+            var users = gatewayUserClient.batchQuery(new ArrayList<>(userIds));
+            Map<Long, String> nameMap = new HashMap<>();
+            users.forEach((id, u) -> nameMap.put(id, u.realName()));
             for (Map<String, Object> m : result) {
                 m.put("userName", nameMap.getOrDefault(m.get("userId"), ""));
                 @SuppressWarnings("unchecked")

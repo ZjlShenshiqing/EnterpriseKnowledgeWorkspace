@@ -1,8 +1,14 @@
 package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.zjl.collaboration.entity.*;
-import com.zjl.collaboration.mapper.*;
+import com.zjl.collaboration.entity.SysDoc;
+import com.zjl.collaboration.entity.SysDocCollaborator;
+import com.zjl.collaboration.entity.SysDocShareLink;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
+import com.zjl.collaboration.mapper.SysDocCollaboratorMapper;
+import com.zjl.collaboration.mapper.SysDocMapper;
+import com.zjl.collaboration.mapper.SysDocShareLinkMapper;
 import com.zjl.collaboration.service.DocOTService;
 import com.zjl.collaboration.service.DocPermissionService;
 import com.zjl.collaboration.service.DocPresenceService;
@@ -17,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -28,7 +33,7 @@ public class DocShareController {
     private final SysDocShareLinkMapper shareLinkMapper;
     private final SysDocCollaboratorMapper collaboratorMapper;
     private final SysDocMapper docMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
     private final DocPermissionService permissionService;
     private final DocOTService docOTService;
     private final DocPresenceService presenceService;
@@ -57,9 +62,9 @@ public class DocShareController {
         }
 
         if (!userIds.isEmpty()) {
-            var users = userMapper.selectBatchIds(userIds);
-            Map<Long, String> nameMap = users.stream()
-                    .collect(Collectors.toMap(u -> u.getId(), u -> u.getRealName(), (a, b) -> a));
+            var users = gatewayUserClient.batchQuery(new ArrayList<>(userIds));
+            Map<Long, String> nameMap = new HashMap<>();
+            users.forEach((id, u) -> nameMap.put(id, u.realName()));
             for (Map<String, Object> m : result) {
                 if ("USER".equals(m.get("targetType"))) {
                     m.put("targetName", nameMap.getOrDefault(m.get("targetId"), ""));

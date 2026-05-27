@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Pageable;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -58,4 +60,10 @@ public interface SysUserRepository extends JpaRepository<SysUser, Long> {
             ORDER BY u.id ASC
             """)
     java.util.List<SysUser> findDirectoryUsers(@Param("deptId") Long deptId);
+
+    /**
+     * 按用户名或姓名模糊搜索用户。
+     */
+    @Query("SELECT DISTINCT u FROM SysUser u LEFT JOIN FETCH u.dept WHERE u.enabled = true AND (u.username LIKE ?1 OR u.realName LIKE ?2)")
+    List<SysUser> findByUsernameLikeOrRealNameLike(String usernamePattern, String realNamePattern, Pageable pageable);
 }

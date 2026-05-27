@@ -14,7 +14,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,6 +107,38 @@ public class UserService {
             u.getDept().getName();
         }
         return u;
+    }
+
+    /**
+     * 批量查询用户简要信息。
+     *
+     * @param userIds 用户 ID 列表
+     * @return userId → UserInfoDTO
+     */
+    public Map<Long, UserInfoDTO> batchGetUsers(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<SysUser> users = userRepository.findAllById(userIds);
+        return users.stream()
+                .collect(Collectors.toMap(SysUser::getId, UserInfoDTO::from, (a, b) -> a));
+    }
+
+    /**
+     * 按关键词搜索用户（用户名或姓名，模糊匹配）。
+     *
+     * @param keyword 搜索关键词
+     * @param limit   最大返回数
+     * @return 用户简要信息列表
+     */
+    public List<UserInfoDTO> searchUsers(String keyword, int limit) {
+        if (!StringUtils.hasText(keyword)) {
+            return Collections.emptyList();
+        }
+        String pattern = "%" + keyword.trim() + "%";
+        org.springframework.data.domain.Pageable pageable = PageRequest.of(0, Math.min(limit, 100));
+        List<SysUser> users = userRepository.findByUsernameLikeOrRealNameLike(pattern, pattern, pageable);
+        return users.stream().map(UserInfoDTO::from).toList();
     }
 
     /**

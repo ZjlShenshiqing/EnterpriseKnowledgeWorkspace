@@ -29,6 +29,10 @@ spring:
           uri: lb://enterprise-workbench-service
           predicates:
             - Path=/api/workbench/**
+        - id: collaboration-ws
+          uri: lb://enterprise-collaboration-service
+          predicates:
+            - Path=/ws/**
 
   jpa:
     hibernate:
@@ -37,6 +41,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 server:
   port: 8086
@@ -57,11 +66,17 @@ logging:
     com.alibaba.nacos.client.config.impl.ClientWorker: warn
     com.alibaba.nacos: warn
 
+sa-token:
+  token-name: Authorization
+  timeout: 2592000
+  is-concurrent: true
+  is-share: false
+  token-style: simple-uuid
+  is-log: false
+  is-print: false
+
 app:
   security:
-    jwt:
-      secret: "dev-secret-change-me-dev-secret-change-me-32bytes"
-      ttl-seconds: 86400
     whitelist:
       paths:
         - /api/system/health

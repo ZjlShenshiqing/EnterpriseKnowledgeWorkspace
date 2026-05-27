@@ -16,6 +16,7 @@ import com.zjl.security.UserContext;
 import com.zjl.service.OpLogService;
 import com.zjl.service.RoleDTO;
 import com.zjl.service.RoleService;
+import com.zjl.service.UserInfoDTO;
 import com.zjl.service.UserService;
 import com.zjl.service.UserService.UserStats;
 import jakarta.validation.Valid;
@@ -23,26 +24,25 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * 系统管理（RBAC）后台接口
  *
- * <p>约束：仅允许管理员访问（hasRole('ADMIN')）。</p>
+ * <p>约束：仅允许管理员访问，由 {@link com.zjl.config.SaTokenConfig} 统一校验 admin 角色。</p>
  * <p>Controller 仅做路由转发和参数校验，业务逻辑在 Service 层。</p>
  */
 @Slf4j
 @Validated
 @RestController
 @RequestMapping("/api/system")
-@PreAuthorize("hasRole('ADMIN')")
 public class SystemAdminController {
 
     private final UserService userService;
@@ -182,6 +182,35 @@ public class SystemAdminController {
                         .log(UserContext.userId(), UserContext.username(),
                                 "DELETE_USER", request, "userId=" + id)
                         .thenReturn(Results.success()));
+    }
+
+    // ──────────────────── User batch/search (non-admin) ────────────────────
+
+    /**
+     * 批量查询用户简要信息（供下游服务内部调用，无需 admin 角色）。
+     */
+    @GetMapping("/users/batch")
+    public Mono<Result<Map<Long, UserInfoDTO>>> batchUsers(
+            @RequestParam("ids") List<Long> ids,
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.debug("批量查询用户: ids={}", ids);
+        return Mono.fromCallable(() -> Results.success(userService.batchGetUsers(ids)))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 搜索用户（供通讯录等场景，无需 admin 角色）。
+     */
+    @GetMapping("/users/search")
+    public Mono<Result<List<UserInfoDTO>>> searchUsers(
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            @RequestParam(value = "limit", defaultValue = "50") int limit,
+            org.springframework.http.server.reactive.ServerHttpRequest request
+    ) {
+        log.debug("搜索用户: keyword={}", keyword);
+        return Mono.fromCallable(() -> Results.success(userService.searchUsers(keyword, limit)))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     // ──────────────────── Role endpoints ────────────────────

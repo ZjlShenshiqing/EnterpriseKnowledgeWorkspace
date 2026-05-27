@@ -2,9 +2,9 @@ package com.zjl.collaboration.web;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.SysAnnouncement;
-import com.zjl.collaboration.entity.SysUser;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.collaboration.mapper.SysAnnouncementMapper;
-import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.Data;
@@ -23,7 +23,7 @@ import java.util.List;
 public class AnnouncementController {
 
     private final SysAnnouncementMapper announcementMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
 
     @GetMapping
     @Cacheable(value = "announcements", key = "'list'", unless = "#result.data.isEmpty()")
@@ -34,10 +34,10 @@ public class AnnouncementController {
 
     @PostMapping
     public Result<Long> publish(@RequestBody AnnounceReq req, @RequestHeader("X-User-Id") Long userId) {
-        SysUser user = userMapper.selectById(userId);
+        UserInfo user = gatewayUserClient.getById(userId);
         SysAnnouncement a = new SysAnnouncement();
         a.setTitle(req.getTitle()); a.setContent(req.getContent());
-        a.setPublisherId(userId); a.setPublisherName(user != null ? user.getRealName() : "管理员");
+        a.setPublisherId(userId); a.setPublisherName(user != null ? user.realName() : "管理员");
         a.setCreatedAt(LocalDateTime.now());
         announcementMapper.insert(a);
         log.info("公告发布: userId={}, announcementId={}", userId, a.getId());

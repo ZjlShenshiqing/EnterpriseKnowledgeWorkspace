@@ -86,7 +86,7 @@ function authHeaders() {
 function getToken() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    return user.accessToken || ''
+    return user.token || localStorage.getItem('token') || ''
   } catch { return '' }
 }
 
@@ -213,7 +213,7 @@ function connectWs(docId) {
   const token = getToken()
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = location.hostname
-  ws = new WebSocket(`${protocol}//${host}:8090/ws/docs?token=${encodeURIComponent(token)}`)
+  ws = new WebSocket(`${protocol}//${host}:8086/ws/docs?token=${encodeURIComponent(token)}`)
 
   ws.onopen = () => {
     sendWsMessage({ action: 'sub', docId })

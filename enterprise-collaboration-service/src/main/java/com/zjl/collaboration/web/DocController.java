@@ -3,8 +3,9 @@ package com.zjl.collaboration.web;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjl.collaboration.entity.SysDoc;
+import com.zjl.collaboration.integration.GatewayUserClient;
+import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.collaboration.mapper.SysDocMapper;
-import com.zjl.collaboration.mapper.SysUserMapper;
 import com.zjl.collaboration.service.DocOTService;
 import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
@@ -28,7 +29,7 @@ import java.util.Map;
 public class DocController {
 
     private final SysDocMapper docMapper;
-    private final SysUserMapper userMapper;
+    private final GatewayUserClient gatewayUserClient;
     private final DocOTService docOTService;
 
     private static final String EMPTY_DELTA = "{\"ops\":[{\"insert\":\"\\n\"}]}";
@@ -92,9 +93,9 @@ public class DocController {
         doc.setCreatedAt(LocalDateTime.now());
         doc.setUpdatedAt(LocalDateTime.now());
 
-        var user = userMapper.selectById(userId);
+        UserInfo user = gatewayUserClient.getById(userId);
         if (user != null) {
-            doc.setUpdatedByName(user.getRealName());
+            doc.setUpdatedByName(user.realName());
         }
 
         docMapper.insert(doc);
