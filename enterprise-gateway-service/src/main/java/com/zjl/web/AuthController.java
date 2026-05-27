@@ -94,37 +94,34 @@ public class AuthController {
     ) {}
 
     /**
-     * 登录接口：校验用户名密码并创建 Sa-Token 会话
+     * 登录接口：校验用户名密码并创建 Sa-Token 会话。
      *
-     * @param req 登录请求
-     * @return token
+     * <p>不使用 subscribeOn，因为 StpUtil.login 需要 SaTokenContext（ThreadLocal），
+     * 只能在 Reactor 事件循环线程上执行。</p>
      */
     @PostMapping("/login")
     public Mono<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest req) {
-        return Mono.fromCallable(() -> userRepository.findByUsername(req.username()).orElse(null))
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(user -> {
-                    if (user == null || !user.isEnabled()) {
-                        log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
-                        return Mono.error(new BizException(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
-                    }
-                    if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
-                        log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
-                        return Mono.error(new BizException(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
-                    }
-                    StpUtil.login(user.getId());
-                    ProfileResponse profile = toProfile(user);
-                    String token = StpUtil.getTokenValue();
-                    log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
-                    return Mono.just(Results.success(new LoginResponse(
-                            token,
-                            profile.userId(),
-                            profile.username(),
-                            profile.realName(),
-                            profile.deptId(),
-                            profile.isAdmin()
-                    )));
-                });
+        SysUser user = userRepository.findByUsername(req.username()).orElse(null);
+        if (user == null || !user.isEnabled()) {
+            log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
+            return Mono.just(Results.failure(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
+        }
+        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
+            return Mono.just(Results.failure(ErrorCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
+        }
+        StpUtil.login(user.getId());
+        ProfileResponse profile = toProfile(user);
+        String token = StpUtil.getTokenValue();
+        log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
+        return Mono.just(Results.success(new LoginResponse(
+                token,
+                profile.userId(),
+                profile.username(),
+                profile.realName(),
+                profile.deptId(),
+                profile.isAdmin()
+        )));
     }
 
     /**
