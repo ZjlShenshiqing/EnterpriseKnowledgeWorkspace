@@ -1,6 +1,8 @@
 package com.zjl.knowledge.web;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.zjl.knowledge.dto.chunk.ChunkSensitivityUpdateRequest;
+import com.zjl.knowledge.dto.chunk.ChunkSensitivityVO;
 import com.zjl.knowledge.dto.chunk.KbChunkBatchRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkCreateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkPageRequest;
@@ -103,6 +105,20 @@ public class KbChunkController {
             @Valid @RequestBody KbChunkBatchRequest request
     ) {
         kbChunkService.batchToggleEnabled(docId, request, enabled, UserContextHolder.get());
+        return Results.success();
+    }
+
+    @GetMapping("/sensitivity")
+    public Result<List<ChunkSensitivityVO>> listSensitiveChunks(@PathVariable("docId") Long docId) {
+        return Results.success(kbChunkService.listSensitiveChunks(docId, UserContextHolder.get()));
+    }
+
+    @PutMapping("/sensitivity")
+    public Result<Void> updateSensitivity(
+            @PathVariable("docId") Long docId,
+            @RequestBody ChunkSensitivityUpdateRequest request
+    ) {
+        kbChunkService.updateChunkSensitivity(docId, request, UserContextHolder.get());
         return Results.success();
     }
 }

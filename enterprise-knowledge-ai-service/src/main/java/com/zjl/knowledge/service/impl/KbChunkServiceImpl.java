@@ -9,11 +9,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.knowledge.domain.DocumentStatus;
+import com.zjl.knowledge.dto.chunk.ChunkSensitivityUpdateRequest;
+import com.zjl.knowledge.dto.chunk.ChunkSensitivityVO;
 import com.zjl.knowledge.dto.chunk.KbChunkBatchRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkCreateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkPageRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkUpdateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkVO;
+import com.zjl.knowledge.metadata.ChunkMetadata;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.entity.KbDocumentPermission;
@@ -23,6 +26,7 @@ import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.DocumentVisibilityService;
 import com.zjl.knowledge.service.KbChunkService;
+import com.zjl.knowledge.service.KbMilvusRoutingService;
 import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.token.TokenCounterService;
 import com.zjl.knowledge.util.ContentHashUtil;
@@ -51,6 +55,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
     private final KbDocumentMapper documentMapper;
     private final KbDocumentPermissionMapper permissionMapper;
     private final VectorSyncService vectorSyncService;
+    private final KbMilvusRoutingService kbMilvusRoutingService;
     private final TokenCounterService tokenCounterService;
     private final TransactionTemplate transactionTemplate;
     private final DocumentVisibilityService documentVisibilityService;
@@ -203,7 +208,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
                 List<String> texts = vectorChunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
                 List<List<Float>> vecs = vectorSyncService.embedBatch(texts, document);
                 for (int i = 0; i < vectorChunks.size(); i++) {
-                    vectorChunks.get(i).setEmbedding(VectorSyncService.toArray(vecs.get(i)));
+                    vectorChunks.get(i).setEmbedding(toArray(vecs.get(i)));
                 }
                 vectorSyncService.indexDocumentChunks(document, vectorChunks);
             }
@@ -374,7 +379,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
             List<String> texts = vectorChunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
             List<List<Float>> vecs = vectorSyncService.embedBatch(texts, document);
             for (int i = 0; i < vectorChunks.size(); i++) {
-                vectorChunks.get(i).setEmbedding(VectorSyncService.toArray(vecs.get(i)));
+                vectorChunks.get(i).setEmbedding(toArray(vecs.get(i)));
             }
 
             transactionTemplate.executeWithoutResult(status -> {
@@ -440,6 +445,68 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         baseMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, docId));
     }
 
+    @Override
+    public List<ChunkSensitivityVO> listSensitiveChunks(Long docId, UserContext user) {
+        KbDocument document = loadDocOrThrow(docId);
+        assertReadable(document, user);
+
+        List<KbDocumentChunk> chunks = baseMapper.selectList(
+                Wrappers.lambdaQuery(KbDocumentChunk.class)
+                        .eq(KbDocumentChunk::getDocumentId, docId)
+                        .orderByAsc(KbDocumentChunk::getChunkIndex));
+
+        return chunks.stream()
+                .filter(c -> {
+                    ChunkMetadata meta = ChunkMetadata.fromJson(c.getMetadataJson());
+                    return meta != null && "ADMIN_ONLY".equals(meta.getSensitivityLevel());
+                })
+                .map(c -> {
+                    ChunkMetadata meta = ChunkMetadata.fromJson(c.getMetadataJson());
+                    ChunkSensitivityVO vo = new ChunkSensitivityVO();
+                    vo.setChunkId(c.getId());
+                    vo.setChunkIndex(c.getChunkIndex());
+                    vo.setSensitivityLevel(meta != null ? meta.getSensitivityLevel() : "ALL");
+                    String text = c.getChunkText();
+                    vo.setTextPreview(text != null && text.length() > 100 ? text.substring(0, 100) + "..." : text);
+                    return vo;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateChunkSensitivity(Long docId, ChunkSensitivityUpdateRequest request, UserContext user) {
+        KbDocument document = loadDocOrThrow(docId);
+        assertWritable(document, user);
+
+        if (request.getUpdates() == null || request.getUpdates().isEmpty()) {
+            return;
+        }
+
+        boolean shouldEmbed = kbMilvusRoutingService.shouldEmbed(document);
+
+        for (var item : request.getUpdates()) {
+            KbDocumentChunk chunk = baseMapper.selectById(item.getChunkId());
+            if (chunk == null || !chunk.getDocumentId().equals(docId)) {
+                continue;
+            }
+
+            ChunkMetadata meta = ChunkMetadata.fromJson(chunk.getMetadataJson());
+            if (meta == null) {
+                meta = new ChunkMetadata();
+                meta.setDocId(docId);
+                meta.setChunkIndex(chunk.getChunkIndex());
+            }
+            meta.setSensitivityLevel(item.getSensitivityLevel());
+            chunk.setMetadataJson(meta.toJson());
+            baseMapper.updateById(chunk);
+
+            if (shouldEmbed) {
+                vectorSyncService.updateChunk(document, chunk);
+            }
+        }
+    }
+
     private KbDocument loadDocOrThrow(Long docId) {
         KbDocument doc = documentMapper.selectById(docId);
         if (doc == null) {
@@ -497,6 +564,14 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
             return 0;
         }
         return tokenCounterService.countTokens(content);
+    }
+
+    private float[] toArray(List<Float> list) {
+        float[] arr = new float[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            arr[i] = list.get(i);
+        }
+        return arr;
     }
 
     private KbChunkVO toVo(KbDocumentChunk e) {

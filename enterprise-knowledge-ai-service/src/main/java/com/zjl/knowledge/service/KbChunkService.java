@@ -1,6 +1,8 @@
 package com.zjl.knowledge.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.zjl.knowledge.dto.chunk.ChunkSensitivityUpdateRequest;
+import com.zjl.knowledge.dto.chunk.ChunkSensitivityVO;
 import com.zjl.knowledge.dto.chunk.KbChunkBatchRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkCreateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkPageRequest;
@@ -36,4 +38,22 @@ public interface KbChunkService {
     List<KbChunkVO> listByDocId(Long docId, UserContext user);
 
     void deleteByDocId(Long docId);
+
+    /**
+     * 查询文档中被自动标记为敏感的 chunk 列表
+     *
+     * @param docId 文档 ID
+     * @param user  当前用户
+     * @return 敏感 chunk 视图列表
+     */
+    List<ChunkSensitivityVO> listSensitiveChunks(Long docId, UserContext user);
+
+    /**
+     * 批量更新 chunk 敏感级别
+     *
+     * @param docId   文档 ID
+     * @param request 更新请求
+     * @param user    当前用户
+     */
+    void updateChunkSensitivity(Long docId, ChunkSensitivityUpdateRequest request, UserContext user);
 }
