@@ -5,6 +5,7 @@ import com.zjl.common.exception.BizException;
 import com.zjl.knowledge.embedding.EmbeddingService;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
+import com.zjl.knowledge.metadata.ChunkMetadata;
 import com.zjl.knowledge.milvus.ChunkVectorStore;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.KbMilvusRoutingService;
@@ -15,7 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -61,10 +64,12 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     @Override
     public void syncChunk(KbDocument document, KbDocumentChunk chunk) {
         float[] vector = toArray(embed(chunk.getChunkText(), document));
+        Map<String, Object> metaMap = buildMetaMap(chunk.getMetadataJson());
         VectorDocChunk vc = VectorDocChunk.builder()
                 .chunkId(String.valueOf(chunk.getId()))
                 .content(chunk.getChunkText())
                 .index(chunk.getChunkIndex())
+                .metadata(metaMap)
                 .embedding(vector)
                 .build();
         String collection = resolveCollection(document);
@@ -84,12 +89,14 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     @Override
     public void updateChunk(KbDocument document, KbDocumentChunk chunk) {
         float[] vector = toArray(embed(chunk.getChunkText(), document));
+        Map<String, Object> metaMap = buildMetaMap(chunk.getMetadataJson());
         String collection = resolveCollection(document);
         chunkVectorStore.updateChunk(collection, document.getId(),
                 VectorDocChunk.builder()
                         .chunkId(String.valueOf(chunk.getId()))
                         .content(chunk.getChunkText())
                         .index(chunk.getChunkIndex())
+                        .metadata(metaMap)
                         .embedding(vector)
                         .build());
     }
@@ -145,13 +152,21 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         List<VectorDocChunk> result = new ArrayList<>(chunks.size());
         for (int i = 0; i < chunks.size(); i++) {
             KbDocumentChunk c = chunks.get(i);
+            ChunkMetadata meta = ChunkMetadata.fromJson(c.getMetadataJson());
+            Map<String, Object> metaMap = meta != null ? meta.toMap() : Collections.emptyMap();
             result.add(VectorDocChunk.builder()
                     .chunkId(String.valueOf(c.getId()))
                     .content(c.getChunkText())
                     .index(c.getChunkIndex())
+                    .metadata(metaMap)
                     .embedding(toArray(vectors.get(i)))
                     .build());
         }
         return result;
+    }
+
+    private Map<String, Object> buildMetaMap(String metadataJson) {
+        ChunkMetadata meta = ChunkMetadata.fromJson(metadataJson);
+        return meta != null ? meta.toMap() : Collections.emptyMap();
     }
 }

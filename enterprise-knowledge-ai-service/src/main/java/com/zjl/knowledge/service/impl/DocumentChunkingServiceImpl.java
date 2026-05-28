@@ -21,6 +21,8 @@ import com.zjl.knowledge.event.DocumentChunkRequestedEvent;
 import com.zjl.knowledge.mapper.KbDocumentChunkLogMapper;
 import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
+import com.zjl.knowledge.metadata.ChunkMetadata;
+import com.zjl.knowledge.metadata.SensitivityKeywordService;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.DocumentChunkingService;
 import com.zjl.knowledge.service.FileStorageService;
@@ -67,6 +69,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
     private final FileStorageService fileStorageService;
+    private final SensitivityKeywordService sensitivityKeywordService;
 
     /**
      * 提交异步分块：CAS 更新 status→RUNNING，事务提交后由监听器异步执行
@@ -194,13 +197,29 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
             List<VectorDocChunk> chunkResults = new ArrayList<>(parts.size());
             for (int i = 0; i < parts.size(); i++) {
                 long chunkPk = IdWorker.getId();
+                TextChunk part = parts.get(i);
+
+                ChunkMetadata meta = new ChunkMetadata();
+                meta.setDocId(docId);
+                meta.setFileName(document.getFileName());
+                meta.setSourceUrl(document.getSourceLocation());
+                meta.setChunkIndex(part.index());
+                meta.setStartOffset(part.startOffset());
+                meta.setEndOffset(part.endOffset());
+                meta.setSensitivityLevel("ALL");
+
+                if (sensitivityKeywordService.isSensitive(part.content())) {
+                    meta.setSensitivityLevel("ADMIN_ONLY");
+                }
+
                 VectorDocChunk.VectorDocChunkBuilder builder = VectorDocChunk.builder()
                         .chunkId(String.valueOf(chunkPk))
-                        .content(parts.get(i).content())
-                        .index(parts.get(i).index());
+                        .content(part.content())
+                        .index(part.index())
+                        .metadata(meta.toMap());
 
                 if (shouldEmbed && vectors != null) {
-                    builder.embedding(VectorSyncService.toArray(vectors.get(i)));
+                    builder.embedding(toArray(vectors.get(i)));
                 }
                 chunkResults.add(builder.build());
             }
@@ -245,7 +264,16 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
                 row.setTokenCount(tokenCounterService.countTokens(vc.getContent()));
                 row.setEnabled(1);
                 row.setVectorId(shouldEmbed ? vc.getChunkId() : null);
-                row.setMetadataJson("{}");
+                Map<String, Object> chunkMeta = vc.getMetadata();
+                if (chunkMeta != null && !chunkMeta.isEmpty()) {
+                    try {
+                        row.setMetadataJson(objectMapper.writeValueAsString(chunkMeta));
+                    } catch (Exception e) {
+                        row.setMetadataJson("{}");
+                    }
+                } else {
+                    row.setMetadataJson("{}");
+                }
                 row.setCreatedBy(actingUserId);
                 row.setUpdatedBy(actingUserId);
                 row.setCreatedAt(now);
@@ -304,6 +332,14 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
         } catch (Exception e) {
             return "{}";
         }
+    }
+
+    private float[] toArray(List<Float> list) {
+        float[] arr = new float[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            arr[i] = list.get(i);
+        }
+        return arr;
     }
 
     private Map<String, Object> parseChunkConfig(String json) {
