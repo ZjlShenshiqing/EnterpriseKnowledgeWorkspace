@@ -28,7 +28,7 @@
                                           knowledge / collaboration / workbench
 ```
 
-> **注意**：协作服务（`enterprise-collaboration-service`）另有独立的 `/api/auth/login` 与用户表，供 WebSocket 或直接访问 `:8082` 时使用。**前端主流程登录走的是网关**，两者账号体系互不通用。
+> **注意**：协作服务 **已无** 独立 `/api/auth/login`（v4 已移除协同 JWT）。WebSocket 与 REST 一样，经网关 `:8086` 校验 Sa-Token 后转发；下游只读 `X-User-Id`。Collaboration 库若仍保留 `sys_user` 表仅为历史数据，**登录账号以 Gateway 库为准**。
 
 ---
 

@@ -309,11 +309,11 @@ INSERT INTO sys_dept (id, name, parent_id) VALUES
 (3, '设计部', NULL);
 
 INSERT INTO sys_user (id, username, password_hash, real_name, dept_id, enabled) VALUES
-(1, 'admin',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 1, 1),
-(2, 'zhangsan', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '张三',     1, 1),
-(3, 'lisi',     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李四',     2, 1),
-(4, 'wangwu',   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '王五',     1, 0),
-(5, 'zhaoliu',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '赵六',     3, 1);
+(1, 'admin',    '$2b$10$4ya3hhnFrBYhLge0QMKj.O4pg3pWI37wOnKi783bwmyYRdRdvHajO', '系统管理员', 1, 1),
+(2, 'zhangsan', '$2b$10$4ya3hhnFrBYhLge0QMKj.O4pg3pWI37wOnKi783bwmyYRdRdvHajO', '张三',     1, 1),
+(3, 'lisi',     '$2b$10$4ya3hhnFrBYhLge0QMKj.O4pg3pWI37wOnKi783bwmyYRdRdvHajO', '李四',     2, 1),
+(4, 'wangwu',   '$2b$10$4ya3hhnFrBYhLge0QMKj.O4pg3pWI37wOnKi783bwmyYRdRdvHajO', '王五',     1, 0),
+(5, 'zhaoliu',  '$2b$10$4ya3hhnFrBYhLge0QMKj.O4pg3pWI37wOnKi783bwmyYRdRdvHajO', '赵六',     3, 1);
 
 INSERT INTO sys_role (id, code, name) VALUES
 (1, 'admin',   '系统管理员'),

@@ -1,4 +1,4 @@
-package com.zjl.service;
+package com.zjl.dto;
 
 import com.zjl.domain.SysPermission;
 import com.zjl.domain.SysRole;

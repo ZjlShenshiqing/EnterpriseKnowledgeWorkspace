@@ -1,5 +1,6 @@
 package com.zjl.web;
 
+import cn.dev33.satoken.reactor.context.SaReactorHolder;
 import cn.dev33.satoken.stp.StpUtil;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
@@ -96,32 +97,38 @@ public class AuthController {
     /**
      * 登录接口：校验用户名密码并创建 Sa-Token 会话。
      *
-     * <p>不使用 subscribeOn，因为 StpUtil.login 需要 SaTokenContext（ThreadLocal），
-     * 只能在 Reactor 事件循环线程上执行。</p>
+     * <p>数据库查询在 boundedElastic 执行；{@link StpUtil#login(Object)} 必须在
+     * {@link SaReactorHolder#sync} 内调用，以绑定 WebFlux 上下文。</p>
      */
     @PostMapping("/login")
     public Mono<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest req) {
-        SysUser user = userRepository.findByUsername(req.username()).orElse(null);
-        if (user == null || !user.isEnabled()) {
-            log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
-            throw new BizException(ErrorCode.UNAUTHORIZED, "用户名或密码错误");
-        }
-        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
-            log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
-            throw new BizException(ErrorCode.UNAUTHORIZED, "用户名或密码错误");
-        }
-        StpUtil.login(user.getId());
-        ProfileResponse profile = toProfile(user);
-        String token = StpUtil.getTokenValue();
-        log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
-        return Mono.just(Results.success(new LoginResponse(
-                token,
-                profile.userId(),
-                profile.username(),
-                profile.realName(),
-                profile.deptId(),
-                profile.isAdmin()
-        )));
+        return Mono.fromCallable(() -> {
+                    SysUser user = userRepository.findByUsername(req.username()).orElse(null);
+                    if (user == null || !user.isEnabled()) {
+                        log.warn("用户登录失败: username={}, reason={}", req.username(), "用户不存在或已禁用");
+                        throw new BizException(ErrorCode.UNAUTHORIZED, "用户名或密码错误");
+                    }
+                    if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+                        log.warn("用户登录失败: username={}, reason={}", req.username(), "密码错误");
+                        throw new BizException(ErrorCode.UNAUTHORIZED, "用户名或密码错误");
+                    }
+                    return user;
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(user -> SaReactorHolder.sync(() -> {
+                    StpUtil.login(user.getId());
+                    ProfileResponse profile = toProfile(user);
+                    String token = StpUtil.getTokenValue();
+                    log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
+                    return Results.success(new LoginResponse(
+                            token,
+                            profile.userId(),
+                            profile.username(),
+                            profile.realName(),
+                            profile.deptId(),
+                            profile.isAdmin()
+                    ));
+                }));
     }
 
     /**
@@ -131,16 +138,18 @@ public class AuthController {
      */
     @GetMapping("/profile")
     public Mono<Result<ProfileResponse>> profile() {
-        StpUtil.checkLogin();
-        Long userId = Long.parseLong(StpUtil.getLoginIdAsString());
-        return Mono.fromCallable(() -> {
-                    SysUser user = userRepository.findById(userId).orElse(null);
-                    if (user == null || !user.isEnabled()) {
-                        throw new BizException(ErrorCode.UNAUTHORIZED);
-                    }
-                    return Results.success(toProfile(user));
+        return SaReactorHolder.sync(() -> {
+                    StpUtil.checkLogin();
+                    return Long.parseLong(StpUtil.getLoginIdAsString());
                 })
-                .subscribeOn(Schedulers.boundedElastic());
+                .flatMap(userId -> Mono.fromCallable(() -> {
+                            SysUser user = userRepository.findById(userId).orElse(null);
+                            if (user == null || !user.isEnabled()) {
+                                throw new BizException(ErrorCode.UNAUTHORIZED);
+                            }
+                            return Results.success(toProfile(user));
+                        })
+                        .subscribeOn(Schedulers.boundedElastic()));
     }
 
     /**
@@ -150,8 +159,10 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public Mono<Result<Void>> logout() {
-        StpUtil.logout();
-        return Mono.just(Results.success());
+        return SaReactorHolder.sync(() -> {
+            StpUtil.logout();
+            return Results.success();
+        });
     }
 
     /**

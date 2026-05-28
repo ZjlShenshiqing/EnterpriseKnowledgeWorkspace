@@ -24,6 +24,11 @@ public class WorkbenchController {
     private final KnowledgeFeignClient knowledgeClient;
     private final WbFavoriteMapper favoriteMapper;
 
+    /**
+     * 标记 overview 是否因下游 Feign 失败而降级；降级结果不写入 Redis 缓存。
+     */
+    private final ThreadLocal<Boolean> overviewDegraded = ThreadLocal.withInitial(() -> false);
+
     private static final String UA = "X-User-Id";
     private static final String AD = "X-Is-Admin";
 
@@ -35,12 +40,22 @@ public class WorkbenchController {
         this.favoriteMapper = favoriteMapper;
     }
 
+    /**
+     * 供 {@link Cacheable#unless()} 使用：下游失败时不缓存 overview，避免长时间展示全 0。
+     */
+    public boolean skipOverviewCache() {
+        boolean skip = overviewDegraded.get();
+        overviewDegraded.remove();
+        return skip;
+    }
+
     @GetMapping("/overview")
-    @Cacheable(value = "wb_overview", key = "#userId", unless = "#result.data.isEmpty()")
+    @Cacheable(value = "wb_overview", key = "#userId", unless = "@workbenchController.skipOverviewCache()")
     public Result<Map<String, Object>> overview(
             @RequestHeader(UA) Long userId,
             @RequestHeader(value = AD, defaultValue = "false") String isAdmin) {
 
+        overviewDegraded.set(false);
         Map<String, Object> data = new LinkedHashMap<>();
 
         // 待办列表
@@ -50,6 +65,7 @@ public class WorkbenchController {
             data.put("todos", todos != null ? todos : List.of());
         } catch (FeignException e) {
             log.warn("获取待办失败: {}", e.getMessage());
+            overviewDegraded.set(true);
             data.put("todos", List.of());
         }
 
@@ -67,6 +83,7 @@ public class WorkbenchController {
             data.put("meetingCount", todayMeetings.size());
         } catch (FeignException e) {
             log.warn("获取会议失败: {}", e.getMessage());
+            overviewDegraded.set(true);
             data.put("meetings", List.of());
             data.put("todayMeetings", List.of());
             data.put("meetingCount", 0);
@@ -99,6 +116,7 @@ public class WorkbenchController {
             }
         } catch (FeignException e) {
             log.warn("获取文档失败: {}", e.getMessage());
+            overviewDegraded.set(true);
             data.put("recentDocs", List.of());
             data.put("documentCount", 0);
         }
@@ -165,6 +183,7 @@ public class WorkbenchController {
             }
         } catch (FeignException e) {
             log.warn("获取知识库统计失败: {}", e.getMessage());
+            overviewDegraded.set(true);
             data.put("baseCount", 0);
         }
 

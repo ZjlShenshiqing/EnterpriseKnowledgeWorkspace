@@ -619,7 +619,7 @@ import com.zjl.repository.SysDeptRepository;
 import com.zjl.repository.SysPermissionRepository;
 import com.zjl.security.UserContext;
 import com.zjl.service.OpLogService;
-import com.zjl.service.RoleDTO;
+import com.zjl.dto.RoleDTO;
 import com.zjl.service.RoleService;
 import com.zjl.service.UserService;
 import com.zjl.service.UserService.UserStats;

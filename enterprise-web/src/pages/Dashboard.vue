@@ -290,30 +290,40 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+function toNumber(value, fallback = 0) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
 async function loadData() {
   try {
-    const resp = await fetch('/api/workbench/overview', {headers:headers()})
-    const data = (await resp.json()).data||{}
-    recentDocs.value = data.recentDocs||[]
-    todos.value = (data.todos||[]).map(t=>({...t,done:t.done===1||t.done===true}))
+    const resp = await fetch('/api/workbench/overview', { headers: headers() })
+    const result = await resp.json()
+    if (!resp.ok || !(result.code === 200 || result.code === '200')) {
+      console.warn('工作台 overview 请求失败', result)
+      return
+    }
+    const data = result.data || {}
+    recentDocs.value = data.recentDocs || []
+    todos.value = (data.todos || []).map(t => ({ ...t, done: t.done === 1 || t.done === true }))
     todayMeetings.value = data.todayMeetings
       || (data.meetings || []).filter(m => m.date === todayStr())
 
     collabStats.value = {
-      todos: data.todoCount || 0,
-      meetings: data.meetingCount || 0,
-      approvals: data.pendingApprovalCount || 0,
-      messages: data.unreadMessageCount || 0
+      todos: toNumber(data.todoCount),
+      meetings: toNumber(data.meetingCount),
+      approvals: toNumber(data.pendingApprovalCount),
+      messages: toNumber(data.unreadMessageCount)
     }
 
     knowledgeStats.value = {
-      documents: data.documentCount || 0,
-      bases: data.baseCount || 0,
-      intents: data.intentCount || 0,
-      sessions: data.todaySessionCount || 0
+      documents: toNumber(data.documentCount),
+      bases: toNumber(data.baseCount),
+      intents: toNumber(data.intentCount),
+      sessions: toNumber(data.todaySessionCount)
     }
-  } catch(e) {
-    console.log('Workbench API not available')
+  } catch (e) {
+    console.warn('Workbench API not available', e)
   }
 }
 

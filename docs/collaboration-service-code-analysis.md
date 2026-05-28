@@ -1,22 +1,49 @@
 # enterprise-collaboration-service 服务分析
 
-> **文档版本**：v3.0 · **更新日期**：2026-05-25  
-> 基于当前 `enterprise-collaboration-service` 源码整理，覆盖 IM、协同文档 OT、会议/任务/审批、意图树、关键词映射、WebSocket 与外部集成。
+> **文档版本**：v4.1 · **更新日期**：2026-05-27  
+> 基于当前 `enterprise-collaboration-service` 源码整理，覆盖 IM、协同文档 OT、会议/任务/审批、意图树、关键词映射、WebSocket 与外部集成。  
+> 网关鉴权见 [`gateway-service-code-analysis.md`](gateway-service-code-analysis.md)、[`login-flow.md`](login-flow.md)。
 
-本文重点解释协同服务的 **7 条能力线**、双认证体系、WebSocket 协议、OT 算法要点，以及与 Gateway / Workbench / Knowledge Agent 的集成边界。
+本文重点解释协同服务的 **7 条能力线**、**网关注入身份模型**（非协同自有 JWT）、WebSocket 协议、OT 算法要点，以及与 Gateway / Workbench / Knowledge Agent 的集成边界。
+
+### 速查卡
+
+| 你想… | 看这里 |
+|--------|--------|
+| 身份从哪来 | §4（`X-User-Id` 头，无 JwtAuthFilter） |
+| WebSocket 怎么连 | §4.2、§6.5（经 Gateway `?token=`；协同 Handler 读 `X-User-Id`） |
+| 意图 API 404 | §8、§21（路径是 `/api/intents/nodes`，不是 `/api/intents`） |
+| 用户姓名从哪查 | §4.3 `GatewayUserClient` |
+| Workbench 聚合失败 | §27、§21（Feign 路径与网关权限） |
+| curl 自测 | §31 |
 
 **文档结构**
 
 | 章节 | 内容 |
 |------|------|
+| §0 | **v3→v4 迁移**（移除协同 JWT） |
 | §1–§4 | 定位、架构、目录树、启动配置 |
-| §5–§6 | 鉴权模型、Controller 分组 |
+| §5–§6 | Controller 分组、鉴权模型 |
 | §7–§12 | IM、文档 OT、会议、办公流、意图/关键词 |
 | §13–§14 | 数据库与迁移、外部集成 |
 | §15–§16 | 前端消费、响应与错误 |
 | §17–§18 | 阅读路线、逐文件代码地图 |
 | §19–§21 | 附录：REST 速查、WebSocket 协议、调用链、Gotchas |
-| §22–§28 | **v3 新增**：实体字段全表、Service 方法索引、逐 Controller 请求/响应、前端映射、DDL 摘录、87 文件清单 |
+| §22–§31 | 实体/Service/Controller/前端映射、集成矩阵、验证清单 |
+
+---
+
+## 0. v3 → v4 迁移摘要（2026-05-27）
+
+| v3（已移除） | v4（当前） |
+|-------------|-----------|
+| `AuthController` + 协同 `/api/auth/login` | **无**；统一走网关 Sa-Token 登录 |
+| `JwtAuthFilter` / `FilterConfig` | **无**；REST 只读 `X-User-Id` 等头 |
+| `JwtUtil` / `JwtClaimsSupport` | **无** |
+| `UserLoginServiceImpl` + 协同 `sys_user` 登录 | **无**（协同库仍可保留历史用户表，但无登录 API） |
+| WS `?token=JWT` | WS 握手头 **`X-User-Id`**（Chat / Doc 一致） |
+| `ContactController` 读协同库 | 用户列表 **`GatewayUserClient` → 网关** |
+| Java 源文件 **87** | **80** |
 
 ---
 
@@ -32,20 +59,20 @@
 | 4 | **办公流** | 待办、任务看板、多级审批、公告 |
 | 5 | **意图树** | 节点/规则/知识库绑定 + match 测试 |
 | 6 | **关键词映射** | utterance → 意图/KB 关键词命中 |
-| 7 | **独立认证** | 协同库 `sys_user` + 自有 JWT（WebSocket/直连） |
+| 7 | **网关用户集成** | `GatewayUserClient` 调网关 batch/search 补全 realName 等 |
 
 | 项 | 值 |
 |---|---|
 | 端口 | **8090** |
 | 数据库 | MySQL `enterprise_collaboration` |
 | ORM | MyBatis-Plus 3.5.7 |
-| WebSocket | `/ws/chat`、`/ws/docs`（**不经 Gateway**） |
+| WebSocket | `/ws/chat`、`/ws/docs`（开发直连；生产可经 Gateway `/ws/**`） |
 | MQ | RocketMQ topic `im-message` |
 | 运行时 | **Spring MVC（Servlet）** + WebSocket |
 | Nacos 名 | `enterprise-collaboration-service` |
-| Java 源文件 | **87** 个 |
+| Java 源文件 | **80** 个 |
 
-**技术栈**：Spring Boot 3.4.4、MyBatis-Plus、Spring WebSocket、RocketMQ 2.3.2、AWS S3 SDK（OSS 兼容）、jjwt 0.12.6、Nacos、`frameworks-web-spring-boot-starter`
+**技术栈**：Spring Boot 3.4.4、MyBatis-Plus、Spring WebSocket、RocketMQ 2.3.2、AWS S3 SDK（OSS 兼容）、Nacos、`frameworks-web-spring-boot-starter`（**已移除 jjwt**）
 
 ### 1.1 平台架构位置
 
@@ -54,8 +81,8 @@
                     │  /api/meetings|todos|tasks|chat|docs|...      │
                     ▼                                              │
 ┌──────── enterprise-web :5173 ──────┐                            │
-│  REST → Gateway（多数 /api/*）      │                            │
-│  WS   → 直连 :8090/ws/chat|docs    │                            │
+│  REST → Gateway（/api/* → :8086）   │                            │
+│  WS   → Gateway :8086/ws/*?token=  │  （Vite 不代理 WS）         │
 └────────────────────────────────────┘                            │
                     │                                              │
                     ▼                                              ▼
@@ -68,7 +95,7 @@
  collaboration
 ```
 
-**与 Gateway 的分工**：Gateway 负责 JWT + 路由；Collaboration 负责业务数据。Gateway 的 `sys_user`（`enterprise_gateway`）与协同的 `sys_user`（`enterprise_collaboration`）**完全独立**。
+**与 Gateway 的分工**：Gateway 负责 **Sa-Token 鉴权 + 路由 + 身份头注入**；Collaboration **不校验 Token**，只信任 `X-User-Id` / `X-Is-Admin`。用户主数据在网关库 `enterprise_gateway.sys_user`；协同库以业务表为主（文档、会议、IM 等）。
 
 **与 Knowledge 的集成**：`enterprise-knowledge-ai-service` 的 `CollaborationClient` 直连 `:8090` 调用会议 API（Agent MCP Tool）。
 
@@ -80,42 +107,33 @@
 enterprise-collaboration-service/src/main/java/com/zjl/collaboration/
 ├── CollaborationApplication.java
 ├── config/
-│   ├── FilterConfig.java              # JwtAuthFilter 注册 /api/*
 │   ├── WebSocketConfig.java           # /ws/chat, /ws/docs
 │   ├── MybatisPlusConfig.java
 │   └── ImOssProperties.java           # app.im.oss.*
-├── web/                               # 13 Controller + 2 WS + Filter
-│   ├── AuthController.java
-│   ├── MeetingController.java
-│   ├── TodoController / TaskController / ApprovalController
-│   ├── AnnouncementController / ContactController
-│   ├── ChatController.java
+├── web/                               # 11 Controller + 2 WS Handler
+│   ├── MeetingController / TodoController / TaskController
+│   ├── ApprovalController / AnnouncementController
+│   ├── ContactController              # 用户 → GatewayUserClient
+│   ├── ChatController / ChatWebSocketHandler
 │   ├── DocController / DocCommentController / DocShareController
+│   ├── DocWebSocketHandler
 │   ├── IntentController / KeywordMappingController
-│   ├── ChatWebSocketHandler.java
-│   ├── DocWebSocketHandler.java
-│   ├── JwtAuthFilter.java
-│   └── MutableRequestWrapper.java
 ├── service/
-│   ├── DocOTService.java              # Quill Delta OT + 版本锁
-│   ├── DocPermissionService.java
-│   ├── DocPresenceService.java
-│   ├── IntentService.java
-│   ├── ImMessageService.java
-│   ├── ImMessageConsumer.java         # RocketMQ + onlineUsers Map
-│   ├── ImReadService.java
-│   ├── ImFileService.java
-│   ├── UserLoginService.java
-│   └── impl/UserLoginServiceImpl.java
+│   ├── DocOTService (+ impl)          # Quill Delta OT + 版本锁
+│   ├── DocPermissionService (+ impl)
+│   ├── DocPresenceService (+ impl)
+│   ├── IntentService (+ impl)
+│   ├── ImMessageService (+ impl)
+│   ├── ImMessageConsumer (+ impl)     # RocketMQ + onlineUsers Map
+│   ├── ImReadService (+ impl)
+│   └── ImFileService (+ impl)
 ├── integration/
+│   ├── GatewayUserClient.java         # HTTP → 网关 users/batch|search
+│   ├── UserInfo.java
 │   ├── WorkbenchCacheNotifier.java
 │   └── ZoomMeetingClient.java
-├── dto/                               # 登录/注册 DTO
-├── entity/                            # ~25 实体
-├── mapper/                            # ~25 Mapper
-└── util/
-    ├── JwtUtil.java                   # 协同 JWT（auth.jwt.*）
-    └── JwtClaimsSupport.java          # userId claim 或 sub 兼容
+├── entity/                            # ~20 实体
+└── mapper/                            # MyBatis-Plus Mapper
 ```
 
 ---
@@ -136,11 +154,10 @@ public class CollaborationApplication { ... }
 | 配置项 | 值 | 说明 |
 |--------|-----|------|
 | `server.port` | **8090** | |
-| `auth.jwt.expiration` | **86400000** ms（24h） | |
-| `auth.jwt.secret` | Nacos/secrets | **application.yml 未写**，须外部配置 |
+| `app.gateway.url` | `http://localhost:8086` | `GatewayUserClient` 调用户 batch/search |
+| `app.workbench.service-url` | `http://localhost:8084` | 缓存失效回调 |
 | `rocketmq.name-server` | localhost:9876 | |
 | `rocketmq.producer.group` | im-producer-group | |
-| `app.workbench.service-url` | http://localhost:8084 | 缓存失效回调 |
 | `app.im.oss.*` | endpoint/keys/bucket | IM 文件上传 |
 | `flyway.enabled` | **false** | 迁移手工执行 |
 | `spring.sql.init.mode` | **never** | |
@@ -155,98 +172,106 @@ public class CollaborationApplication { ... }
 | spring-boot-starter-websocket | WS |
 | rocketmq-spring-boot-starter | IM 异步 |
 | software.amazon.awssdk:s3 | OSS 兼容上传 |
-| jjwt | 协同 JWT |
 | spring-boot-starter-data-redis | 依赖引入（@EnableCaching） |
 | nacos discovery/config | 注册与配置 |
+
+> **已移除**：`jjwt`（v3 协同 JWT 方案）。
 
 ### 3.4 Gateway 路由前缀（经 :8086）
 
 ```
-/api/meetings/**  /api/todos/**  /api/tasks/**  /api/notifications/**
+/api/meetings/**  /api/todos/**  /api/tasks/**
 /api/chat/**  /api/docs/**  /api/approvals/**  /api/announcements/**
-/api/intents/**  /api/keyword-mappings/**
+/api/intents/**  /api/keyword-mappings/**  /ws/**
 ```
 
-**不经 Gateway**：`/ws/chat`、`/ws/docs`、开发期若直连 `:8090` 的全部路径。
+| 路径 | 说明 |
+|------|------|
+| `/api/notifications/**` | Gateway 已配置 Route，**协同服务无 Controller**（调用会 404） |
+| `/api/contacts/**` | 由**网关本地** `ContactDirectoryController` 处理，不转发到 :8090 |
+
+**开发调试**：生产路径 REST/WS 均经 `:8086`（WS 用 `?token=`）。仅 curl/集成测试可直连 `:8090` 并手动带 `X-User-Id`。
 
 ---
 
 ## 4. 鉴权模型（核心）
 
-### 4.1 JwtAuthFilter 决策树
+### 4.1 REST：信任网关注入头
 
-**注册**：`FilterConfig` · URL `/api/*` · Order **1**
+协同服务 **无 Servlet Filter 验 Token**。所有 REST Controller 通过 `@RequestHeader("X-User-Id")`（及可选 `X-Is-Admin`）识别用户。
 
 ```text
-请求 /api/*
-  │
-  ├─ path startsWith /api/auth/login → 放行
-  │
-  ├─ Header 含 X-User-Id（非空）→ 放行（Gateway 已鉴权）
-  │
-  ├─ Authorization: Bearer <token>
-  │     → collaboration JwtUtil.parse
-  │     → MutableRequestWrapper 注入:
-  │         X-User-Id = claims.userId   ⚠ 不读 sub
-  │         X-Department-Id = claims.deptId
-  │         X-Is-Admin = claims.isAdmin
-  │
-  └─ 否则 → 放行（无身份头，Controller 自行处理或空 userId）
+Client → Gateway :8086（Sa-Token）
+           IdentityPropagationGlobalFilter
+             注入 X-User-Id, X-Department-Id, X-Is-Admin
+             移除 Authorization
+           → lb://enterprise-collaboration-service :8090
+Collaboration Controller 读取 X-User-Id
 ```
 
-**与 Gateway JWT 的差异**：
+| Header | 用途 |
+|--------|------|
+| `X-User-Id` | 必填（业务 API）；缺失时多为 null / NPE / 空列表 |
+| `X-Is-Admin` | 审批列表等管理员放宽 |
+| `X-Department-Id` | 预留；当前 Controller 较少直接使用 |
 
-| 项 | Gateway JWT | Collaboration JWT |
-|----|-------------|-------------------|
-| userId | `sub` | `userId` claim |
-| 密钥 | `app.security.jwt.secret` | `auth.jwt.secret` |
-| 黑名单 | DB `sys_token_blacklist` | 内存 `ConcurrentHashMap` |
+**安全边界**：生产环境禁止外网直连 `:8090`，否则可伪造 `X-User-Id`。
 
-经 Gateway 的 REST：**推荐**依赖 `X-User-Id`，不要指望 Bearer 在 Filter 里从 Gateway token 解析（Filter 只读 `userId` claim，不读 `sub`）。
+### 4.2 WebSocket：握手头 `X-User-Id`
 
-### 4.2 WebSocket 鉴权
-
-**Chat** 与 **Doc** WS 均用 query：`?token=<JWT>`
+**Chat** 与 **Doc** 均在 `afterConnectionEstablished` 读取：
 
 ```java
-// ChatWebSocketHandler / DocWebSocketHandler
-Claims c = jwtUtil.parse(token);  // 协同 JwtUtil
-Long userId = JwtClaimsSupport.resolveUserId(c);  // userId 或 sub ✅
+String userIdHeader = session.getHandshakeHeaders().getFirst("X-User-Id");
 ```
 
-前端 `Chats.vue` / `Documents.vue` 传的是 `localStorage.token`（**Gateway 登录 token**）。  
-WS 能连上需满足：**两服务 JWT secret 一致**，且 `JwtClaimsSupport` 从 `sub` 解析 userId。
+| Handler | 无头时 |
+|---------|--------|
+| `ChatWebSocketHandler` | CloseStatus **4002**「用户未认证」 |
+| `DocWebSocketHandler` | CloseStatus **POLICY_VIOLATION** |
 
-CloseStatus：`4001` Token 过期 · `4002` Token 无效
+**v3 文档误区**：协同服务**不再**签发或校验 JWT；`JwtUtil` 已删除。
 
-### 4.3 协同自有登录（AuthController）
+**推荐路径（与当前前端一致）**：经 Gateway 升级 WebSocket，query 传 Sa-Token：
 
-独立账号体系，供 IM/WS 或直连协同使用：
+```javascript
+// Chats.vue / Documents.vue 实际写法
+const token = localStorage.getItem('token')
+new WebSocket(`ws://${host}:8086/ws/chat?token=${encodeURIComponent(token)}`)
+```
 
-| API | 说明 |
+Gateway `SaTokenConfig` 校验 `?token=` 后转发至 `:8090`；下游 Handler 仍读取握手头 **`X-User-Id`**。  
+**已知缺口**：`IdentityPropagationGlobalFilter` 仅从 `Authorization` 头取 token，**不会**把 query `token` 转成 `X-User-Id`——若 WS 连上但立刻 4002 关闭，需网关侧补注入或前端改用可带头的 WS 客户端直连 `:8090`。
+
+**开发直连 :8090**（curl/集成测试）：
+
+```bash
+curl -i -N -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  -H 'X-User-Id: 6' 'http://localhost:8090/ws/chat'
+```
+
+### 4.3 GatewayUserClient（用户资料反查）
+
+**类**：`integration/GatewayUserClient`  
+**配置**：`app.gateway.url`（默认 `http://localhost:8086`）
+
+| 方法 | 网关 API | 用途 |
+|------|----------|------|
+| `batchQuery(ids)` | `GET /api/system/users/batch?ids=` | Chat/Doc 显示 realName |
+| `search(keyword, limit)` | `GET /api/system/users/search?keyword=&limit=` | ContactController 用户列表 |
+| `getById(userId)` | batch 单 id | 发消息时取发送者姓名 |
+
+**注意**：当前实现 **未携带** `Authorization` 头。网关 batch/search 需 login，服务间调用可能返回空 Map（日志 `批量查询用户失败`）。改进方向：内部服务 Token、mTLS 或网关白名单内网 IP。
+
+### 4.4 ContactController 行为
+
+| API | 实现 |
 |-----|------|
-| POST `/api/auth/login` | 返回 `accessToken`（协同 JWT） |
-| GET `/api/auth/check-login?accessToken=` | 校验 |
-| POST `/api/auth/logout?accessToken=` | 内存黑名单 |
-| POST `/api/auth/register` | 注册 |
-| POST `/api/auth/deletion` | 物理删用户 |
-| GET `/api/auth/has-username?username=` | 用户名是否存在 |
+| `GET /api/contacts/departments` | 返回 **空列表**（占位） |
+| `GET /api/contacts/users` | `GatewayUserClient.search` + 可选 deptId 过滤 |
 
-`UserLoginServiceImpl` 签发 claims：`userId`, `username`, `isAdmin`（及 register 时 deptId 等）。
-
-**DTO 字段**：
-
-| DTO | 字段 |
-|-----|------|
-| UserLoginReqDTO | username, password |
-| UserLoginRespDTO | accessToken, userId, username, realName, isAdmin |
-| UserRegisterReqDTO | username, password, realName?, deptId? |
-| UserRegisterRespDTO | userId, username |
-| UserDeletionReqDTO | username, password |
-
-密码存储：`UserLoginServiceImpl` 使用 BCrypt 校验/编码。
-
-**Filter 白名单范围**：仅 `/api/auth/login` 前缀；register/logout 等仍走 Filter，但无 Bearer 且无 X-User-Id 时 **也会放行**（Filter 最后一支 `chain.doFilter` 无身份）。
+经 Gateway 访问 `/api/contacts/**` 时，请求会到**网关** `ContactDirectoryController`（读网关库），不会 hit 协同此 Controller。
 
 ---
 
@@ -254,18 +279,17 @@ CloseStatus：`4001` Token 过期 · `4002` Token 无效
 
 | Controller | 前缀 | 身份 | 核心职责 |
 |-----------|------|------|----------|
-| AuthController | `/api/auth` | 部分白名单 | 协同登录/register |
 | MeetingController | `/api/meetings` | X-User-Id | 会议 CRUD、冲突检测、Zoom |
 | TodoController | `/api/todos` | X-User-Id | 个人待办 |
-| TaskController | `/api/tasks` | X-User-Id（创建） | 任务看板+评论 |
+| TaskController | `/api/tasks` | X-User-Id | 任务看板+评论 |
 | ApprovalController | `/api/approvals` | X-User-Id, X-Is-Admin | 审批流 |
 | AnnouncementController | `/api/announcements` | X-User-Id | 公告 |
-| ContactController | `/api/contacts` | — | 部门/用户（协同库） |
+| ContactController | `/api/contacts` | — | 用户搜索（GatewayUserClient）；部门占位空 |
 | ChatController | `/api/chat` | X-User-Id | IM REST |
-| DocController | `/api/docs` | X-User-Id（创建） | 协同文档 CRUD |
-| DocCommentController | `/api/docs/.../comments` | — | 评论 |
-| DocShareController | `/api/docs/...` | — | 协作者、分享链接 |
-| IntentController | `/api/intents` | — | 意图树管理 + match |
+| DocController | `/api/docs` | X-User-Id | 协同文档 CRUD |
+| DocCommentController | `/api/docs` | X-User-Id | 评论 |
+| DocShareController | `/api/docs` | X-User-Id | 协作者、分享链接 |
+| IntentController | `/api/intents` | — | 意图树 `/nodes/**` + match |
 | KeywordMappingController | `/api/keyword-mappings` | — | 关键词 CRUD + match |
 
 ---
@@ -326,7 +350,7 @@ ImMessageConsumer.onMessage
 
 ### 6.5 Chat WebSocket 协议
 
-**连接**：`ws://host:8090/ws/chat?token=JWT`
+**连接**：`ws://host:8090/ws/chat`（握手请求头 **`X-User-Id: <userId>`**）
 
 **客户端 → 服务端**（JSON）：
 
@@ -379,9 +403,9 @@ MultipartFile
 
 ### 6.8 ChatWebSocketHandler 要点
 
-与 Doc WS 类似：`afterConnectionEstablished` 解析 `?token=`，`JwtClaimsSupport.resolveUserId`。  
-连接成功后注册 `ImMessageConsumer.onlineUsers.put(userId, session)`；断开 remove。  
-`handleTextMessage` 解析 JSON → `ImMessageService.send(senderId, senderName, conversationId, content, clientMsgId)` → 回写 ack TextMessage。
+`afterConnectionEstablished` 从握手头读 **`X-User-Id`**，缺失则 CloseStatus **4002**。  
+连接成功后 `ImMessageConsumer.onlineUsers.put(userId, session)`；断开 remove。  
+`handleTextMessage` → `GatewayUserClient.getById` 取 realName → `ImMessageService.send` → 回 ack。
 
 ---
 
@@ -438,7 +462,7 @@ unlock
 
 ### 7.4 Doc WebSocket 协议
 
-**连接**：`ws://host:8090/ws/docs?token=JWT`
+**连接**：`ws://host:8090/ws/docs`（握手头 **`X-User-Id`**）
 
 **action 类型**：
 
@@ -776,20 +800,20 @@ kb_keyword_mapping (独立)
 
 | 页面 | 连接 |
 |------|------|
-| Chats.vue | `ws://host:8090/ws/chat?token=` |
-| Documents.vue | `ws://host:8090/ws/docs?token=` |
-| Meetings.vue | REST 经 Gateway；错误提示 8090 |
+| Chats.vue | `ws://host:8086/ws/chat?token=`（Gateway Sa-Token） |
+| Documents.vue | `ws://host:8086/ws/docs?token=`（同上） |
+| Meetings.vue | REST 经 Gateway `:8086` |
 
-Vite **未代理** WebSocket，必须端口 8090 可达。
+Vite **未代理** WebSocket；前端写死 `:8086/ws/**?token=`，与 REST 共用同一登录 Token。
 
 ---
 
 ## 14. 响应与错误
 
 - 统一 `Result<T>`，`code="200"` 成功
-- `BizException` → GlobalExceptionHandler
-- JwtAuthFilter 401 直接写 JSON（非 Result 格式）：`{"code":"40100","message":"..."}`
-- WS 认证失败：close 4001/4002 或 POLICY_VIOLATION
+- `BizException` → `GlobalExceptionHandler`
+- 缺 `X-User-Id`：多为空数据或 500，非统一 401（无 Filter 拦截）
+- WS 认证失败：Chat **4002**；Doc **POLICY_VIOLATION**
 
 ---
 
@@ -797,22 +821,23 @@ Vite **未代理** WebSocket，必须端口 8090 可达。
 
 | 阶段 | 顺序 |
 |------|------|
-| ① | `FilterConfig` → `JwtAuthFilter` |
+| ① | `GatewayUserClient` + 网关 `IdentityPropagationGlobalFilter` |
 | ② | `ChatController` → `ImMessageService` → `ChatWebSocketHandler` |
 | ③ | `DocWebSocketHandler` → `DocOTService` → `DocPermissionService` |
 | ④ | `MeetingController` → `WorkbenchCacheNotifier` |
-| ⑤ | `IntentService` → `KeywordMappingController` |
-| ⑥ | `db/migration/001-initial.sql` |
+| ⑤ | `IntentController`（`/nodes` 路径）→ `KeywordMappingController` |
+| ⑥ | `db/migration/*.sql` |
 
 | 现象 | 排查 |
 |------|------|
-| WS 连不上 | token 是否协同 JWT 或同 secret 的 Gateway JWT；8090 端口 |
-| REST 401 | 经 Gateway 是否带 X-User-Id；直连是否 Bearer 协同 token |
+| WS 连不上 | 握手是否带 `X-User-Id`；8090 端口；浏览器 WS 限制 |
+| REST 经网关 500 | 网关 IdentityPropagation 是否已修复（见 gateway 文档 §0） |
+| 聊天无发送者姓名 | `GatewayUserClient` 调网关 batch 是否 401 |
 | 文档 OT 冲突 | baseVersion 是否落后；多实例锁 |
 | 工作台会议不刷新 | WorkbenchCacheNotifier、8084 可达 |
-| intentCount=0 | 无 GET /api/intents 根路径 |
+| intentCount=0 / 500 | Workbench Feign 调 **`GET /api/intents`** 不存在；应为 `/api/intents/nodes` |
 | IM 无推送 | onlineUsers 是否注册；RocketMQ 可选 |
-| 审批状态卡住 | nextStatus 多级流转 |
+| `/api/intents` 404 | 正确路径为 `/api/intents/nodes` 等子路径 |
 
 ---
 
@@ -822,7 +847,6 @@ Vite **未代理** WebSocket，必须端口 8090 可达。
 
 | 文件 | 说明 |
 |------|------|
-| AuthController | 协同登录/register |
 | MeetingController | 会议+冲突+Zoom+evict |
 | TodoController | 待办 |
 | TaskController | 任务+评论 |
@@ -836,14 +860,21 @@ Vite **未代理** WebSocket，必须端口 8090 可达。
 | IntentController | 意图树 |
 | KeywordMappingController | 关键词 |
 
-### 16.2 web/ WebSocket & Filter
+### 16.2 web/ WebSocket
 
 | 文件 | 说明 |
 |------|------|
-| ChatWebSocketHandler | IM WS |
-| DocWebSocketHandler | 文档 OT WS |
-| JwtAuthFilter | /api/* 鉴权 |
-| MutableRequestWrapper | 注入 Header |
+| ChatWebSocketHandler | IM WS（X-User-Id） |
+| DocWebSocketHandler | 文档 OT WS（X-User-Id） |
+
+### 16.3 integration/
+
+| 文件 | 说明 |
+|------|------|
+| GatewayUserClient | 调网关用户 batch/search |
+| UserInfo | 用户 DTO |
+| WorkbenchCacheNotifier | 工作台缓存失效 |
+| ZoomMeetingClient | Zoom API |
 
 ### 16.3 service/
 
@@ -877,18 +908,10 @@ Vite **未代理** WebSocket，必须端口 8090 可达。
 
 ---
 
-### 17.1 AuthController — `/api/auth`
+### 17.1 认证说明（v4）
 
-| 方法 | 路径 | 鉴权 | 请求体 / 参数 | 响应 data |
-|------|------|------|---------------|-----------|
-| POST | `/login` | 无 | `UserLoginReqDTO`: `{ username, password }` | `UserLoginRespDTO`: `{ accessToken, userId, username, realName, isAdmin }` |
-| GET | `/check-login` | 无 | Query: `accessToken` | `boolean` |
-| POST | `/logout` | 无 | Query: `accessToken` | void |
-| POST | `/register` | 无 | `UserRegisterReqDTO`: `{ username, password, realName?, deptId? }` | `UserRegisterRespDTO` |
-| POST | `/deletion` | 无 | `UserDeletionReqDTO`: `{ username, password }` | void |
-| GET | `/has-username` | 无 | Query: `username` | `boolean` |
-
-**说明**：`/login` 在 `JwtAuthFilter` 白名单；签发 token 使用 `auth.jwt.secret`，claims 含 `userId`（非 sub）。logout 将 token 写入 `UserLoginServiceImpl` 内存黑名单 Set。
+协同服务 **无** `/api/auth/*` 接口。登录统一使用网关 `POST /api/auth/login`（Sa-Token）。  
+本服务 REST 依赖 Header **`X-User-Id`**；用户姓名等通过 **`GatewayUserClient`** 反查网关 `GET /api/system/users/batch|search`。
 
 ---
 
@@ -1116,15 +1139,16 @@ reject：`action=rejected` → status=`rejected`，不再走 nextStatus。
 
 ### 18.1 Chat WS
 
-**URL**：`ws://{host}:8090/ws/chat?token={JWT}`
+**URL**：`ws://{host}:8090/ws/chat`（握手头 **`X-User-Id: {userId}`**）
 
 **连接生命周期**：
 
 ```text
 afterConnectionEstablished
-  → JwtUtil.parse(token) + JwtClaimsSupport.resolveUserId
+  → getHandshakeHeaders().getFirst("X-User-Id")
+  → 缺失则 CloseStatus 4002
   → onlineUsers.put(userId, session)
-  → 广播 { type:"status", userId, status:"online" } 给相关会话成员
+  → 广播 { type:"status", userId, status:"online" }
 
 afterConnectionClosed
   → onlineUsers.remove(userId)
@@ -1150,13 +1174,13 @@ afterConnectionClosed
 | status | userId, status | online / offline |
 | read | conversationId, userId, lastReadMsgId | 已读回执 |
 
-**CloseStatus**：4001 过期 · 4002 无效 · POLICY_VIOLATION 无 token
+**CloseStatus**：**4002** 无 X-User-Id · POLICY_VIOLATION 解析失败
 
 ---
 
 ### 18.2 Doc WS
 
-**URL**：`ws://{host}:8090/ws/docs?token={JWT}`
+**URL**：`ws://{host}:8090/ws/docs`（握手头 **`X-User-Id`**）
 
 所有消息含 `action` 字段。
 
@@ -1282,22 +1306,21 @@ ListMyMeetingsTool → GET /api/meetings/my?userName={userId}
 
 | 项 | 现状 | 影响 | 建议 |
 |----|------|------|------|
-| 双 sys_user | Gateway ≠ Collaboration | 同 username 不同 id | SSO 或同步 |
-| JwtAuthFilter Bearer | 只读 userId claim | Gateway JWT 无 userId 时 X-User-Id=null | Filter 改用 JwtClaimsSupport |
-| WS token | 前端传 Gateway JWT | secret 不一致则 4002 | 统一 secret 或协同 login |
-| 协同 logout 黑名单 | 内存 Set | 重启失效 | Redis/DB 黑名单 |
+| GatewayUserClient 无 Token | batch/search 调网关 401 | 聊天 senderName 为空 | 服务间凭证或内网白名单 |
+| WS 经 Gateway `?token=` | IdentityPropagation 不读 query | 握手成功但协同 4002 关连接 | 网关 WS 路由注入 X-User-Id |
+| WS 握手头 | 协同 Handler 硬依赖 X-User-Id | 直连 :8090 可伪造身份 | 生产禁外网直连 8090 |
 | IM 双推 | Service+Consumer 各推 | 客户端可能重复 message | clientMsgId 去重 |
 | onlineUsers 静态 Map | 单 JVM | 多实例 IM 不同步 | Redis pub/sub |
 | DocOT 内存锁 | ReentrantLock/docId | 多实例 OT 竞争 | 分布式锁 |
 | Task 全库 | 无 user 过滤 | Workbench 统计非个人 | query assigneeId |
-| GET /api/intents | 不存在 | Workbench intentCount=0 | 加 count 或改 Feign |
+| GET /api/intents | Feign 误调根路径 | intentCount=0 / NoResourceFoundException | 改 Feign 为 `/api/intents/nodes` 或加 count API |
 | 会议 /my | attendees 字符串 contains | 误匹配 | JSON 数组参会人 |
 | Flyway off | 手工 SQL | 环境漂移 | 启用或 CI 校验 |
-| Doc WS dept 权限 | checkPermission deptId=null | DEPT 协作者 WS 被拒 | 从 JWT/Header 传 deptId |
-| Doc 创建者判定 | updatedBy 非 createdBy | 权限边界模糊 | 用 created_by |
+| Doc WS userName | 暂用 userId 字符串 | 光标显示不友好 | GatewayUserClient 补 realName |
 | 公告/通讯录缓存 | @Cacheable 无 evict | 发布后列表 stale | @CacheEvict on POST |
 | 物理删 | doc/task/todo/approval | 无审计 | 统一 deleted 标志 |
 | IM 文件 GET | ChatController 无 download | Chats.vue 图片 404 | 实现 GET /files/{ossKey} |
+| /api/notifications | Gateway 有 Route 无 Controller | 404 | 实现或删 Route |
 
 ---
 
@@ -1468,8 +1491,8 @@ ListMyMeetingsTool → GET /api/meetings/my?userName={userId}
 
 | Vue 页面 | REST | WebSocket | 备注 |
 |----------|------|-----------|------|
-| Chats.vue | /api/chat/* | ws://:8090/ws/chat?token= | localStorage.token；文件 /api/chat/files/{ossKey} |
-| Documents.vue | /api/docs, collaborators | ws://:8090/ws/docs?token= | OT 编辑、协作者面板 |
+| Chats.vue | /api/chat/*（经 Gateway Sa-Token） | `ws://host:8086/ws/chat?token=` | 与 REST 同一套登录 Token |
+| Documents.vue | /api/docs, collaborators | `ws://host:8086/ws/docs?token=` | OT 编辑；同上 |
 | Meetings.vue | /api/meetings | — | 经 Gateway |
 | Todos.vue | /api/todos | — | toggle/delete |
 | Tasks.vue | /api/tasks + comments | — | 看板四列 status |
@@ -1479,7 +1502,7 @@ ListMyMeetingsTool → GET /api/meetings/my?userName={userId}
 | admin/IntentList.vue | /api/intents/nodes | — | 列表删节点 |
 | Workbench（经 8084） | Feign → 本服务多接口 | — | unread-count, meetings/my, tasks, todos |
 
-**Vite 代理**：REST `/api/*` → Gateway 8086；**WS 不代理**，浏览器直连 8090。
+**Vite 代理**：REST `/api/*` → Gateway 8086；`/api/workbench`、`/api/kb` 直连下游。**WS 不代理**，前端写死 `:8086/ws/**?token=`。
 
 ---
 
@@ -1511,8 +1534,7 @@ V007__keyword_mapping.sql
 |----|-----------|------|
 | `server.port` | 8090 | |
 | `spring.datasource.url` | jdbc:mysql://.../enterprise_collaboration | |
-| `auth.jwt.secret` | **必配** | 协同 JWT |
-| `auth.jwt.expiration` | 86400000 | |
+| `app.gateway.url` | http://localhost:8086 | GatewayUserClient |
 | `rocketmq.name-server` | localhost:9876 | IM |
 | `app.im.oss.endpoint` | MinIO/S3 地址 | IM 文件 |
 | `app.im.oss.access-key` / `secret-key` / `bucket` / `region` | | 空则上传不可用 |
@@ -1522,36 +1544,27 @@ V007__keyword_mapping.sql
 
 ---
 
-## 26. 附录 J — 87 个 Java 源文件清单（按包）
+## 26. 附录 J — 80 个 Java 源文件清单（按包）
 
 ```text
 com.zjl.collaboration/
 ├── CollaborationApplication.java
-├── config/ (5)
-│   FilterConfig, WebSocketConfig, MybatisPlusConfig, ImOssProperties
-├── web/ (17)
-│   AuthController, MeetingController, TodoController, TaskController
+├── config/ (3)
+│   WebSocketConfig, MybatisPlusConfig, ImOssProperties
+├── web/ (13)
+│   MeetingController, TodoController, TaskController
 │   ApprovalController, AnnouncementController, ContactController
 │   ChatController, DocController, DocCommentController, DocShareController
 │   IntentController, KeywordMappingController
-│   ChatWebSocketHandler, DocWebSocketHandler, JwtAuthFilter, MutableRequestWrapper
-├── service/ (11)
+│   ChatWebSocketHandler, DocWebSocketHandler
+├── service/ (14)
 │   DocOTService, DocPermissionService, DocPresenceService, IntentService
 │   ImMessageService, ImMessageConsumer, ImReadService, ImFileService
-│   UserLoginService, impl/UserLoginServiceImpl
-├── integration/ (2)
-│   WorkbenchCacheNotifier, ZoomMeetingClient
-├── dto/ (5)
-│   UserLoginReqDTO/RespDTO, UserRegisterReqDTO/RespDTO, UserDeletionReqDTO
-├── entity/ (25)
-│   SysUser, SysDept, SysMeeting, SysTodo, SysTask, SysTaskComment
-│   SysApprovalRequest, SysApprovalRecord, SysAnnouncement, SysDoc
-│   SysDocOperation, SysDocComment, SysDocShareLink, SysDocCollaborator
-│   ImConversation, ImConversationMember, ImMessage, ImMessageRead, ImMessageFile
-│   KbIntentNode, KbIntentRule, KbIntentKbRel, KbKeywordMapping
-├── mapper/ (25) — 与 entity 一一对应
-└── util/ (2)
-    JwtUtil, JwtClaimsSupport
+│   + 对应 *Impl
+├── integration/ (4)
+│   GatewayUserClient, UserInfo, WorkbenchCacheNotifier, ZoomMeetingClient
+├── entity/ (~20)
+├── mapper/ (~20)
 ```
 
 ---
@@ -1560,10 +1573,12 @@ com.zjl.collaboration/
 
 | 调用方 | 被调接口 | 协议 | 身份传递 |
 |--------|----------|------|----------|
-| enterprise-web | 全部 /api/* | HTTP→Gateway→8090 | JWT→X-User-Id 等 |
-| enterprise-web | /ws/chat, /ws/docs | WS 直连 8090 | ?token= |
-| enterprise-workbench-service | meetings/my, todos, tasks, chat/unread-count, intents(误) | Feign HTTP | X-User-Id |
-| enterprise-knowledge-ai-service | meetings CRUD, check-conflict | CollaborationClient HTTP | X-User-Id, X-Is-Admin |
+| enterprise-web | REST /api/* | HTTP→Gateway→8090 | Sa-Token→X-User-Id |
+| enterprise-web | /ws/chat, /ws/docs | WS 直连或 Gateway /ws/** | X-User-Id 握手头 |
+| enterprise-workbench-service | meetings, todos, tasks, chat/unread-count | Feign HTTP | X-User-Id |
+| enterprise-workbench-service | **GET /api/intents**（误） | Feign | 404，应改路径 |
+| enterprise-knowledge-ai-service | meetings CRUD, check-conflict | CollaborationClient | X-User-Id, X-Is-Admin |
+| Collaboration | GET /api/system/users/batch\|search | HTTP→Gateway | **无 Token（待改进）** |
 | MeetingController | workbench cache evict | HTTP DELETE | 无 |
 | ImMessageService | RocketMQ im-message | MQ | — |
 | ImFileService | S3 兼容 OSS | AWS SDK | AK/SK |
@@ -1573,21 +1588,20 @@ com.zjl.collaboration/
 ## 28. 附录 L — 鉴权与权限决策（汇总图）
 
 ```text
-                    HTTP /api/*
+                    HTTP /api/*（经 Gateway）
+                         │
+              Gateway SaReactorFilter + IdentityPropagation
+                         │
+              X-User-Id, X-Is-Admin, X-Department-Id
                          │
               ┌──────────▼──────────┐
-              │   JwtAuthFilter     │
+              │ Collaboration       │
+              │ Controller          │
               └──────────┬──────────┘
-         login白名单     │    X-User-Id 已有
-              │         │         │
-              ▼         ▼         ▼
-           放行      Bearer解析   放行
-                    (userId claim)
-                         │
          ┌───────────────┼───────────────┐
          ▼               ▼               ▼
     Todo/Task      Approval(+Admin)   Doc/Chat
-    user_id过滤     列表范围          X-User-Id
+    user_id过滤     列表范围          @RequestHeader
          │               │               │
          └───────────────┴───────────────┘
                          │
@@ -1598,9 +1612,7 @@ com.zjl.collaboration/
 ```text
                     WebSocket
                          │
-              token query param
-                         │
-              JwtUtil + JwtClaimsSupport
+              Handshake Header: X-User-Id
                          │
               ┌──────────┴──────────┐
               ▼                     ▼
@@ -1637,4 +1649,62 @@ com.zjl.collaboration/
 
 ---
 
-*文档结束 · v3.0 · 2026-05-25*
+## 31. 附录 O — 快速验证清单
+
+```bash
+# 0. 前置：MySQL enterprise_collaboration、RocketMQ（可选）、Nacos（可选）
+#    网关 :8086 已启动时可走完整链路；仅测协同可直连 :8090 并手动带头
+
+# 1. 启动协同服务
+mvn spring-boot:run -pl enterprise-collaboration-service
+
+# 2. 健康检查（若未暴露 actuator，可跳过；以业务 API 为准）
+curl -s -o /dev/null -w '%{http_code}\n' \
+  'http://localhost:8090/api/chat/unread-count' -H 'X-User-Id: 6'
+# 期望 200
+
+# 3. IM 未读数（直连，模拟网关注入）
+curl -s 'http://localhost:8090/api/chat/unread-count' -H 'X-User-Id: 6' | jq .
+
+# 4. 文档列表
+curl -s 'http://localhost:8090/api/docs?current=1&size=5' -H 'X-User-Id: 6' | jq '.code, .data.total // .data.records | length'
+
+# 5. 意图树（正确路径；勿调 GET /api/intents）
+curl -s 'http://localhost:8090/api/intents/nodes' | jq '.code, (.data | length)'
+
+# 6. 错误路径对照（Workbench Feign 曾误调，日志 NoResourceFoundException）
+curl -s -o /dev/null -w '%{http_code}\n' 'http://localhost:8090/api/intents'
+# 期望 404
+
+# 7. 经 Gateway 完整链路（需先登录拿 TOKEN）
+TOKEN=$(curl -s -X POST http://localhost:8086/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"123456"}' | jq -r '.data.token')
+
+curl -s 'http://localhost:8086/api/chat/unread-count' \
+  -H "Authorization: $TOKEN" | jq '.code, .data'
+
+curl -s 'http://localhost:8086/api/meetings/my' \
+  -H "Authorization: $TOKEN" | jq '.code, (.data | length)'
+
+# 8. GatewayUserClient 依赖（协同发消息显示姓名；需 login）
+curl -s "http://localhost:8086/api/system/users/batch?ids=6" \
+  -H "Authorization: $TOKEN" | jq .
+
+# 9. Workbench 聚合（Feign 带头；观察 intentCount 是否为 0）
+curl -s 'http://localhost:8084/api/workbench/overview' \
+  -H 'X-User-Id: 6' -H 'X-Is-Admin: true' | jq '.data | {documentCount, baseCount, intentCount, unreadMessageCount}'
+```
+
+| 现象 | 可能原因 | 对照章节 |
+|------|----------|----------|
+| REST 401 | 未带 Authorization 或权限码不足 | gateway §8、§13 |
+| REST 200 但业务空 | 缺 `X-User-Id`（直连 8090 未带头） | §4.1 |
+| `intentCount=0` | Feign 调 `GET /api/intents` | §20、§27 |
+| overview 长期全 0 | Redis 缓存了 Feign 降级结果 | workbench `skipOverviewCache` |
+| WS 立刻断开 4002 | 握手无 `X-User-Id`（Gateway query token 未注入） | §4.2、§20 |
+| senderName 为空 | `GatewayUserClient` 调 batch 401 | §4.3 |
+
+---
+
+*文档结束 · v4.1 · 2026-05-27 · 身份模型：网关注入 X-User-Id*

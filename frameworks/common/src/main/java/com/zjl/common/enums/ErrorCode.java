@@ -61,4 +61,24 @@ public enum ErrorCode {
         this.code = code;
         this.message = message;
     }
+
+    /**
+     * 构造与 {@link com.zjl.common.response.Result} 一致的失败 JSON。
+     * 仅用于必须直接返回 JSON 字符串、且 Jackson 序列化失败时的兜底。
+     *
+     * @param code    数值错误码
+     * @param message 错误消息
+     * @param traceId 链路 ID，可为 null
+     * @return JSON 字符串
+     */
+    public static String toFailureJson(int code, String message, String traceId) {
+        String msg = message != null ? message : SYSTEM_ERROR.message;
+        String tid = traceId == null ? "null" : "\"" + escapeJson(traceId) + "\"";
+        return "{\"code\":\"" + code + "\",\"message\":\"" + escapeJson(msg)
+                + "\",\"data\":null,\"traceId\":" + tid + "}";
+    }
+
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 }

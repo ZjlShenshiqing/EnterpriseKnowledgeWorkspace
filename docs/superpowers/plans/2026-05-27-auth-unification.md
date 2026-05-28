@@ -117,7 +117,7 @@ public List<UserInfoDTO> searchUsers(String keyword, int limit) {
 
 Add required imports at the top:
 ```java
-import com.zjl.service.UserInfoDTO;
+import com.zjl.dto.UserInfoDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
@@ -192,7 +192,7 @@ public Mono<Result<List<UserInfoDTO>>> searchUsers(
 
 Add import for `UserInfoDTO` and `Map`:
 ```java
-import com.zjl.service.UserInfoDTO;
+import com.zjl.dto.UserInfoDTO;
 import java.util.Map;
 ```
 

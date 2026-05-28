@@ -1,6 +1,7 @@
 package com.zjl.common.response;
 
 import com.zjl.common.enums.BaseErrorCode;
+import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.AbstractException;
 import com.zjl.common.trace.TraceIdHolder;
 import org.slf4j.MDC;
@@ -82,5 +83,12 @@ public final class Results {
                 .setCode(String.valueOf(numericCode))
                 .setMessage(errorMessage)
                 .setTraceId(traceId);
+    }
+
+    /**
+     * 通过 {@link ErrorCode} 构建失败响应，并显式指定 traceId。
+     */
+    public static Result<Void> failure(ErrorCode errorCode, String traceId) {
+        return failure(errorCode.getCode(), errorCode.getMessage(), traceId);
     }
 }

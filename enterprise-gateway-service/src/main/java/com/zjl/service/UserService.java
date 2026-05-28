@@ -5,6 +5,7 @@ import com.zjl.common.response.PageResult;
 import com.zjl.domain.SysDept;
 import com.zjl.domain.SysRole;
 import com.zjl.domain.SysUser;
+import com.zjl.dto.UserInfoDTO;
 import com.zjl.repository.SysDeptRepository;
 import com.zjl.repository.SysRoleRepository;
 import com.zjl.repository.SysUserRepository;
