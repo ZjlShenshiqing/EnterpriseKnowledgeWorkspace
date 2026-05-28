@@ -49,6 +49,16 @@ app:
     embedding-model: text-embedding-v3
     embedding-base-url: https://dashscope.aliyuncs.com/compatible-mode
     vector-write-enabled: true    # 全局向量写入开关
+    sensitivity:
+      enabled: true
+      keywords:
+        - 薪资
+        - 财务数据
+        - 战略
+        - 未公开
+        - 机密
+        - 预算
+        - 股权
   milvus:
     uri: http://localhost:19530
     collection: kb_chunk_embedding
