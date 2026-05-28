@@ -114,8 +114,10 @@ public class RagQaTool implements McpTool {
         List<KbDocumentChunk> chunks = kbDocumentChunkMapper.selectBatchIds(chunkIds);
 
         Map<Long, Float> scoreMap = new LinkedHashMap<>();
+        Map<Long, Map<String, Object>> metaMap = new LinkedHashMap<>();
         for (SearchResult r : results) {
             scoreMap.put(Long.parseLong(r.chunkId()), r.score());
+            metaMap.put(Long.parseLong(r.chunkId()), r.metadata());
         }
 
         return chunks.stream()
@@ -124,6 +126,7 @@ public class RagQaTool implements McpTool {
                     chunkInfo.put("chunkIndex", c.getChunkIndex());
                     chunkInfo.put("text", c.getChunkText());
                     chunkInfo.put("score", scoreMap.getOrDefault(c.getId(), 0f));
+                    chunkInfo.put("metadata", metaMap.getOrDefault(c.getId(), Map.of()));
                     return chunkInfo;
                 })
                 .collect(Collectors.toList());

@@ -300,7 +300,7 @@ public class MilvusVectorWriter {
                         String chunkId = (String) sr.getEntity().get("id");
                         Map<String, Object> metaObj = getMetadata(sr.getEntity());
                         String docId = metaObj != null ? (String) metaObj.get("doc_id") : null;
-                        results.add(new SearchResult(chunkId, docId, sr.getScore()));
+                        results.add(new SearchResult(chunkId, docId, sr.getScore(), metaObj));
                     }
                 }
             }
