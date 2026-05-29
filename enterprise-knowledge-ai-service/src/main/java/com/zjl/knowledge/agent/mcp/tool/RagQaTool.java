@@ -78,20 +78,22 @@ public class RagQaTool implements McpTool {
                 .distinct()
                 .collect(Collectors.toList());
 
-        List<KbDocument> docs = kbDocumentMapper.selectBatchIds(docIds).stream()
+        Map<Long, KbDocument> docMap = kbDocumentMapper.selectBatchIds(docIds).stream()
                 .filter(d -> d.getDeleted() == null || d.getDeleted() == 0)
                 .filter(this::isSearchable)
                 .filter(d -> isVisible(d, user))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(KbDocument::getId, d -> d, (left, right) -> left, LinkedHashMap::new));
 
         Map<Long, List<SearchResult>> resultsByDoc = searchResults.stream()
-                .filter(r -> docs.stream().anyMatch(d -> d.getId().toString().equals(r.docId())))
+                .filter(r -> docMap.containsKey(Long.parseLong(r.docId())))
                 .collect(Collectors.groupingBy(r -> Long.parseLong(r.docId())));
 
         List<Map<String, Object>> documents = new ArrayList<>();
         int count = 0;
-        for (KbDocument doc : docs) {
+        for (Long docId : docIds) {
             if (count >= topK) break;
+            KbDocument doc = docMap.get(docId);
+            if (doc == null) continue;
             List<SearchResult> docResults = resultsByDoc.get(doc.getId());
             if (docResults == null || docResults.isEmpty()) continue;
 
@@ -120,7 +122,8 @@ public class RagQaTool implements McpTool {
                 .map(r -> Long.parseLong(r.chunkId()))
                 .collect(Collectors.toList());
 
-        List<KbDocumentChunk> chunks = kbDocumentChunkMapper.selectBatchIds(chunkIds);
+        Map<Long, KbDocumentChunk> chunkMap = kbDocumentChunkMapper.selectBatchIds(chunkIds).stream()
+                .collect(Collectors.toMap(KbDocumentChunk::getId, c -> c, (left, right) -> left));
 
         Map<Long, Float> scoreMap = new LinkedHashMap<>();
         Map<Long, Map<String, Object>> metaMap = new LinkedHashMap<>();
@@ -129,7 +132,9 @@ public class RagQaTool implements McpTool {
             metaMap.put(Long.parseLong(r.chunkId()), r.metadata());
         }
 
-        return chunks.stream()
+        return chunkIds.stream()
+                .map(chunkMap::get)
+                .filter(c -> c != null)
                 .filter(c -> c.getEnabled() == null || c.getEnabled() == 1)
                 .map(c -> {
                     Map<String, Object> chunkInfo = new LinkedHashMap<>();

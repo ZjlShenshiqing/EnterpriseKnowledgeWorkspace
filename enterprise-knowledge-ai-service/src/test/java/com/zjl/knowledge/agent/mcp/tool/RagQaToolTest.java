@@ -142,6 +142,32 @@ class RagQaToolTest {
         )));
     }
 
+    @Test
+    void executePreservesDocumentOrderFromVectorSearchResults() {
+        UserContext user = defaultUser();
+        KbDocument firstDoc = visibleDocument(3001L);
+        firstDoc.setTitle("first");
+        KbDocument secondDoc = visibleDocument(2001L);
+        secondDoc.setTitle("second");
+
+        when(vectorSyncService.searchSimilar("question", 15, new KbDocument()))
+                .thenReturn(List.of(
+                        new SearchResult("9301", "3001", 0.96f, Map.of("doc_id", "3001")),
+                        new SearchResult("9201", "2001", 0.82f, Map.of("doc_id", "2001"))
+                ));
+        when(kbDocumentMapper.selectBatchIds(List.of(3001L, 2001L))).thenReturn(List.of(secondDoc, firstDoc));
+        when(kbDocumentPermissionMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
+        when(kbDocumentChunkMapper.selectBatchIds(List.of(9301L))).thenReturn(List.of(chunk(9301L, 1, 1)));
+        when(kbDocumentChunkMapper.selectBatchIds(List.of(9201L))).thenReturn(List.of(chunk(9201L, 1, 1)));
+
+        ToolResult result = ragQaTool.execute(Map.of("question", "question"), user);
+
+        List<?> documents = documents(result);
+        assertThat(documents).hasSize(2);
+        assertThat(((Map<?, ?>) documents.get(0)).get("documentId")).isEqualTo(3001L);
+        assertThat(((Map<?, ?>) documents.get(1)).get("documentId")).isEqualTo(2001L);
+    }
+
     private static UserContext defaultUser() {
         return UserContext.builder()
                 .userId(1001L)
@@ -164,10 +190,13 @@ class RagQaToolTest {
     }
 
     private static KbDocumentChunk chunk(Long id, int enabled) {
+        return chunk(id, id.equals(9001L) ? 1 : 2, enabled);
+    }
+
+    private static KbDocumentChunk chunk(Long id, int chunkIndex, int enabled) {
         KbDocumentChunk chunk = new KbDocumentChunk();
         chunk.setId(id);
-        chunk.setDocumentId(2001L);
-        chunk.setChunkIndex(id.equals(9001L) ? 1 : 2);
+        chunk.setChunkIndex(chunkIndex);
         chunk.setChunkText("chunk-" + id);
         chunk.setEnabled(enabled);
         return chunk;
