@@ -39,3 +39,4 @@ build/
 /.idea/codeStyles/codeStyleConfig.xml
 D:\maven-repository/
 application-secrets.yml
+.worktrees/
