@@ -1,4 +1,4 @@
-package com.zjl.knowledge.agent.tool;
+package com.zjl.knowledge.agent.mcp.tool;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zjl.knowledge.agent.config.AgentProperties;

@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Sa-Token 权限 / 角色数据源实现。
+ * Sa-Token 权限 / 角色数据源实现
  *
  * Sa-Token 在执行以下方法时，会回调当前类：
  * - StpUtil.checkPermission(...)

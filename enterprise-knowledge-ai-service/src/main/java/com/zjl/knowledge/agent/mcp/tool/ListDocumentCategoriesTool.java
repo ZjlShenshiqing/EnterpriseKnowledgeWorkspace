@@ -1,4 +1,4 @@
-package com.zjl.knowledge.agent.tool;
+package com.zjl.knowledge.agent.mcp.tool;
 
 import com.zjl.knowledge.agent.mcp.McpTool;
 import com.zjl.knowledge.agent.mcp.ToolDefinition;

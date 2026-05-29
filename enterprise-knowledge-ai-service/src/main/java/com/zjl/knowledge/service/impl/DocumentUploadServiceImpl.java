@@ -73,7 +73,7 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
     private final ObjectMapper objectMapper;
 
     /**
-     * 上传文档：魔数检测 → INSERT kb_document (PENDING) → 落盘 → 权限行
+     * 上传文档：校验参数 → 检测文件类型 → 创建 PENDING 文档 → 文件落盘 → 写入权限。
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -81,12 +81,15 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         if (file == null || file.isEmpty()) {
             throw new BizException(ErrorCode.PARAM_INVALID, "文件不能为空");
         }
+
+        // 当前仅支持本地文件上传，URL 来源暂不接入
         SourceType sourceType = SourceType.normalize(meta.getSourceType());
         if (sourceType == SourceType.URL) {
             throw new BizException(ErrorCode.PARAM_INVALID, "URL 来源上传尚未支持，请使用 FILE 上传");
         }
         validateSchedule(meta, sourceType);
 
+        // 校验权限类型及对应授权参数
         DocumentPermissionType permType;
         try {
             permType = DocumentPermissionType.valueOf(meta.getPermissionType());
@@ -100,6 +103,8 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         if (permType == DocumentPermissionType.PROJECT && meta.getGrantProjectId() == null) {
             throw new BizException(ErrorCode.PARAM_INVALID, "PROJECT 权限必须指定 grantProjectId");
         }
+
+        // 校验文档归属的分类和知识库是否存在
         if (kbCategoryService.getById(meta.getCategoryId()) == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "分类不存在");
         }
@@ -112,9 +117,11 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
 
         ProcessMode processMode = ProcessMode.normalize(meta.getProcessMode());
         ChunkingMode chunkingMode = ChunkingMode.fromValue(meta.getChunkStrategy());
+
+        // 标准化分块配置，保证后续解析流程可直接使用。
         String chunkConfigJson = normalizeChunkConfigJson(chunkingMode, meta.getChunkConfig());
 
-        /** ① 读取文件字节，做魔数检测 */
+        // 读取文件字节，供 MIME 检测和后续落盘复用。
         byte[] fileBytes;
         try {
             fileBytes = file.getBytes();
@@ -122,6 +129,7 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
             throw new BizException(ErrorCode.SYSTEM_ERROR, "读取文件失败: " + e.getMessage());
         }
 
+        // 使用文件头检测真实类型，避免只依赖前端传入的 Content-Type。
         String detectedType = tikaDocumentParser.detectMime(
                 fileBytes.length > 512 ? java.util.Arrays.copyOf(fileBytes, 512) : fileBytes,
                 file.getOriginalFilename());
@@ -133,7 +141,7 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
                     "不支持的文件类型: " + detectedType + "（支持 PDF、Word、Excel、PPT、文本、图片）");
         }
 
-        /** ② INSERT kb_document (PENDING) */
+        // 先创建 PENDING 文档记录，拿到 docId 后再用于文件存储。
         KbDocument doc = new KbDocument();
         doc.setTitle(meta.getTitle().trim());
         doc.setCategoryId(meta.getCategoryId());
@@ -161,14 +169,16 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         doc.setCreatedAt(LocalDateTime.now());
         doc.setUpdatedAt(LocalDateTime.now());
         kbDocumentMapper.insert(doc);
+
         log.info("文档记录已插入: docId={}, ownerId={}, status={}, fileType={}",
                 doc.getId(), doc.getOwnerId(), doc.getStatus(), doc.getFileType());
 
-        /** ③ 落盘 */
+        // 文件落盘成功后，回写存储路径并初始化权限行。
         try (InputStream in = new ByteArrayInputStream(fileBytes)) {
             String storedPath = fileStorageService.store(doc.getId(),
                     Objects.requireNonNullElse(file.getOriginalFilename(), "upload.bin"), in);
             log.info("文件已存储: docId={}, path={}", doc.getId(), storedPath);
+
             doc.setFileUrl(storedPath);
             doc.setUpdatedAt(LocalDateTime.now());
             kbDocumentMapper.updateById(doc);
@@ -178,6 +188,7 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         } catch (BizException ex) {
             throw ex;
         } catch (Exception ex) {
+            // 落盘失败时标记上传失败，便于后续排查和状态展示。
             log.error("文件存储失败: docId={}, error={}", doc.getId(), ex.getMessage(), ex);
             markUploadFailed(doc.getId(), ex.getMessage());
             throw new BizException(ErrorCode.SYSTEM_ERROR, "文件保存失败: " + ex.getMessage());

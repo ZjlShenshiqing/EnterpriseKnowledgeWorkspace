@@ -1,4 +1,4 @@
-package com.zjl.knowledge.agent.tool;
+package com.zjl.knowledge.agent.mcp.tool;
 
 import com.zjl.common.response.Result;
 import com.zjl.knowledge.agent.integration.CollaborationClient;

@@ -1,4 +1,4 @@
-package com.zjl.knowledge.agent.tool;
+package com.zjl.knowledge.agent.mcp.tool;
 
 import com.zjl.knowledge.web.UserContext;
 import org.springframework.web.multipart.MultipartFile;

@@ -190,7 +190,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                 List<String> texts = vectorChunks.stream().map(VectorDocChunk::getContent).collect(Collectors.toList());
                 List<List<Float>> vecs = vectorSyncService.embedBatch(texts, doc);
                 for (int i = 0; i < vectorChunks.size(); i++) {
-                    vectorChunks.get(i).setEmbedding(VectorSyncService.toArray(vecs.get(i)));
+                    vectorChunks.get(i).setEmbedding(toArray(vecs.get(i)));
                 }
             }
         }
@@ -283,5 +283,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         if (!user.isAdmin() && !Objects.equals(doc.getOwnerId(), user.getUserId())) {
             throw new BizException(ErrorCode.FORBIDDEN);
         }
+    }
+
+    private float[] toArray(List<Float> list) {
+        float[] arr = new float[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            arr[i] = list.get(i);
+        }
+        return arr;
     }
 }

@@ -35,12 +35,4 @@ public interface VectorSyncService {
     void deleteChunkVectors(KbDocument document, List<String> chunkIds);
 
     List<com.zjl.knowledge.milvus.SearchResult> searchSimilar(String query, int topK, KbDocument document);
-
-    static float[] toArray(List<Float> list) {
-        float[] arr = new float[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            arr[i] = list.get(i);
-        }
-        return arr;
-    }
 }

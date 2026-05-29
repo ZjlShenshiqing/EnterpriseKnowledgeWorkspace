@@ -1,4 +1,4 @@
-package com.zjl.knowledge.agent.tool;
+package com.zjl.knowledge.agent.mcp.tool;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
