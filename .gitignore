@@ -51,3 +51,4 @@ docs/superpowers/specs/*.html
 enterprise-gateway-service/logs/
 logs/2026-05-27/
 logs/2026-05-28/
+logs/*.log
