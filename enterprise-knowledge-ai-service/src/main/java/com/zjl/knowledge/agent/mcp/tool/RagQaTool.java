@@ -1,13 +1,17 @@
-package com.zjl.knowledge.agent.tool;
+package com.zjl.knowledge.agent.mcp.tool;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zjl.knowledge.agent.mcp.McpTool;
 import com.zjl.knowledge.agent.mcp.ToolDefinition;
 import com.zjl.knowledge.agent.mcp.ToolResult;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
+import com.zjl.knowledge.entity.KbDocumentPermission;
 import com.zjl.knowledge.mapper.KbDocumentChunkMapper;
 import com.zjl.knowledge.mapper.KbDocumentMapper;
+import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
 import com.zjl.knowledge.milvus.SearchResult;
+import com.zjl.knowledge.service.DocumentVisibilityService;
 import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.web.UserContext;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +33,8 @@ public class RagQaTool implements McpTool {
     private final VectorSyncService vectorSyncService;
     private final KbDocumentMapper kbDocumentMapper;
     private final KbDocumentChunkMapper kbDocumentChunkMapper;
+    private final KbDocumentPermissionMapper kbDocumentPermissionMapper;
+    private final DocumentVisibilityService documentVisibilityService;
 
     @Override
     public ToolDefinition getDefinition() {
@@ -133,9 +139,11 @@ public class RagQaTool implements McpTool {
     }
 
     private boolean isVisible(KbDocument doc, UserContext user) {
-        if (user.isAdmin()) return true;
-        if (doc.getOwnerId() != null && doc.getOwnerId().equals(user.getUserId())) return true;
-        return true;
+        List<KbDocumentPermission> permissions = kbDocumentPermissionMapper.selectList(
+                new LambdaQueryWrapper<KbDocumentPermission>()
+                        .eq(KbDocumentPermission::getDocumentId, doc.getId())
+        );
+        return documentVisibilityService.canView(doc, user, permissions);
     }
 
     private int getInt(Map<String, Object> args, String key, int defaultValue) {
