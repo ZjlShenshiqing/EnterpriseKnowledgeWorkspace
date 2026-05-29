@@ -40,3 +40,14 @@ build/
 D:\maven-repository/
 application-secrets.yml
 .worktrees/
+.idea/inspectionProfiles/
+.superpowers/brainstorm/
+ai-orchestrator/dist/
+ai-orchestrator/examples/
+ai-orchestrator/node_modules/
+ai-orchestrator/src/artifacts/
+ai-orchestrator/tests/
+docs/superpowers/specs/*.html
+enterprise-gateway-service/logs/
+logs/2026-05-27/
+logs/2026-05-28/
