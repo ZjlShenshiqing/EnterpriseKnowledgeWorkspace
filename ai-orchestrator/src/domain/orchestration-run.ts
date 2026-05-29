@@ -2,6 +2,9 @@ import { z } from "zod";
 import { AgentResultSchema } from "./agent-result.js";
 import { AgentTaskSpecSchema } from "./agent-task-spec.js";
 import { CiFailureEventSchema } from "./ci-event.js";
+import { BlackboardSnapshotSchema } from "./blackboard.js";
+import { FileConflictSchema } from "./conflict.js";
+import { PipelineResultSchema } from "./pipeline-result.js";
 
 export const FailureTypeSchema = z.enum([
   "MAVEN_COMPILE_FAILURE",
@@ -25,7 +28,10 @@ export const OrchestrationRunSchema = z.object({
   analysis: FailureAnalysisSchema,
   tasks: z.array(AgentTaskSpecSchema),
   results: z.array(AgentResultSchema),
-  status: z.enum(["planned", "running", "verified", "needs-human", "failed"])
+  status: z.enum(["planned", "running", "verified", "needs-human", "failed"]),
+  blackboard: BlackboardSnapshotSchema.optional(),
+  conflicts: z.array(FileConflictSchema).default([]),
+  pipelineResult: PipelineResultSchema.optional()
 });
 
 export type FailureType = z.infer<typeof FailureTypeSchema>;

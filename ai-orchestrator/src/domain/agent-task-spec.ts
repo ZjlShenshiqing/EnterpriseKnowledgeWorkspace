@@ -27,7 +27,11 @@ export const AgentTaskSpecSchema = z.object({
   repoContext: z.array(z.string()),
   constraints: z.array(z.string()),
   expectedOutput: ExpectedOutputSchema,
-  readOnly: z.boolean()
+  readOnly: z.boolean(),
+  dependencies: z.array(z.string()).default([]),
+  inputKeys: z.array(z.string()).default([]),
+  outputKeys: z.array(z.string()).default([]),
+  blackboardContext: z.record(z.unknown()).default({})
 });
 
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
