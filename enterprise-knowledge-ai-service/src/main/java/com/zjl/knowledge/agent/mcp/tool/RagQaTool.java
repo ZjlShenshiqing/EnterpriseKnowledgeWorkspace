@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zjl.knowledge.agent.mcp.McpTool;
 import com.zjl.knowledge.agent.mcp.ToolDefinition;
 import com.zjl.knowledge.agent.mcp.ToolResult;
+import com.zjl.knowledge.domain.DocumentStatus;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.entity.KbDocumentPermission;
@@ -79,6 +80,7 @@ public class RagQaTool implements McpTool {
 
         List<KbDocument> docs = kbDocumentMapper.selectBatchIds(docIds).stream()
                 .filter(d -> d.getDeleted() == null || d.getDeleted() == 0)
+                .filter(this::isSearchable)
                 .filter(d -> isVisible(d, user))
                 .collect(Collectors.toList());
 
@@ -94,6 +96,7 @@ public class RagQaTool implements McpTool {
             if (docResults == null || docResults.isEmpty()) continue;
 
             List<Map<String, Object>> matchedChunks = buildMatchedChunks(doc.getId(), docResults);
+            if (matchedChunks.isEmpty()) continue;
 
             Map<String, Object> docInfo = new LinkedHashMap<>();
             docInfo.put("documentId", doc.getId());
@@ -127,6 +130,7 @@ public class RagQaTool implements McpTool {
         }
 
         return chunks.stream()
+                .filter(c -> c.getEnabled() == null || c.getEnabled() == 1)
                 .map(c -> {
                     Map<String, Object> chunkInfo = new LinkedHashMap<>();
                     chunkInfo.put("chunkIndex", c.getChunkIndex());
@@ -136,6 +140,11 @@ public class RagQaTool implements McpTool {
                     return chunkInfo;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private boolean isSearchable(KbDocument doc) {
+        boolean enabled = doc.getEnabled() == null || doc.getEnabled() == 1;
+        return enabled && DocumentStatus.SUCCESS.name().equals(doc.getStatus());
     }
 
     private boolean isVisible(KbDocument doc, UserContext user) {
