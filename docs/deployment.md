@@ -42,6 +42,18 @@ flowchart TB
 | rabbitmq/kafka/rocketmq | 异步任务和通知 |
 | nginx | 反向代理和静态资源服务 |
 
+## 3.1 AI Orchestrator
+
+`ai-orchestrator` is a standalone TypeScript infrastructure service for CI/CD AI Agent orchestration. It is not a business microservice and must not be exposed as a frontend API.
+
+Deployment rules:
+
+1. Deploy only inside the internal CI/CD network.
+2. Grant read access to CI artifacts and limited write access for repair branches.
+3. Do not grant production deployment permissions.
+4. Do not mount production secret files.
+5. Record all Agent task inputs, outputs, changed files, and verification results.
+
 ## 4. 日志设计
 
 系统应采集以下日志：

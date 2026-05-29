@@ -367,3 +367,18 @@ pom.xml
 本方案采用 TypeScript 独立 Orchestrator、统一 Agent 协议、Runtime Adapter、多 worktree 隔离和人工 Review 兜底。第一版先解决 Maven 编译失败和单元测试失败，既能验证多 Agent 协同价值，又能控制自动修改代码的风险。
 
 该设计的关键约束是：AI Agent 可以诊断、修复、补测试和创建 PR，但不能直接合并保护分支，不能发布生产，不能接触生产密钥，不能绕过测试和人工审批。
+
+## 17. MVP Implementation Status
+
+The first implementation is tracked in `docs/superpowers/plans/2026-05-29-ai-agent-cicd-orchestration.md`.
+
+The MVP creates a standalone `ai-orchestrator/` TypeScript service with:
+
+1. CI failure event schemas.
+2. Maven log analysis.
+3. Surefire report parsing.
+4. Multi-agent task planning.
+5. Runtime adapter abstraction.
+6. Mock and Codex CLI adapter support.
+7. Worktree, patch, verification, review, and PR-summary components.
+8. A GitHub Actions Maven CI workflow.
