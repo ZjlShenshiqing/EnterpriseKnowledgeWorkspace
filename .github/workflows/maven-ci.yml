@@ -1,0 +1,53 @@
+name: Maven CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Capture module info
+        run: |
+          mkdir -p artifacts
+          mvn -q help:evaluate -Dexpression=project.modules -DforceStdout > artifacts/module-info.txt || true
+
+      - name: Run Maven tests
+        run: |
+          mkdir -p artifacts
+          set -o pipefail
+          mvn test 2>&1 | tee artifacts/ci.log
+
+      - name: Capture git diff
+        if: always()
+        run: |
+          mkdir -p artifacts
+          git diff -- . > artifacts/git.diff || true
+
+      - name: Upload CI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-context
+          path: |
+            artifacts/
+            **/target/surefire-reports/
