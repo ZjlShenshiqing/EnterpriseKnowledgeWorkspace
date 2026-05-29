@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -73,8 +75,17 @@ public class RagQaTool implements McpTool {
             return ToolResult.success(Map.of("documents", List.of()));
         }
 
-        List<Long> docIds = searchResults.stream()
-                .map(r -> Long.parseLong(r.docId()))
+        List<SearchResult> validResults = searchResults.stream()
+                .filter(r -> parseLong(r.docId()).isPresent())
+                .filter(r -> parseLong(r.chunkId()).isPresent())
+                .collect(Collectors.toList());
+        if (validResults.isEmpty()) {
+            return ToolResult.success(Map.of("documents", List.of()));
+        }
+
+        List<Long> docIds = validResults.stream()
+                .map(r -> parseLong(r.docId()).orElse(null))
+                .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -84,9 +95,9 @@ public class RagQaTool implements McpTool {
                 .filter(d -> isVisible(d, user))
                 .collect(Collectors.toMap(KbDocument::getId, d -> d, (left, right) -> left, LinkedHashMap::new));
 
-        Map<Long, List<SearchResult>> resultsByDoc = searchResults.stream()
-                .filter(r -> docMap.containsKey(Long.parseLong(r.docId())))
-                .collect(Collectors.groupingBy(r -> Long.parseLong(r.docId())));
+        Map<Long, List<SearchResult>> resultsByDoc = validResults.stream()
+                .filter(r -> docMap.containsKey(parseLong(r.docId()).orElse(null)))
+                .collect(Collectors.groupingBy(r -> parseLong(r.docId()).orElseThrow()));
 
         List<Map<String, Object>> documents = new ArrayList<>();
         int count = 0;
@@ -119,7 +130,8 @@ public class RagQaTool implements McpTool {
 
     private List<Map<String, Object>> buildMatchedChunks(Long docId, List<SearchResult> results) {
         List<Long> chunkIds = results.stream()
-                .map(r -> Long.parseLong(r.chunkId()))
+                .map(r -> parseLong(r.chunkId()).orElse(null))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         Map<Long, KbDocumentChunk> chunkMap = kbDocumentChunkMapper.selectBatchIds(chunkIds).stream()
@@ -128,8 +140,11 @@ public class RagQaTool implements McpTool {
         Map<Long, Float> scoreMap = new LinkedHashMap<>();
         Map<Long, Map<String, Object>> metaMap = new LinkedHashMap<>();
         for (SearchResult r : results) {
-            scoreMap.put(Long.parseLong(r.chunkId()), r.score());
-            metaMap.put(Long.parseLong(r.chunkId()), r.metadata());
+            Optional<Long> chunkId = parseLong(r.chunkId());
+            if (chunkId.isPresent()) {
+                scoreMap.put(chunkId.get(), r.score());
+                metaMap.put(chunkId.get(), r.metadata());
+            }
         }
 
         return chunkIds.stream()
@@ -150,6 +165,17 @@ public class RagQaTool implements McpTool {
     private boolean isSearchable(KbDocument doc) {
         boolean enabled = doc.getEnabled() == null || doc.getEnabled() == 1;
         return enabled && DocumentStatus.SUCCESS.name().equals(doc.getStatus());
+    }
+
+    private Optional<Long> parseLong(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Long.parseLong(value));
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
     }
 
     private boolean isVisible(KbDocument doc, UserContext user) {

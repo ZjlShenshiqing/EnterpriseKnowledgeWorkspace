@@ -168,6 +168,27 @@ class RagQaToolTest {
         assertThat(((Map<?, ?>) documents.get(1)).get("documentId")).isEqualTo(2001L);
     }
 
+    @Test
+    void executeSkipsInvalidVectorSearchIds() {
+        UserContext user = defaultUser();
+        KbDocument doc = visibleDocument(2001L);
+
+        when(vectorSyncService.searchSimilar("question", 15, new KbDocument()))
+                .thenReturn(List.of(
+                        new SearchResult("bad-chunk", "bad-doc", 0.99f, Map.of()),
+                        new SearchResult("9201", "2001", 0.82f, Map.of("doc_id", "2001"))
+                ));
+        when(kbDocumentMapper.selectBatchIds(List.of(2001L))).thenReturn(List.of(doc));
+        when(kbDocumentPermissionMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
+        when(kbDocumentChunkMapper.selectBatchIds(List.of(9201L))).thenReturn(List.of(chunk(9201L, 1, 1)));
+
+        ToolResult result = ragQaTool.execute(Map.of("question", "question"), user);
+
+        List<?> documents = documents(result);
+        assertThat(documents).hasSize(1);
+        assertThat(((Map<?, ?>) documents.get(0)).get("documentId")).isEqualTo(2001L);
+    }
+
     private static UserContext defaultUser() {
         return UserContext.builder()
                 .userId(1001L)
