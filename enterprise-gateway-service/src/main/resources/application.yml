@@ -25,10 +25,10 @@ spring:
           uri: lb://enterprise-collaboration-service
           predicates:
             - Path=/api/meetings/**,/api/todos/**,/api/tasks/**,/api/notifications/**,/api/chat/**,/api/docs/**,/api/approvals/**,/api/announcements/**,/api/intents/**,/api/keyword-mappings/**
-        - id: workbench
-          uri: lb://enterprise-workbench-service
+        - id: platform-admin
+          uri: lb://platform-admin-service
           predicates:
-            - Path=/api/workbench/**
+            - Path=/api/system/**
         - id: collaboration-ws
           uri: lb://enterprise-collaboration-service
           predicates:
@@ -48,7 +48,7 @@ spring:
       port: 6379
 
 server:
-  port: 8086
+  port: 8098
 
 management:
   endpoints:

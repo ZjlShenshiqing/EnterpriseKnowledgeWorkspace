@@ -7,7 +7,6 @@ import com.zjl.repository.SysUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,23 +39,7 @@ public class SaTokenStpInterfaceImpl implements StpInterface {
      */
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
-        SysUser user = findUser(loginId);
-
-        // 用户不存在时，返回空权限列表，表示没有任何权限
-        if (user == null) {
-            return Collections.emptyList();
-        }
-
-        List<String> permissions = new ArrayList<>();
-
-        // 一个用户可能拥有多个角色；
-        // 每个角色下面又可能绑定多个权限；
-        // 这里把所有角色的权限码汇总成一个权限列表返回给 Sa-Token。
-        for (SysRole role : user.getRoles()) {
-            role.getPermissions().forEach(permission -> permissions.add(permission.getCode()));
-        }
-
-        return permissions;
+        return Collections.emptyList();
     }
 
     /**

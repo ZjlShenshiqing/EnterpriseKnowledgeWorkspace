@@ -122,10 +122,8 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
 
     private static List<String> authoritiesOf(SysUser user) {
         List<String> result = new ArrayList<>();
-        user.getRoles().forEach(role -> {
-            result.add("ROLE_" + role.getCode().toUpperCase());
-            role.getPermissions().forEach(p -> result.add(p.getCode()));
-        });
+        user.getRoles().forEach(role ->
+            result.add("ROLE_" + role.getCode().toUpperCase()));
         return result;
     }
 

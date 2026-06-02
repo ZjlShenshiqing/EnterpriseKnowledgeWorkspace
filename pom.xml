@@ -12,7 +12,7 @@
         <module>frameworks</module>
         <module>enterprise-gateway-service</module>
         <module>enterprise-knowledge-ai-service</module>
-        <module>enterprise-workbench-service</module>
+        <module>enterprise-platform-admin-service</module>
         <module>enterprise-collaboration-service</module>
     </modules>
 
