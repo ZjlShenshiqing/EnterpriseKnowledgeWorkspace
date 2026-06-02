@@ -1,4 +1,4 @@
-package com.zjl.collaboration.entity;
+package com.zjl.collaboration.workflow.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -8,17 +8,18 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_approval_request")
-public class SysApprovalRequest {
+@TableName("wf_task")
+public class WfTask {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String type;
-    private Long userId;
-    private String userName;
-    private String title;
-    private String formData;
+    private Long instanceId;
+    private Long nodeId;
+    private String assigneeType;
+    private Long assigneeId;
     private String status;
-    private Long workflowInstanceId;
+    private Long claimedBy;
+    private LocalDateTime handledAt;
+    private String comment;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer deleted;
