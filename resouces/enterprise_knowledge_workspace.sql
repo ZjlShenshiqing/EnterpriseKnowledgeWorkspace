@@ -330,12 +330,18 @@ INSERT INTO sys_permission (id, code, name) VALUES
 (6, 'system:dept:write',  '管理部门'),
 (7, 'system:log:read',    '查看日志'),
 (8, 'kb:document:read',   '查看文档'),
-(9, 'kb:document:write',  '管理文档');
+(9, 'kb:document:write',  '管理文档'),
+(10, 'workflow:template:read', '查看工作流模板'),
+(11, 'workflow:task:read', '查看工作流任务'),
+(12, 'workflow:task:write', '处理工作流任务'),
+(13, 'approval:read', '查看审批'),
+(14, 'approval:write', '发起审批');
 
 INSERT INTO sys_role_permission (role_id, permission_id) VALUES
-(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9),
-(2, 1), (2, 3), (2, 5), (2, 8), (2, 9),
-(3, 1), (3, 5), (3, 8);
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11), (1, 12), (1, 13), (1, 14),
+(2, 1), (2, 3), (2, 5), (2, 8), (2, 9), (2, 11), (2, 12), (2, 13),
+(3, 1), (3, 5), (3, 8),
+(4, 1), (4, 3), (4, 5), (4, 11), (4, 12), (4, 13);
 
 INSERT INTO sys_user_role (user_id, role_id) VALUES
 (1, 1),

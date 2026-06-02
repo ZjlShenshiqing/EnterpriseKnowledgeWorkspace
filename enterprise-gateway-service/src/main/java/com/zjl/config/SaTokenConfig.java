@@ -34,6 +34,7 @@ public class SaTokenConfig {
 
     private static final String ROLE_ADMIN = "admin";
     private static final String METHOD_GET = "GET";
+    private static final String METHOD_POST = "POST";
 
     private static final String WS_PATH_PREFIX = "/ws/";
 
@@ -124,7 +125,7 @@ public class SaTokenConfig {
         // 这些方法内部会根据请求路径和请求方法，
         // 判断用户是否拥有对应的权限码。
         checkKnowledgeBasePermissions();
-        checkCollaborationPermissions();
+        checkCollaborationPermissions(path);
         checkWorkbenchPermissions();
         checkSystemPermissions(path);
     }
@@ -234,7 +235,7 @@ public class SaTokenConfig {
     /**
      * 协同办公模块权限
      */
-    private void checkCollaborationPermissions() {
+    private void checkCollaborationPermissions(String path) {
         matchReadWrite(
                 "/api/meetings/**",
                 "collab:meeting:read",
@@ -264,11 +265,8 @@ public class SaTokenConfig {
                 () -> StpUtil.checkPermission("collab:chat:use")
         );
 
-        matchReadWrite(
-                "/api/approvals/**",
-                "collab:approval:read",
-                "collab:approval:write"
-        );
+        checkApprovalPermissions(path);
+        checkWorkflowPermissions();
 
         matchReadWrite(
                 "/api/announcements/**",
@@ -295,6 +293,39 @@ public class SaTokenConfig {
                 "/api/keyword-mappings/**",
                 () -> StpUtil.checkPermission("collab:intent:read")
         );
+    }
+
+    /**
+     * 审批申请权限。
+     */
+    private void checkApprovalPermissions(String path) {
+        SaRouter.match("/api/approvals", () -> {
+            if (SaHolder.getRequest().isMethod(METHOD_POST)) {
+                return;
+            }
+            StpUtil.checkPermission("approval:read");
+        });
+        SaRouter.match("/api/approvals/**", () -> {
+            if (isLoginOnlyApprovalEndpoint(path)) {
+                return;
+            }
+            StpUtil.checkPermission("approval:read");
+        });
+    }
+
+    /**
+     * 工作流任务和模板权限。
+     */
+    private void checkWorkflowPermissions() {
+        SaRouter.match("/api/workflow/tasks/**", () -> {
+            if (isGetRequest()) {
+                StpUtil.checkPermission("workflow:task:read");
+            } else {
+                StpUtil.checkPermission("workflow:task:write");
+            }
+        });
+        SaRouter.match("/api/workflow/templates", () -> StpUtil.checkPermission("workflow:template:read"));
+        SaRouter.match("/api/workflow/templates/**", () -> StpUtil.checkPermission("workflow:template:read"));
     }
 
     /**
@@ -361,6 +392,11 @@ public class SaTokenConfig {
     private boolean isLoginOnlySystemEndpoint(String path) {
         return "/api/system/users/batch".equals(path)
                 || "/api/system/users/search".equals(path);
+    }
+
+    private boolean isLoginOnlyApprovalEndpoint(String path) {
+        return "/api/approvals/my".equals(path)
+                || ("/api/approvals".equals(path) && SaHolder.getRequest().isMethod(METHOD_POST));
     }
 
     /**
