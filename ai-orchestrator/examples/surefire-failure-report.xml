@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.zjl.knowledge.service.KbDocumentServiceImplTest" tests="2" failures="1" errors="0" skipped="0">
-  <testcase classname="com.zjl.knowledge.service.KbDocumentServiceImplTest" name="startChunkShouldMovePendingDocumentToRunning" time="0.02">
-    <failure message="expected: &lt;RUNNING&gt; but was: &lt;FAILED&gt;" type="org.opentest4j.AssertionFailedError">
-      org.opentest4j.AssertionFailedError: expected: &lt;RUNNING&gt; but was: &lt;FAILED&gt;
-    </failure>
-  </testcase>
-  <testcase classname="com.zjl.knowledge.service.KbDocumentServiceImplTest" name="uploadShouldCreatePendingDocument" time="0.01" />
-</testsuite>
