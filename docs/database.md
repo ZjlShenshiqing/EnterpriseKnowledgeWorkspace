@@ -438,7 +438,30 @@ erDiagram
 9. read_at：阅读时间。
 10. created_at：创建时间。
 
-### 2.21 operation_log 操作日志表
+### 2.21 approval_workflow 审批工作流表
+
+审批申请保留在 `sys_approval_request`，并通过 `workflow_instance_id` 关联通用工作流实例。旧表 `sys_approval_record` 不再承载新审批流转，只作为历史兼容表保留。
+
+核心表：
+
+1. `wf_template`：流程模板，内置 `leave`、`expense`，业务类型为 `approval`。
+2. `wf_node`：模板节点，节点类型为 `START`、`APPROVAL`、`END`，首版审批模式为 `ANY`。
+3. `wf_node_approver`：节点候选审批人，支持 `USER` 和 `ROLE`。
+4. `wf_instance`：流程实例，关联业务类型、业务 ID、发起人、当前节点和实例状态。
+5. `wf_task`：审批任务，记录候选人、处理人、处理时间、意见和任务状态。
+6. `wf_record`：流程流转记录，记录 `START`、`APPROVE`、`REJECT`、`AUTO_CLOSE`、`COMPLETE`。
+
+状态：
+
+1. 实例状态：`RUNNING`、`APPROVED`、`REJECTED`、`CANCELLED`。
+2. 任务状态：`PENDING`、`APPROVED`、`REJECTED`、`CLOSED`。
+
+内置流程：
+
+1. 请假：`start → manager_approve → end`。
+2. 报销：`start → manager_approve → finance_approve → end`。
+
+### 2.22 operation_log 操作日志表
 
 用途：存储系统关键操作审计日志。
 

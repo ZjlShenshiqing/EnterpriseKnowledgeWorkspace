@@ -611,24 +611,42 @@ Workbench Feign 传 `userName=""` → 用 **userId 字符串** 匹配 attendees 
 
 **注意**：list **不按** assignee/creator 过滤 — Workbench 统计为全局看板数据。
 
-### 9.3 审批 ApprovalController
+### 9.3 审批与工作流
 
-**列表**：
+审批模块已拆成两层：
 
-- `X-Is-Admin=true` → 全部申请
-- 否则 → `user_id = 当前用户`
+| 层 | 表 / 接口 | 说明 |
+|----|----------|------|
+| 业务申请 | `sys_approval_request`、`/api/approvals/**` | 保存请假/报销申请、申请人、表单 JSON、当前业务状态和 `workflow_instance_id` |
+| 工作流运行时 | `wf_template`、`wf_node`、`wf_task`、`wf_record`、`/api/workflow/**` | 保存模板、节点、候选审批任务、流转记录 |
 
-**创建** POST body：`type`, `title`, `formData`（JSON 字符串）
+`sys_approval_record` 已废弃，旧的 `POST /api/approvals/{id}/approve` 和 Controller 内 `nextStatus()` 不再使用。审批动作统一走工作流任务接口：
 
-**审批** POST `/{id}/approve` body：`action`, `comment`
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/approvals` | 发起申请；支持 `leave`、`expense`，创建申请后启动工作流 |
+| GET | `/api/approvals/my` | 当前用户的申请 |
+| GET | `/api/approvals` | 管理员查看全部，普通用户回退为自己的申请 |
+| GET | `/api/approvals/{id}` | 申请详情 + 工作流实例 + `wf_record` 时间线 |
+| GET | `/api/workflow/tasks/my` | 当前用户可处理的待审任务，包含 USER/ROLE 候选 |
+| POST | `/api/workflow/tasks/{taskId}/actions` | `APPROVE` / `REJECT` |
+| GET | `/api/workflow/templates` | 模板列表 |
+| GET | `/api/workflow/templates/{id}` | 模板、节点、审批人 |
 
-**多级状态机**（`nextStatus`）：
+内置模板：
 
 | type | 路径 |
 |------|------|
-| `leave` | pending → manager_approved → approved |
-| 其他 | pending → manager_approved → finance_approved → approved |
-| reject | action=rejected → status=rejected |
+| `leave` | start → manager_approve → end |
+| `expense` | start → manager_approve → finance_approve → end |
+
+运行时状态：
+
+| 对象 | 状态 |
+|------|------|
+| `wf_instance` | `RUNNING`、`APPROVED`、`REJECTED`、`CANCELLED` |
+| `wf_task` | `PENDING`、`APPROVED`、`REJECTED`、`CLOSED` |
+| `wf_record.action` | `START`、`APPROVE`、`REJECT`、`AUTO_CLOSE`、`COMPLETE` |
 
 ### 9.4 公告 AnnouncementController
 
