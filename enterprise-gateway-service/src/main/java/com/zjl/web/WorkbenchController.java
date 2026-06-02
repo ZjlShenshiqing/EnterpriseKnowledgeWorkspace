@@ -201,37 +201,28 @@ public class WorkbenchController {
 
     @SuppressWarnings("unchecked")
     private Mono<Long> fetchIntentCount(Long userId, String isAdmin) {
-        return callMap("lb://enterprise-collaboration-service/api/intents?current=1&size=1",
-                userId, isAdmin)
-                .map(m -> {
-                    Object total = m.get("total");
-                    if (total instanceof Number n) return n.longValue();
-                    return 0L;
-                })
-                .onErrorReturn(0L);
+        return callCount("lb://enterprise-collaboration-service/api/intents/nodes", userId, isAdmin);
     }
 
     @SuppressWarnings("unchecked")
     private Mono<Long> fetchSessionCount(Long userId, String isAdmin) {
-        return callMap("lb://enterprise-knowledge-ai-service/api/kb/agent/sessions?current=1&size=1",
-                userId, isAdmin)
-                .map(m -> {
-                    Object total = m.get("total");
-                    if (total instanceof Number n) return n.longValue();
-                    return 0L;
-                })
-                .onErrorReturn(0L);
+        return callCount("lb://enterprise-knowledge-ai-service/api/kb/agent/sessions", userId, isAdmin);
     }
 
     @SuppressWarnings("unchecked")
     private Mono<Long> fetchDocCount(Long userId, String isAdmin) {
-        return callMap("lb://enterprise-knowledge-ai-service/api/kb/documents?current=1&size=1",
-                userId, isAdmin)
-                .map(m -> {
-                    Object total = m.get("total");
-                    if (total instanceof Number n) return n.longValue();
-                    return 0L;
-                })
+        return callCount("lb://enterprise-knowledge-ai-service/api/kb/documents?current=1&size=1",
+                userId, isAdmin);
+    }
+
+    private Mono<Long> callCount(String uri, Long userId, String isAdmin) {
+        return webClient.get()
+                .uri(uri)
+                .header(UA, String.valueOf(userId))
+                .header(AD, isAdmin)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .map(WorkbenchController::countDataItems)
                 .onErrorReturn(0L);
     }
 
@@ -265,5 +256,27 @@ public class WorkbenchController {
                     return Map.<String, Object>of();
                 })
                 .onErrorReturn(Map.of());
+    }
+
+    static long countDataItems(Map<String, Object> response) {
+        Object data = response.get("data");
+        if (data instanceof Map<?, ?> map) {
+            Object total = map.get("total");
+            if (total instanceof Number n) {
+                return n.longValue();
+            }
+            Object records = map.get("records");
+            if (records instanceof List<?> list) {
+                return list.size();
+            }
+            return 0L;
+        }
+        if (data instanceof List<?> list) {
+            return list.size();
+        }
+        if (data instanceof Number n) {
+            return n.longValue();
+        }
+        return 0L;
     }
 }

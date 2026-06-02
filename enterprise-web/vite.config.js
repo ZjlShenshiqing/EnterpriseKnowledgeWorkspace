@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api/workbench': 'http://localhost:8084',
-      '/api/kb': 'http://localhost:8083',
-      '/api/auth': 'http://localhost:8086',
-      '/api': 'http://localhost:8086',
+      '/api/workbench': 'http://localhost:8098',
+      '/api/kb': 'http://localhost:8098',
+      '/api/auth': 'http://localhost:8098',
+      '/api': 'http://localhost:8098',
       '/mcp': 'http://localhost:8083',
     }
   }
