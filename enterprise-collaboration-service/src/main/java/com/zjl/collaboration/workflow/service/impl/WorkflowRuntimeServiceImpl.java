@@ -11,10 +11,14 @@ import com.zjl.collaboration.workflow.enums.WfBusinessType;
 import com.zjl.collaboration.workflow.enums.WfInstanceStatus;
 import com.zjl.collaboration.workflow.enums.WfTaskStatus;
 import com.zjl.collaboration.workflow.mapper.WfInstanceMapper;
+import com.zjl.collaboration.workflow.mapper.WfNodeMapper;
 import com.zjl.collaboration.workflow.mapper.WfRecordMapper;
 import com.zjl.collaboration.workflow.mapper.WfTaskMapper;
 import com.zjl.collaboration.workflow.service.WorkflowRuntimeService;
+import com.zjl.collaboration.workflow.service.WorkflowTaskService;
 import com.zjl.collaboration.workflow.service.WorkflowTemplateService;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +33,8 @@ public class WorkflowRuntimeServiceImpl implements WorkflowRuntimeService {
     private final WfInstanceMapper instanceMapper;
     private final WfTaskMapper taskMapper;
     private final WfRecordMapper recordMapper;
+    private final WfNodeMapper nodeMapper;
+    private final WorkflowTaskService taskService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -73,12 +79,112 @@ public class WorkflowRuntimeServiceImpl implements WorkflowRuntimeService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void approveTask(Long taskId, Long operatorId, String comment) {
-        throw new UnsupportedOperationException("approveTask will be implemented in the approve/reject runtime task");
+        WfTask task = requireTask(taskId);
+        WfInstance instance = requireInstance(task.getInstanceId());
+        WfNode currentNode = requireNode(task.getNodeId());
+        LocalDateTime now = LocalDateTime.now();
+
+        taskService.requireCanHandle(task, operatorId);
+        task.setStatus(WfTaskStatus.APPROVED);
+        task.setClaimedBy(operatorId);
+        task.setHandledAt(now);
+        task.setComment(comment);
+        taskMapper.updateById(task);
+        taskService.closeOtherPendingTasks(instance.getId(), currentNode.getId(), task.getId(), operatorId);
+
+        insertRecord(instance.getId(), currentNode.getId(), task.getId(), operatorId,
+                WfAction.APPROVE, WfTaskStatus.PENDING, WfTaskStatus.APPROVED, comment, now);
+
+        WfNode nextNode = templateService.findNextApprovalNode(instance.getTemplateId(), currentNode.getSortOrder());
+        if (nextNode != null) {
+            createPendingTasks(instance.getId(), nextNode);
+            instance.setCurrentNodeId(nextNode.getId());
+            instance.setStatus(WfInstanceStatus.RUNNING);
+            instanceMapper.updateById(instance);
+            return;
+        }
+
+        instance.setStatus(WfInstanceStatus.APPROVED);
+        instance.setEndedAt(now);
+        instanceMapper.updateById(instance);
+        insertRecord(instance.getId(), currentNode.getId(), task.getId(), operatorId,
+                WfAction.COMPLETE, WfInstanceStatus.RUNNING, WfInstanceStatus.APPROVED, null, now);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void rejectTask(Long taskId, Long operatorId, String comment) {
-        throw new UnsupportedOperationException("rejectTask will be implemented in the approve/reject runtime task");
+        WfTask task = requireTask(taskId);
+        WfInstance instance = requireInstance(task.getInstanceId());
+        LocalDateTime now = LocalDateTime.now();
+
+        taskService.requireCanHandle(task, operatorId);
+        task.setStatus(WfTaskStatus.REJECTED);
+        task.setClaimedBy(operatorId);
+        task.setHandledAt(now);
+        task.setComment(comment);
+        taskMapper.updateById(task);
+        taskService.closeOtherPendingTasks(instance.getId(), task.getNodeId(), task.getId(), operatorId);
+
+        instance.setStatus(WfInstanceStatus.REJECTED);
+        instance.setEndedAt(now);
+        instanceMapper.updateById(instance);
+        insertRecord(instance.getId(), task.getNodeId(), task.getId(), operatorId,
+                WfAction.REJECT, WfInstanceStatus.RUNNING, WfInstanceStatus.REJECTED, comment, now);
+    }
+
+    private void createPendingTasks(Long instanceId, WfNode node) {
+        for (WfNodeApprover approver : templateService.requireApprovers(node.getId())) {
+            WfTask task = new WfTask();
+            task.setInstanceId(instanceId);
+            task.setNodeId(node.getId());
+            task.setAssigneeType(approver.getApproverType());
+            task.setAssigneeId(approver.getApproverId());
+            task.setStatus(WfTaskStatus.PENDING);
+            task.setDeleted(0);
+            taskMapper.insert(task);
+        }
+    }
+
+    private void insertRecord(Long instanceId, Long nodeId, Long taskId, Long operatorId,
+                              String action, String fromStatus, String toStatus,
+                              String comment, LocalDateTime now) {
+        WfRecord record = new WfRecord();
+        record.setInstanceId(instanceId);
+        record.setNodeId(nodeId);
+        record.setTaskId(taskId);
+        record.setOperatorId(operatorId);
+        record.setAction(action);
+        record.setFromStatus(fromStatus);
+        record.setToStatus(toStatus);
+        record.setComment(comment);
+        record.setCreatedAt(now);
+        recordMapper.insert(record);
+    }
+
+    private WfTask requireTask(Long taskId) {
+        WfTask task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "审批任务不存在");
+        }
+        return task;
+    }
+
+    private WfInstance requireInstance(Long instanceId) {
+        WfInstance instance = instanceMapper.selectById(instanceId);
+        if (instance == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "工作流实例不存在");
+        }
+        return instance;
+    }
+
+    private WfNode requireNode(Long nodeId) {
+        WfNode node = nodeMapper.selectById(nodeId);
+        if (node == null) {
+            throw new BizException(ErrorCode.PARAM_INVALID, "流程节点不存在");
+        }
+        return node;
     }
 }

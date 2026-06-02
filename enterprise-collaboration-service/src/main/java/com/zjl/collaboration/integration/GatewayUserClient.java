@@ -67,7 +67,8 @@ public class GatewayUserClient {
                                 (String) userMap.get("username"),
                                 (String) userMap.get("realName"),
                                 toLong(userMap.get("deptId")),
-                                (String) userMap.get("deptName")
+                                (String) userMap.get("deptName"),
+                                parseRoles(userMap.get("roles"))
                         ));
                     });
                     return result;
@@ -113,7 +114,8 @@ public class GatewayUserClient {
                             (String) m.get("username"),
                             (String) m.get("realName"),
                             toLong(m.get("deptId")),
-                            (String) m.get("deptName")
+                            (String) m.get("deptName"),
+                            parseRoles(m.get("roles"))
                     )).toList();
                 }
             }
@@ -129,5 +131,19 @@ public class GatewayUserClient {
             try { return Long.parseLong(s); } catch (NumberFormatException e) {}
         }
         return null;
+    }
+
+    private static List<UserInfo.RoleInfo> parseRoles(Object value) {
+        if (!(value instanceof List<?> roles)) {
+            return List.of();
+        }
+        return roles.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .map(role -> new UserInfo.RoleInfo(
+                        toLong(role.get("id")),
+                        (String) role.get("code"),
+                        (String) role.get("name")))
+                .toList();
     }
 }
