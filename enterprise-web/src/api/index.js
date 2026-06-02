@@ -238,6 +238,36 @@ export function uploadAgentAttachment(file) {
   })
 }
 
+// ---- Approval Workflow ----
+
+export function createApproval(body) {
+  return fetch('/api/approvals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body)
+  }).then(r => r.json())
+}
+
+export function getMyApprovals() {
+  return fetch('/api/approvals/my', { headers: getAuthHeaders() }).then(r => r.json())
+}
+
+export function getApprovalDetail(id) {
+  return fetch(`/api/approvals/${id}`, { headers: getAuthHeaders() }).then(r => r.json())
+}
+
+export function getMyWorkflowTasks() {
+  return fetch('/api/workflow/tasks/my', { headers: getAuthHeaders() }).then(r => r.json())
+}
+
+export function handleWorkflowTask(taskId, action, comment) {
+  return fetch(`/api/workflow/tasks/${taskId}/actions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ action, comment })
+  }).then(r => r.json())
+}
+
 // ---- System Admin ----
 
 export function getUsers(params) {

@@ -17,4 +17,9 @@ public class WorkflowTaskVO {
     private String comment;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long approvalId;
+    private String approvalType;
+    private String approvalTitle;
+    private String applicantName;
+    private String approvalStatus;
 }

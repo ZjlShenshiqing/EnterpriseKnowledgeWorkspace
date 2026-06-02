@@ -1,7 +1,11 @@
 package com.zjl.collaboration.web;
 
+import com.zjl.collaboration.entity.SysApprovalRequest;
+import com.zjl.collaboration.mapper.SysApprovalRequestMapper;
+import com.zjl.collaboration.workflow.entity.WfInstance;
 import com.zjl.collaboration.workflow.dto.WorkflowActionRequest;
 import com.zjl.collaboration.workflow.entity.WfTask;
+import com.zjl.collaboration.workflow.mapper.WfInstanceMapper;
 import com.zjl.collaboration.workflow.service.WorkflowRuntimeService;
 import com.zjl.collaboration.workflow.service.WorkflowTaskService;
 import com.zjl.collaboration.workflow.vo.WorkflowTaskVO;
@@ -26,6 +30,8 @@ import java.util.List;
 public class WorkflowTaskController {
     private final WorkflowTaskService taskService;
     private final WorkflowRuntimeService runtimeService;
+    private final WfInstanceMapper instanceMapper;
+    private final SysApprovalRequestMapper approvalRequestMapper;
 
     @GetMapping("/my")
     public Result<List<WorkflowTaskVO>> listMine(@RequestHeader("X-User-Id") Long userId) {
@@ -60,6 +66,17 @@ public class WorkflowTaskController {
         vo.setComment(task.getComment());
         vo.setCreatedAt(task.getCreatedAt());
         vo.setUpdatedAt(task.getUpdatedAt());
+        WfInstance instance = instanceMapper.selectById(task.getInstanceId());
+        if (instance != null) {
+            SysApprovalRequest approval = approvalRequestMapper.selectById(instance.getBusinessId());
+            if (approval != null) {
+                vo.setApprovalId(approval.getId());
+                vo.setApprovalType(approval.getType());
+                vo.setApprovalTitle(approval.getTitle());
+                vo.setApplicantName(approval.getUserName());
+                vo.setApprovalStatus(approval.getStatus());
+            }
+        }
         return vo;
     }
 }
