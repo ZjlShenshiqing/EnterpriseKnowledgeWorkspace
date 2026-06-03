@@ -95,7 +95,6 @@
           <span>流程状态</span><b>{{ statusLabel(detail.instance?.status || detail.status) }}</b>
           <span>当前节点</span><b>{{ detail.instance?.currentNodeId || '-' }}</b>
         </div>
-        <pre class="form-json">{{ prettyForm(detail.formData) }}</pre>
         <el-timeline>
           <el-timeline-item v-for="record in detail.records || []" :key="record.id" :timestamp="formatTime(record.createdAt)">
             <b>{{ actionLabel(record.action) }}</b>
@@ -217,14 +216,6 @@ function formatTime(value) {
   return value ? String(value).replace('T', ' ').slice(0, 19) : '-'
 }
 
-function prettyForm(value) {
-  try {
-    return JSON.stringify(JSON.parse(value || '{}'), null, 2)
-  } catch {
-    return value || '{}'
-  }
-}
-
 onMounted(load)
 </script>
 
@@ -245,5 +236,4 @@ onMounted(load)
 .detail-title { font-size: 16px; font-weight: 600; }
 .detail-grid { display: grid; grid-template-columns: 80px 1fr; gap: 6px 12px; margin-bottom: 12px; }
 .detail-grid span { color: var(--text-tertiary); }
-.form-json { padding: 10px; background: var(--bg-body); border-radius: 6px; overflow: auto; font-size: 12px; }
 </style>
