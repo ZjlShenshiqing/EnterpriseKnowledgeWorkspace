@@ -25,6 +25,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,6 +59,8 @@ class ApprovalApplicationServiceImplTest {
         when(gatewayUserClient.getById(6L)).thenReturn(new UserInfo(6L, "zhangsan", "张三", 1L, "研发部"));
         when(requestMapper.insert(any(SysApprovalRequest.class))).thenAnswer(invocation -> {
             SysApprovalRequest approval = invocation.getArgument(0);
+            assertThat(approval.getStatus()).isEqualTo("PENDING");
+            assertThat(approval.getFormData()).contains("\"days\":1");
             approval.setId(1001L);
             return 1;
         });
@@ -66,14 +69,14 @@ class ApprovalApplicationServiceImplTest {
         ApprovalCreateVO created = approvalApplicationService.create(request, 6L);
 
         ArgumentCaptor<SysApprovalRequest> approvalCaptor = ArgumentCaptor.forClass(SysApprovalRequest.class);
+        ArgumentCaptor<SysApprovalRequest> updatedApprovalCaptor = ArgumentCaptor.forClass(SysApprovalRequest.class);
         verify(requestMapper).insert(approvalCaptor.capture());
         verify(runtimeService).startApproval("leave", 1001L, 6L);
-        verify(requestMapper).updateById(any(SysApprovalRequest.class));
+        verify(requestMapper, atLeastOnce()).updateById(updatedApprovalCaptor.capture());
 
         assertThat(created.getApprovalId()).isEqualTo(1001L);
         assertThat(created.getWorkflowInstanceId()).isEqualTo(9001L);
-        assertThat(approvalCaptor.getValue().getStatus()).isEqualTo("PENDING");
-        assertThat(approvalCaptor.getValue().getFormData()).contains("\"days\":1");
+        assertThat(updatedApprovalCaptor.getValue().getStatus()).isEqualTo("RUNNING");
     }
 
     @Test

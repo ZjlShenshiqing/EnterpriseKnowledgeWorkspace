@@ -12,6 +12,7 @@ import com.zjl.collaboration.workflow.entity.WfInstance;
 import com.zjl.collaboration.workflow.entity.WfRecord;
 import com.zjl.collaboration.workflow.mapper.WfInstanceMapper;
 import com.zjl.collaboration.workflow.mapper.WfRecordMapper;
+import com.zjl.collaboration.workflow.enums.WfInstanceStatus;
 import com.zjl.collaboration.workflow.service.ApprovalApplicationService;
 import com.zjl.collaboration.workflow.service.WorkflowRuntimeService;
 import com.zjl.collaboration.workflow.vo.ApprovalCreateVO;
@@ -62,6 +63,7 @@ public class ApprovalApplicationServiceImpl implements ApprovalApplicationServic
 
         Long instanceId = runtimeService.startApproval(request.getType(), approval.getId(), userId);
         approval.setWorkflowInstanceId(instanceId);
+        approval.setStatus(WfInstanceStatus.RUNNING);
         approval.setUpdatedAt(LocalDateTime.now());
         requestMapper.updateById(approval);
 

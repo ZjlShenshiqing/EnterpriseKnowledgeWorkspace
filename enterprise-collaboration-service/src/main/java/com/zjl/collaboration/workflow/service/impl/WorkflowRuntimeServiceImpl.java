@@ -1,5 +1,7 @@
 package com.zjl.collaboration.workflow.service.impl;
 
+import com.zjl.collaboration.entity.SysApprovalRequest;
+import com.zjl.collaboration.mapper.SysApprovalRequestMapper;
 import com.zjl.collaboration.workflow.entity.WfInstance;
 import com.zjl.collaboration.workflow.entity.WfNode;
 import com.zjl.collaboration.workflow.entity.WfNodeApprover;
@@ -35,6 +37,7 @@ public class WorkflowRuntimeServiceImpl implements WorkflowRuntimeService {
     private final WfRecordMapper recordMapper;
     private final WfNodeMapper nodeMapper;
     private final WorkflowTaskService taskService;
+    private final SysApprovalRequestMapper approvalRequestMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -109,6 +112,7 @@ public class WorkflowRuntimeServiceImpl implements WorkflowRuntimeService {
         instance.setStatus(WfInstanceStatus.APPROVED);
         instance.setEndedAt(now);
         instanceMapper.updateById(instance);
+        updateBusinessApprovalStatus(instance.getBusinessId(), WfInstanceStatus.APPROVED);
         insertRecord(instance.getId(), currentNode.getId(), task.getId(), operatorId,
                 WfAction.COMPLETE, WfInstanceStatus.RUNNING, WfInstanceStatus.APPROVED, null, now);
     }
@@ -131,8 +135,17 @@ public class WorkflowRuntimeServiceImpl implements WorkflowRuntimeService {
         instance.setStatus(WfInstanceStatus.REJECTED);
         instance.setEndedAt(now);
         instanceMapper.updateById(instance);
+        updateBusinessApprovalStatus(instance.getBusinessId(), WfInstanceStatus.REJECTED);
         insertRecord(instance.getId(), task.getNodeId(), task.getId(), operatorId,
                 WfAction.REJECT, WfInstanceStatus.RUNNING, WfInstanceStatus.REJECTED, comment, now);
+    }
+
+    private void updateBusinessApprovalStatus(Long approvalId, String status) {
+        SysApprovalRequest approval = new SysApprovalRequest();
+        approval.setId(approvalId);
+        approval.setStatus(status);
+        approval.setUpdatedAt(LocalDateTime.now());
+        approvalRequestMapper.updateById(approval);
     }
 
     private void createPendingTasks(Long instanceId, WfNode node) {

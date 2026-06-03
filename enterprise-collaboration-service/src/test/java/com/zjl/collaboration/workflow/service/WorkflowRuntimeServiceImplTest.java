@@ -1,5 +1,7 @@
 package com.zjl.collaboration.workflow.service;
 
+import com.zjl.collaboration.entity.SysApprovalRequest;
+import com.zjl.collaboration.mapper.SysApprovalRequestMapper;
 import com.zjl.collaboration.workflow.entity.WfInstance;
 import com.zjl.collaboration.workflow.entity.WfNode;
 import com.zjl.collaboration.workflow.entity.WfNodeApprover;
@@ -50,6 +52,9 @@ class WorkflowRuntimeServiceImplTest {
 
     @Mock
     private WorkflowTaskService taskService;
+
+    @Mock
+    private SysApprovalRequestMapper approvalRequestMapper;
 
     @InjectMocks
     private WorkflowRuntimeServiceImpl runtimeService;
@@ -154,6 +159,26 @@ class WorkflowRuntimeServiceImplTest {
     }
 
     @Test
+    void approveFinalTaskUpdatesBusinessApprovalStatus() {
+        WfTask task = pendingTask(31L, 90L, 20L);
+        WfInstance instance = runningInstance(90L, 10L, 20L);
+        instance.setBusinessId(1001L);
+        WfNode currentNode = approvalNode(20L, 10);
+
+        when(taskMapper.selectById(31L)).thenReturn(task);
+        when(instanceMapper.selectById(90L)).thenReturn(instance);
+        when(nodeMapper.selectById(20L)).thenReturn(currentNode);
+        when(templateService.findNextApprovalNode(10L, 10)).thenReturn(null);
+
+        runtimeService.approveTask(31L, 6L, "同意");
+
+        ArgumentCaptor<SysApprovalRequest> approvalCaptor = ArgumentCaptor.forClass(SysApprovalRequest.class);
+        verify(approvalRequestMapper).updateById(approvalCaptor.capture());
+        assertThat(approvalCaptor.getValue().getId()).isEqualTo(1001L);
+        assertThat(approvalCaptor.getValue().getStatus()).isEqualTo(WfInstanceStatus.APPROVED);
+    }
+
+    @Test
     void rejectTaskEndsWorkflowAndClosesSameNodePendingTasks() {
         WfTask task = pendingTask(31L, 90L, 20L);
         WfInstance instance = runningInstance(90L, 10L, 20L);
@@ -174,6 +199,23 @@ class WorkflowRuntimeServiceImplTest {
         assertThat(taskCaptor.getValue().getStatus()).isEqualTo(WfTaskStatus.REJECTED);
         assertThat(instanceCaptor.getValue().getStatus()).isEqualTo(WfInstanceStatus.REJECTED);
         assertThat(recordCaptor.getValue().getAction()).isEqualTo(WfAction.REJECT);
+    }
+
+    @Test
+    void rejectTaskUpdatesBusinessApprovalStatus() {
+        WfTask task = pendingTask(31L, 90L, 20L);
+        WfInstance instance = runningInstance(90L, 10L, 20L);
+        instance.setBusinessId(1001L);
+
+        when(taskMapper.selectById(31L)).thenReturn(task);
+        when(instanceMapper.selectById(90L)).thenReturn(instance);
+
+        runtimeService.rejectTask(31L, 6L, "不同意");
+
+        ArgumentCaptor<SysApprovalRequest> approvalCaptor = ArgumentCaptor.forClass(SysApprovalRequest.class);
+        verify(approvalRequestMapper).updateById(approvalCaptor.capture());
+        assertThat(approvalCaptor.getValue().getId()).isEqualTo(1001L);
+        assertThat(approvalCaptor.getValue().getStatus()).isEqualTo(WfInstanceStatus.REJECTED);
     }
 
     private static WfTask pendingTask(Long id, Long instanceId, Long nodeId) {
