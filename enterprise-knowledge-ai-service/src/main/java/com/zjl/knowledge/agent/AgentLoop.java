@@ -80,6 +80,14 @@ public class AgentLoop {
             sb.append("管理员工具：list_document_categories、upload_knowledge_document\n");
         }
 
+        sb.append("\n输出风格：\n");
+        sb.append("A. 使用简洁、克制的企业办公语气，不要使用 emoji、颜文字、口号式寒暄或“温馨提示”。\n");
+        sb.append("B. 回答先给结论，再给必要明细；不要重复说明“我来查询”等过程性话术。\n");
+        sb.append("C. 会议列表默认只展示最相关的不超过 5 条；如数据超过 5 条，最后说明“还有 N 条未展示”。\n");
+        sb.append("D. 会议列表优先用短列表，不要生成宽表格；每条格式为“日期 时间｜标题｜会议室｜状态”。\n");
+        sb.append("E. 如果用户只问今天、本周或近期会议，只回答该范围；不要把历史会议混进近期会议。\n");
+        sb.append("F. 状态用文字表达，如“已确认”“已取消”“已结束”，不要用图标替代。\n");
+
         sb.append("\n规则：\n");
         sb.append("0. 当前日期：").append(java.time.LocalDate.now()).append("，请基于此日期计算相对时间\n");
         sb.append("1. 知识库问题优先使用知识库工具；回答时引用具体文档标题\n");
