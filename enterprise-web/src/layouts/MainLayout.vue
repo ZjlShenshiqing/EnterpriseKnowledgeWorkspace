@@ -4,7 +4,7 @@
     <div class="sidebar-container">
       <div style="padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg, #ff6b9d 0%, #c084fc 50%, #22d3ee 100%);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff">E</div>
+          <BrandLogo variant="gradient-ring" />
           <span style="color:#1f2937;font-size:15px;font-weight:600">企业工作平台</span>
         </div>
 
@@ -55,9 +55,17 @@
 
     <!-- Main Area -->
     <div style="flex:1;display:flex;flex-direction:column;background:#fff;overflow:hidden;min-width:0;box-shadow:-2px 0 8px rgba(0,0,0,0.04);">
-      <div class="main-header">
-        <span style="font-size:15px;font-weight:600;color:#1f2937;">{{ title }}</span>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+      <div class="main-header" :class="{ 'main-header--chat': isChatPage }">
+        <div v-if="isChatPage" class="main-header-left">
+          <button class="header-btn" title="历史对话" @click="openChatHistory">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M9 3v18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="main-header-title">{{ title }}</div>
+        <div class="main-header-actions">
           <button class="header-btn" title="上传文件" @click="handleHeaderUpload">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -112,6 +120,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { isAdminUser, readStoredAuth, getChatUnreadCount, logout as doLogout } from '../api/index.js'
+import BrandLogo from '../components/BrandLogo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,6 +131,8 @@ const title = computed(() => route.meta?.title || '工作台')
  * 智能对话、即时通讯等页铺满主内容区（无灰边）；其它页保持原有内边距。
  */
 const isFullBleedPage = computed(() => ['/chat', '/chats', '/contacts', '/documents'].includes(route.path))
+
+const isChatPage = computed(() => route.path === '/chat')
 
 const mainContentWrapStyle = computed(() => {
   if (isFullBleedPage.value) {
@@ -178,6 +189,10 @@ async function refreshUnread() {
 /**
  * 顶栏上传：智能对话页触发附件上传；管理员跳转知识库文档上传；其余用户进入智能对话并打开上传。
  */
+function openChatHistory() {
+  window.dispatchEvent(new CustomEvent('chat:open-history'))
+}
+
 function handleHeaderUpload() {
   if (route.path === '/chat') {
     window.dispatchEvent(new CustomEvent('chat:trigger-upload'))
@@ -333,6 +348,42 @@ onUnmounted(() => {
   align-items: center;
   padding: 0 20px;
   flex-shrink: 0;
+}
+
+.main-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.main-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.main-header--chat {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.main-header--chat .main-header-left {
+  justify-self: start;
+}
+
+.main-header--chat .main-header-title {
+  justify-self: center;
+  text-align: center;
+  font-size: 16px;
+  color: #202123;
+}
+
+.main-header--chat .main-header-actions {
+  justify-self: end;
+  margin-left: 0;
 }
 
 .header-btn {
