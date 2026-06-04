@@ -203,9 +203,10 @@ export function createKnowledgeBase(body) {
 
 // ---- Agent Chat (SSE) ----
 
-export function agentChat(sessionId, message, webSearch = false, attachments = []) {
+export function agentChat(sessionId, message, webSearch = false, attachments = [], options = {}) {
   return fetch('/api/kb/agent/chat', {
     method: 'POST',
+    signal: options.signal,
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({
       sessionId: sessionId != null && sessionId !== '' ? String(sessionId) : null,
