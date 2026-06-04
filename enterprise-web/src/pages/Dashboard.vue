@@ -30,15 +30,15 @@
           <div class="stat-value" style="color:#fff;font-size:36px;font-weight:700;">{{ knowledgeStats.documents }}</div>
           <div style="font-size:12px;opacity:0.7;">分布在 <b>{{ knowledgeStats.bases }}</b> 个知识库</div>
         </div>
-        <div class="stat-card admin-knowledge-card" style="background:linear-gradient(135deg,#047857,#10b981);color:#fff;cursor:pointer;" @click="$router.push('/admin/intent-config')">
+        <div class="stat-card admin-knowledge-card" style="background:linear-gradient(135deg,#047857,#10b981);color:#fff;cursor:pointer;" @click="$router.push('/admin/intents/config')">
           <div style="font-size:12px;opacity:0.8;margin-bottom:4px;">意图配置</div>
           <div class="stat-value" style="color:#fff;font-size:36px;font-weight:700;">{{ knowledgeStats.intents }}</div>
           <div style="font-size:12px;opacity:0.7;">覆盖 <b>{{ knowledgeStats.intents }}</b> 个意图</div>
         </div>
         <div class="stat-card admin-knowledge-card" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;">
-          <div style="font-size:12px;opacity:0.8;margin-bottom:4px;">今日智能会话</div>
+          <div style="font-size:12px;opacity:0.8;margin-bottom:4px;">AI 会话数</div>
           <div class="stat-value" style="color:#fff;font-size:36px;font-weight:700;">{{ knowledgeStats.sessions }}</div>
-          <div style="font-size:12px;opacity:0.7;">AI 对话次数</div>
+          <div style="font-size:12px;opacity:0.7;">{{ knowledgeStats.messages }} 条消息</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;">
@@ -229,6 +229,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Refresh, DocumentAdd, Calendar, List, Checked } from '@element-plus/icons-vue'
 import { isAdminUser, getAuthHeaders } from '../api/index.js'
+import { buildKnowledgeStats, toNumber } from './dashboardStats.js'
 
 const route = useRoute()
 
@@ -248,7 +249,7 @@ const todos = ref([])
 const todayMeetings = ref([])
 
 const collabStats = ref({ todos: 0, meetings: 0, approvals: 0, messages: 0 })
-const knowledgeStats = ref({ documents: 0, bases: 0, intents: 0, sessions: 0 })
+const knowledgeStats = ref({ documents: 0, bases: 0, intents: 0, sessions: 0, messages: 0 })
 
 const quickActions = computed(() => {
   const all = [
@@ -257,7 +258,7 @@ const quickActions = computed(() => {
     { label:'添加待办', icon:'List', bg:'#fffbeb', color:'#f59e0b', path:'/todos' },
   ]
   if (isAdmin.value) {
-    all.push({ label:'意图配置', icon:'Checked', bg:'#fef2f2', color:'#ef4444', path:'/admin/intent-config' })
+    all.push({ label:'意图配置', icon:'Checked', bg:'#fef2f2', color:'#ef4444', path:'/admin/intents/config' })
   }
   return all
 })
@@ -290,41 +291,60 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function toNumber(value, fallback = 0) {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : fallback
-}
-
 async function loadData() {
+  let overviewData = {}
   try {
     const resp = await fetch('/api/workbench/overview', { headers: headers() })
     const result = await resp.json()
     if (!resp.ok || !(result.code === 200 || result.code === '200')) {
       console.warn('工作台 overview 请求失败', result)
-      return
+    } else {
+      overviewData = result.data || {}
     }
-    const data = result.data || {}
-    recentDocs.value = data.recentDocs || []
-    todos.value = (data.todos || []).map(t => ({ ...t, done: t.done === 1 || t.done === true }))
-    todayMeetings.value = data.todayMeetings
-      || (data.meetings || []).filter(m => m.date === todayStr())
+    recentDocs.value = overviewData.recentDocs || []
+    todos.value = (overviewData.todos || []).map(t => ({ ...t, done: t.done === 1 || t.done === true }))
+    todayMeetings.value = overviewData.todayMeetings
+      || (overviewData.meetings || []).filter(m => m.date === todayStr())
 
     collabStats.value = {
-      todos: toNumber(data.todoCount),
-      meetings: toNumber(data.meetingCount),
-      approvals: toNumber(data.pendingApprovalCount),
-      messages: toNumber(data.unreadMessageCount)
-    }
-
-    knowledgeStats.value = {
-      documents: toNumber(data.documentCount),
-      bases: toNumber(data.baseCount),
-      intents: toNumber(data.intentCount),
-      sessions: toNumber(data.todaySessionCount)
+      todos: toNumber(overviewData.todoCount),
+      meetings: toNumber(overviewData.meetingCount),
+      approvals: toNumber(overviewData.pendingApprovalCount),
+      messages: toNumber(overviewData.unreadMessageCount)
     }
   } catch (e) {
     console.warn('Workbench API not available', e)
   }
+
+  let adminStats = null
+  let intentTree = null
+  if (isAdmin.value) {
+    try {
+      const resp = await fetch('/api/kb/admin/stats', { headers: headers() })
+      const result = await resp.json()
+      if (resp.ok && (result.code === 200 || result.code === '200')) {
+        adminStats = result.data || {}
+      } else {
+        console.warn('知识库后台统计请求失败', result)
+      }
+    } catch (e) {
+      console.warn('Knowledge admin stats API not available', e)
+    }
+
+    try {
+      const resp = await fetch('/api/intents/nodes', { headers: headers() })
+      const result = await resp.json()
+      if (resp.ok && (result.code === 200 || result.code === '200')) {
+        intentTree = result.data || []
+      } else {
+        console.warn('意图节点统计请求失败', result)
+      }
+    } catch (e) {
+      console.warn('Intent nodes API not available', e)
+    }
+  }
+
+  knowledgeStats.value = buildKnowledgeStats(overviewData, adminStats, intentTree)
 }
 
 function toggleTodo(t) { t.done = !t.done }

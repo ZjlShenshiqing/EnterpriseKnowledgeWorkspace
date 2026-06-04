@@ -239,7 +239,7 @@ function clearFilters() {
 }
 
 function goToTree(row) {
-  router.push('/admin/intent-config')
+  router.push('/admin/intents/config')
 }
 
 async function deleteNode(row) {
