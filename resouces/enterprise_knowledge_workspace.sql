@@ -373,6 +373,7 @@ DROP TABLE IF EXISTS sys_approval_record;
 DROP TABLE IF EXISTS sys_approval_request;
 DROP TABLE IF EXISTS sys_task_comment;
 DROP TABLE IF EXISTS sys_task;
+DROP TABLE IF EXISTS undo_log;
 DROP TABLE IF EXISTS im_message_file;
 DROP TABLE IF EXISTS im_message_read;
 DROP TABLE IF EXISTS im_message;
@@ -740,6 +741,20 @@ CREATE TABLE IF NOT EXISTS sys_doc_collaborator (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_doc_collaborator (doc_id, deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档协作者表';
+
+CREATE TABLE undo_log (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    branch_id BIGINT NOT NULL,
+    xid VARCHAR(128) NOT NULL,
+    context VARCHAR(128) NOT NULL,
+    rollback_info LONGBLOB NOT NULL,
+    log_status INT NOT NULL,
+    log_created DATETIME NOT NULL,
+    log_modified DATETIME NOT NULL,
+    ext VARCHAR(128) DEFAULT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY ux_undo_log (xid, branch_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO sys_dept (id, name) VALUES (1, '技术部'), (2, '产品部'), (3, '设计部');
 

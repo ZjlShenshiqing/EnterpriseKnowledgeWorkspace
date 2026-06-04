@@ -36,6 +36,25 @@ rocketmq:
     send-message-timeout: 3000
     retry-times-when-send-failed: 1
 
+seata:
+  tx-service-group: enterprise-workspace-tx-group
+  service:
+    vgroup-mapping:
+      enterprise-workspace-tx-group: default
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: ""
+      group: DEFAULT_GROUP
+      application: seata-server
+  config:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: ""
+      group: DEFAULT_GROUP
+
 app:
   gateway:
     url: ${GATEWAY_SERVICE_URL:http://localhost:8086}

@@ -21,6 +21,7 @@ import com.zjl.collaboration.workflow.vo.ApprovalListVO;
 import com.zjl.collaboration.workflow.vo.WfRecordVO;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import io.seata.spring.annotation.GlobalTransactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ public class ApprovalApplicationServiceImpl implements ApprovalApplicationServic
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
+    @GlobalTransactional(timeoutMills = 300000, name = "approval-create")
     @Transactional(rollbackFor = Exception.class)
     public ApprovalCreateVO create(ApprovalCreateRequest request, Long userId) {
         validateCreate(request);

@@ -13,6 +13,7 @@ import com.zjl.collaboration.workflow.mapper.WfRecordMapper;
 import com.zjl.collaboration.workflow.service.impl.ApprovalApplicationServiceImpl;
 import com.zjl.collaboration.workflow.vo.ApprovalCreateVO;
 import com.zjl.collaboration.workflow.vo.ApprovalDetailVO;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -20,12 +21,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,5 +125,65 @@ class ApprovalApplicationServiceImplTest {
         assertThat(detail.getInstance().getId()).isEqualTo(9001L);
         assertThat(detail.getRecords()).hasSize(1);
         assertThat(detail.getRecords().get(0).getAction()).isEqualTo("START");
+    }
+
+    @Test
+    void createMethodHasGlobalTransactionalAnnotation() throws NoSuchMethodException {
+        Method createMethod = ApprovalApplicationServiceImpl.class
+                .getMethod("create", ApprovalCreateRequest.class, Long.class);
+
+        GlobalTransactional annotation = createMethod.getAnnotation(GlobalTransactional.class);
+        assertNotNull(annotation, "create method must have @GlobalTransactional");
+        assertThat(annotation.timeoutMills()).isEqualTo(300000);
+        assertThat(annotation.name()).isEqualTo("approval-create");
+    }
+
+    @Test
+    void createMethodHasTransactionalAnnotation() throws NoSuchMethodException {
+        Method createMethod = ApprovalApplicationServiceImpl.class
+                .getMethod("create", ApprovalCreateRequest.class, Long.class);
+
+        org.springframework.transaction.annotation.Transactional annotation =
+                createMethod.getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+        assertNotNull(annotation, "create method must retain @Transactional for local branch transaction");
+    }
+
+    @Test
+    void downstreamParticipantFailureRollsBackLocalWrites() {
+        ApprovalCreateRequest request = new ApprovalCreateRequest();
+        request.setType("leave");
+        request.setTitle("请假");
+        request.setFormData(Map.of("days", 1));
+
+        when(gatewayUserClient.getById(6L)).thenReturn(new UserInfo(6L, "zhangsan", "张三", 1L, "研发部"));
+        when(requestMapper.insert(any(SysApprovalRequest.class))).thenAnswer(invocation -> {
+            SysApprovalRequest approval = invocation.getArgument(0);
+            approval.setId(1001L);
+            return 1;
+        });
+        doThrow(new RuntimeException("downstream failure"))
+                .when(runtimeService).startApproval("leave", 1001L, 6L);
+
+        assertThrows(RuntimeException.class, () -> approvalApplicationService.create(request, 6L));
+
+        verify(requestMapper).insert(any(SysApprovalRequest.class));
+        verify(requestMapper, never()).updateById(any(SysApprovalRequest.class));
+    }
+
+    @Test
+    void localWriteFailureDoesNotLeaveSuccessfulRecords() {
+        ApprovalCreateRequest request = new ApprovalCreateRequest();
+        request.setType("expense");
+        request.setTitle("报销");
+        request.setFormData(Map.of("amount", 100));
+
+        when(gatewayUserClient.getById(6L)).thenReturn(new UserInfo(6L, "zhangsan", "张三", 1L, "研发部"));
+        when(requestMapper.insert(any(SysApprovalRequest.class)))
+                .thenThrow(new RuntimeException("db write failure"));
+
+        assertThrows(RuntimeException.class, () -> approvalApplicationService.create(request, 6L));
+
+        verify(requestMapper).insert(any(SysApprovalRequest.class));
+        verify(runtimeService, never()).startApproval(any(), any(), any());
     }
 }
