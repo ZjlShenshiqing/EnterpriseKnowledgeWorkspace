@@ -72,6 +72,7 @@ class RagQaToolTest {
         doc.setOwnerId(9999L);
         doc.setPermissionType("USER");
         doc.setDeleted(0);
+        doc.setStatus("SUCCESS");
         doc.setTitle("restricted");
 
         KbDocumentPermission permission = new KbDocumentPermission();
