@@ -7,6 +7,8 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
+        ip: ${NACOS_DISCOVERY_IP:127.0.0.1}
+        port: ${server.port}
       config:
         server-addr: localhost:8848
         file-extension: yaml
@@ -37,23 +39,21 @@ rocketmq:
     retry-times-when-send-failed: 1
 
 seata:
+  enabled: ${SEATA_ENABLED:true}
+  application-id: ${spring.application.name}
   tx-service-group: enterprise-workspace-tx-group
+
+  registry:
+    type: file
+
+  config:
+    type: file
+
   service:
     vgroup-mapping:
       enterprise-workspace-tx-group: default
-  registry:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: ""
-      group: DEFAULT_GROUP
-      application: seata-server
-  config:
-    type: nacos
-    nacos:
-      server-addr: localhost:8848
-      namespace: ""
-      group: DEFAULT_GROUP
+    grouplist:
+      default: 127.0.0.1:8091
 
 app:
   gateway:

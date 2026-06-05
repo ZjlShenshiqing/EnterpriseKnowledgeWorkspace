@@ -7,6 +7,8 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
+        ip: ${NACOS_DISCOVERY_IP:127.0.0.1}
+        port: ${server.port}
       config:
         server-addr: localhost:8848
         file-extension: yaml
