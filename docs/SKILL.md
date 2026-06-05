@@ -55,13 +55,14 @@
 3. ✅ 文档分类。
 4. ✅ 文档权限控制（ALL / DEPARTMENT / PROJECT / USER / ADMIN + kb_document_permission）。
 5. ✅ 逻辑知识库管理（`kb_knowledge_base` + Milvus 集合绑定 + 嵌入模型路由）。
-6. ✅ 文档切片（FIXED_SIZE / PARAGRAPH 策略 + 异步分块事件）。
-7. ✅ 向量写入（Milvus：默认集合 + 每知识库独立集合；可配置跳过）。
-8. ✅ 分块任务日志（`kb_document_chunk_log` 记录各阶段耗时）。
-9. 🔧 文档版本管理（`current_version` 字段已预留，版本流转逻辑规划中）。
-10. 🔧 全文检索（ES/OpenSearch，Step4 接入）。
-11. 🔧 语义检索（Milvus 相似度搜索，Step4 接入）。
-12. 🔧 智能问答来源引用（Step4 RAG 问答）。
+6. ✅ 文档预处理（Tika 后统一上下文模板 + metadata 扩展）。
+7. ✅ 文档切片（FIXED_SIZE / PARAGRAPH 策略 + 异步分块事件）。
+8. ✅ 向量写入（Milvus：默认集合 + 每知识库独立集合；可配置跳过）。
+9. ✅ 分块任务日志（`kb_document_chunk_log` 记录各阶段耗时）。
+10. 🔧 文档版本管理（`current_version` 字段已预留，版本流转逻辑规划中）。
+11. 🔧 全文检索（ES/OpenSearch，Step4 接入）。
+12. 🔧 语义检索（Milvus 相似度搜索，Step4 接入）。
+13. 🔧 智能问答来源引用（Step4 RAG 问答）。
 
 ### 4.2 智能问答能力（Step4 规划）
 
@@ -264,9 +265,9 @@ frontend
 1. 用户上传文档（`multipart`：`meta` + `file`），可选 `meta.kbId` 绑定知识库。
 2. 系统保存原始文件到本地目录，文档状态为 **PENDING**。
 3. 用户调用 **start-chunk**，状态变为 **RUNNING**，事务提交后异步执行分块。
-4. 系统使用 **Tika** 从磁盘解析正文，按策略分块并调用 **EmbeddingService** 生成向量。
+4. 系统使用 **Tika** 从磁盘解析正文与 metadata，先经过默认文档预处理生成统一上下文文本，再按策略分块并调用 **EmbeddingService** 生成向量。
 5. 系统在事务内删除旧切片、写入新 `kb_document_chunk`、更新文档 **SUCCESS** 与摘要等。
-6. 系统向 **Milvus** 写入向量（集合由 `kb_id` 路由，否则默认集合）；失败则文档 **FAILED** 并记录 **kb_document_chunk_log**。
+6. 系统向 **Milvus** 写入向量（集合由 `kb_id` 路由，否则默认集合），chunk metadata 会携带预处理字段；失败则文档 **FAILED** 并记录 **kb_document_chunk_log**。
 7. `vector_id` 与 Milvus 行主键 `id`（chunk 主键）对齐。
 8. 全文检索与 RAG 问答为后续步骤（见 `docs/step3-summary.md` / Step4）。
 

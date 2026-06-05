@@ -24,6 +24,10 @@ import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.metadata.ChunkMetadata;
 import com.zjl.knowledge.metadata.SensitivityKeywordService;
 import com.zjl.knowledge.milvus.VectorDocChunk;
+import com.zjl.knowledge.preprocess.DocumentPreprocessingContext;
+import com.zjl.knowledge.preprocess.DocumentPreprocessingResult;
+import com.zjl.knowledge.preprocess.DocumentPreprocessor;
+import com.zjl.knowledge.preprocess.DocumentPreprocessorSelector;
 import com.zjl.knowledge.service.DocumentChunkingService;
 import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.service.TikaDocumentParser;
@@ -45,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,6 +75,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
     private final ObjectMapper objectMapper;
     private final FileStorageService fileStorageService;
     private final SensitivityKeywordService sensitivityKeywordService;
+    private final DocumentPreprocessorSelector documentPreprocessorSelector;
 
     /**
      * 提交异步分块：CAS 更新 status→RUNNING，事务提交后由监听器异步执行
@@ -170,14 +176,23 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
                 throw new BizException(ErrorCode.PARAM_INVALID, "未能从文件中提取正文");
             }
 
-            document.setMetadata(toJson(docMetadata));
+            DocumentPreprocessingContext preprocessingContext =
+                    new DocumentPreprocessingContext(document, text, docMetadata);
+            DocumentPreprocessor preprocessor = documentPreprocessorSelector.select(preprocessingContext);
+            DocumentPreprocessingResult preprocessingResult = preprocessor.preprocess(preprocessingContext);
+            String chunkInputText = preprocessingResult.chunkInputText();
+            if (!StringUtils.hasText(chunkInputText)) {
+                throw new BizException(ErrorCode.PARAM_INVALID, "文档预处理后正文为空");
+            }
+
+            document.setMetadata(toJson(mergeMetadata(docMetadata, preprocessingResult.documentMetadata())));
 
             ChunkingMode chunkingMode = ChunkingMode.fromValue(document.getChunkStrategy());
             ChunkingStrategy strategy = chunkingStrategyFactory.requireStrategy(chunkingMode);
             ChunkingOptions options = ChunkingOptions.fromMap(parseChunkConfig(document.getChunkConfig()));
 
             long chunkStart = System.currentTimeMillis();
-            List<TextChunk> parts = strategy.chunk(text, options);
+            List<TextChunk> parts = strategy.chunk(chunkInputText, options);
             chunkDuration = System.currentTimeMillis() - chunkStart;
 
             boolean shouldEmbed = vectorSyncService.shouldEmbed(document);
@@ -212,11 +227,14 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
                     meta.setSensitivityLevel("ADMIN_ONLY");
                 }
 
+                Map<String, Object> chunkMetadata = new LinkedHashMap<>(meta.toMap());
+                chunkMetadata.putAll(preprocessingResult.chunkMetadataDefaults());
+
                 VectorDocChunk.VectorDocChunkBuilder builder = VectorDocChunk.builder()
                         .chunkId(String.valueOf(chunkPk))
                         .content(part.content())
                         .index(part.index())
-                        .metadata(meta.toMap());
+                        .metadata(chunkMetadata);
 
                 if (shouldEmbed && vectors != null) {
                     builder.embedding(toArray(vectors.get(i)));
@@ -225,7 +243,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
             }
 
             long persistStart = System.currentTimeMillis();
-            int saved = persistChunksAndVectorsAtomically(document, acting, chunkResults, text, shouldEmbed);
+            int saved = persistChunksAndVectorsAtomically(document, acting, chunkResults, chunkInputText, shouldEmbed);
             persistDuration = System.currentTimeMillis() - persistStart;
 
             long totalDuration = System.currentTimeMillis() - totalStart;
@@ -353,5 +371,16 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
             log.warn("分块参数解析失败: {}", json, e);
             return Map.of();
         }
+    }
+
+    private Map<String, Object> mergeMetadata(Map<String, String> parsedMetadata, Map<String, Object> preprocessingMetadata) {
+        Map<String, Object> merged = new LinkedHashMap<>();
+        if (parsedMetadata != null) {
+            merged.putAll(parsedMetadata);
+        }
+        if (preprocessingMetadata != null) {
+            merged.putAll(preprocessingMetadata);
+        }
+        return merged;
     }
 }

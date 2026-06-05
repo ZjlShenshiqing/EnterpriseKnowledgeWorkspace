@@ -97,6 +97,7 @@ graph TB
 ├── 2. 知识库管理
 │   ├── 文档上传                      POST /api/kb/documents/upload
 │   ├── Tika 文档解析                 支持 PDF/Word/Excel/PPT/HTML/MD
+│   ├── 文档预处理                    默认统一上下文模板 + metadata 扩展
 │   ├── 策略分块                      FIXED_SIZE / PARAGRAPH
 │   ├── 向量化写入 Milvus             DeepSeek Embedding
 │   ├── 文档权限                      5 种权限模型 (ALL/DEPT/PROJECT/USER/ADMIN)
@@ -206,6 +207,7 @@ sequenceDiagram
 
     FE->>KB: POST /api/kb/documents/{id}/start-chunk
     KB->>TIKA: 解析文档全文
+    KB->>KB: 默认预处理 (上下文头 + metadata)
     KB->>KB: 策略分块 (FIXED_SIZE/PARAGRAPH)
     KB->>EMB: embedBatch(chunks)
     KB->>MIL: INSERT chunk vectors

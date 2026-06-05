@@ -94,7 +94,7 @@
 ### 实施
 1. 知识分类管理。
 2. **逻辑知识库**管理（多 Milvus 集合、`kb_knowledge_base` + 文档 `kb_id`）。
-3. 文档上传与元数据入库；**Apache Tika** 落盘解析；**异步分块**（`PENDING` → `RUNNING` → `SUCCESS`/`FAILED`）。
+3. 文档上传与元数据入库；**Apache Tika** 落盘解析；默认文档预处理；**异步分块**（`PENDING` → `RUNNING` → `SUCCESS`/`FAILED`）。
 4. 文档权限策略（全员/部门/项目成员/指定人/管理员）。
 5. 文档切片 CRUD、启用禁用、与 **Milvus** 向量写入（`id`/`content`/`metadata`/`embedding` Schema）；**分块任务日志**表。
 
