@@ -1,12 +1,23 @@
 package com.zjl.collaboration.web;
 
-import com.zjl.collaboration.entity.*;
+import com.zjl.collaboration.dto.IntentBindKbReq;
+import com.zjl.collaboration.dto.IntentMatchReq;
+import com.zjl.collaboration.dto.IntentSortReq;
+import com.zjl.collaboration.entity.KbIntentKbRel;
+import com.zjl.collaboration.entity.KbIntentNode;
+import com.zjl.collaboration.entity.KbIntentRule;
 import com.zjl.collaboration.service.IntentService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -17,8 +28,6 @@ import java.util.Map;
 public class IntentController {
 
     private final IntentService intentService;
-
-    // ---- 节点管理 ----
 
     @GetMapping("/nodes")
     public Result<List<KbIntentNode>> getTree() {
@@ -48,12 +57,10 @@ public class IntentController {
     }
 
     @PutMapping("/nodes/{id}/sort")
-    public Result<Void> updateSort(@PathVariable Long id, @RequestBody SortReq req) {
+    public Result<Void> updateSort(@PathVariable Long id, @RequestBody IntentSortReq req) {
         intentService.updateSort(id, req.getParentId(), req.getSortOrder());
         return Results.success();
     }
-
-    // ---- 规则管理 ----
 
     @GetMapping("/nodes/{id}/rules")
     public Result<List<KbIntentRule>> getRules(@PathVariable Long id) {
@@ -77,20 +84,18 @@ public class IntentController {
         return Results.success();
     }
 
-    // ---- 知识库关联 ----
-
     @GetMapping("/nodes/{id}/kbs")
     public Result<List<KbIntentKbRel>> getKbRels(@PathVariable Long id) {
         return Results.success(intentService.getKbRels(id));
     }
 
     @PostMapping("/nodes/{id}/kbs")
-    public Result<KbIntentKbRel> bindKb(@PathVariable Long id, @RequestBody BindKbReq req) {
+    public Result<KbIntentKbRel> bindKb(@PathVariable Long id, @RequestBody IntentBindKbReq req) {
         return Results.success(intentService.bindKb(id, req.getKbId(), req.getWeight()));
     }
 
     @PutMapping("/kb-rel/{relId}")
-    public Result<Void> updateKbRel(@PathVariable Long relId, @RequestBody BindKbReq req) {
+    public Result<Void> updateKbRel(@PathVariable Long relId, @RequestBody IntentBindKbReq req) {
         intentService.updateKbRel(relId, req.getWeight());
         return Results.success();
     }
@@ -101,14 +106,8 @@ public class IntentController {
         return Results.success();
     }
 
-    // ---- 匹配预览 ----
-
     @PostMapping("/match")
-    public Result<Map<String, Object>> match(@RequestBody MatchReq req) {
+    public Result<Map<String, Object>> match(@RequestBody IntentMatchReq req) {
         return Results.success(intentService.match(req.getQuery()));
     }
-
-    @Data public static class SortReq { private Long parentId; private Integer sortOrder; }
-    @Data public static class BindKbReq { private Long kbId; private Double weight; }
-    @Data public static class MatchReq { private String query; }
 }

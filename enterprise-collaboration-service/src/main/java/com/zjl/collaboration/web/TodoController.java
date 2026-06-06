@@ -1,59 +1,59 @@
 package com.zjl.collaboration.web;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.zjl.collaboration.dto.TodoReq;
 import com.zjl.collaboration.entity.SysTodo;
-import com.zjl.collaboration.mapper.SysTodoMapper;
+import com.zjl.collaboration.service.TodoService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Slf4j
+/**
+ * 待办接口。
+ */
 @RestController
 @RequestMapping("/api/todos")
 @RequiredArgsConstructor
 public class TodoController {
 
-    private final SysTodoMapper todoMapper;
+    private final TodoService todoService;
 
     @GetMapping
     public Result<List<SysTodo>> list(@RequestHeader("X-User-Id") Long userId) {
-        return Results.success(todoMapper.selectList(Wrappers.lambdaQuery(SysTodo.class).eq(SysTodo::getUserId, userId).orderByAsc(SysTodo::getDone).orderByAsc(SysTodo::getDueDate)));
+        return Results.success(todoService.list(userId));
     }
 
     @PostMapping
     public Result<Long> create(@RequestBody TodoReq req, @RequestHeader("X-User-Id") Long userId) {
-        SysTodo t = new SysTodo();
-        t.setTitle(req.getTitle()); t.setUserId(userId); t.setPriority(req.getPriority()); t.setDueDate(req.getDueDate()); t.setDone(0);
-        todoMapper.insert(t);
-        log.info("待办创建: userId={}, todoId={}", userId, t.getId());
-        return Results.success(t.getId());
+        return Results.success(todoService.create(req.getTitle(), req.getPriority(), req.getDueDate(), userId));
     }
 
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody TodoReq req) {
-        SysTodo t = todoMapper.selectById(id);
-        if (t == null) return Results.success();
-        t.setTitle(req.getTitle()); t.setPriority(req.getPriority()); t.setDueDate(req.getDueDate());
-        todoMapper.updateById(t);
+        todoService.update(id, req.getTitle(), req.getPriority(), req.getDueDate());
         return Results.success();
     }
 
     @PutMapping("/{id}/toggle")
     public Result<Void> toggle(@PathVariable Long id) {
-        SysTodo t = todoMapper.selectById(id);
-        if (t == null) return Results.success();
-        t.setDone(t.getDone() == 1 ? 0 : 1);
-        todoMapper.updateById(t);
+        todoService.toggle(id);
         return Results.success();
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) { todoMapper.deleteById(id); return Results.success(); }
+    public Result<Void> delete(@PathVariable Long id) {
+        todoService.delete(id);
+        return Results.success();
+    }
 
-    @Data public static class TodoReq { private String title; private String priority; private java.util.Date dueDate; }
 }

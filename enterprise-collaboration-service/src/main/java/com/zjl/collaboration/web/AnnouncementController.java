@@ -1,51 +1,48 @@
 package com.zjl.collaboration.web;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.zjl.collaboration.dto.AnnouncementReq;
 import com.zjl.collaboration.entity.SysAnnouncement;
-import com.zjl.collaboration.integration.GatewayUserClient;
-import com.zjl.collaboration.integration.UserInfo;
-import com.zjl.collaboration.mapper.SysAnnouncementMapper;
+import com.zjl.collaboration.service.AnnouncementService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
+/**
+ * 公告接口。
+ */
 @RestController
 @RequestMapping("/api/announcements")
 @RequiredArgsConstructor
 public class AnnouncementController {
 
-    private final SysAnnouncementMapper announcementMapper;
-    private final GatewayUserClient gatewayUserClient;
+    private final AnnouncementService announcementService;
 
     @GetMapping
     @Cacheable(value = "announcements", key = "'list'", unless = "#result.data.isEmpty()")
     public Result<List<SysAnnouncement>> list() {
-        return Results.success(announcementMapper.selectList(
-            Wrappers.lambdaQuery(SysAnnouncement.class).orderByDesc(SysAnnouncement::getIsPinned).orderByDesc(SysAnnouncement::getCreatedAt)));
+        return Results.success(announcementService.list());
     }
 
     @PostMapping
-    public Result<Long> publish(@RequestBody AnnounceReq req, @RequestHeader("X-User-Id") Long userId) {
-        UserInfo user = gatewayUserClient.getById(userId);
-        SysAnnouncement a = new SysAnnouncement();
-        a.setTitle(req.getTitle()); a.setContent(req.getContent());
-        a.setPublisherId(userId); a.setPublisherName(user != null ? user.realName() : "管理员");
-        a.setCreatedAt(LocalDateTime.now());
-        announcementMapper.insert(a);
-        log.info("公告发布: userId={}, announcementId={}", userId, a.getId());
-        return Results.success(a.getId());
+    public Result<Long> publish(@RequestBody AnnouncementReq req, @RequestHeader("X-User-Id") Long userId) {
+        return Results.success(announcementService.publish(req.getTitle(), req.getContent(), userId));
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) { announcementMapper.deleteById(id); return Results.success(); }
+    public Result<Void> delete(@PathVariable Long id) {
+        announcementService.delete(id);
+        return Results.success();
+    }
 
-    @Data public static class AnnounceReq { private String title; private String content; }
 }

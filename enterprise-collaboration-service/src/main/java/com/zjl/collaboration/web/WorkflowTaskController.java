@@ -1,13 +1,8 @@
 package com.zjl.collaboration.web;
 
-import com.zjl.collaboration.entity.SysApprovalRequest;
-import com.zjl.collaboration.mapper.SysApprovalRequestMapper;
-import com.zjl.collaboration.workflow.entity.WfInstance;
 import com.zjl.collaboration.workflow.dto.WorkflowActionRequest;
-import com.zjl.collaboration.workflow.entity.WfTask;
-import com.zjl.collaboration.workflow.mapper.WfInstanceMapper;
 import com.zjl.collaboration.workflow.service.WorkflowRuntimeService;
-import com.zjl.collaboration.workflow.service.WorkflowTaskService;
+import com.zjl.collaboration.workflow.service.WorkflowTaskQueryService;
 import com.zjl.collaboration.workflow.vo.WorkflowTaskVO;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
@@ -24,18 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * 工作流任务接口。
+ */
 @RestController
 @RequestMapping("/api/workflow/tasks")
 @RequiredArgsConstructor
 public class WorkflowTaskController {
-    private final WorkflowTaskService taskService;
+
+    private final WorkflowTaskQueryService workflowTaskQueryService;
     private final WorkflowRuntimeService runtimeService;
-    private final WfInstanceMapper instanceMapper;
-    private final SysApprovalRequestMapper approvalRequestMapper;
 
     @GetMapping("/my")
     public Result<List<WorkflowTaskVO>> listMine(@RequestHeader("X-User-Id") Long userId) {
-        return Results.success(taskService.listMyPendingTasks(userId).stream().map(this::toVO).toList());
+        return Results.success(workflowTaskQueryService.listMine(userId));
     }
 
     @PostMapping("/{taskId}/actions")
@@ -51,32 +48,5 @@ public class WorkflowTaskController {
             return Results.success();
         }
         throw new BizException(ErrorCode.PARAM_INVALID, "不支持的审批动作");
-    }
-
-    private WorkflowTaskVO toVO(WfTask task) {
-        WorkflowTaskVO vo = new WorkflowTaskVO();
-        vo.setId(task.getId());
-        vo.setInstanceId(task.getInstanceId());
-        vo.setNodeId(task.getNodeId());
-        vo.setAssigneeType(task.getAssigneeType());
-        vo.setAssigneeId(task.getAssigneeId());
-        vo.setStatus(task.getStatus());
-        vo.setClaimedBy(task.getClaimedBy());
-        vo.setHandledAt(task.getHandledAt());
-        vo.setComment(task.getComment());
-        vo.setCreatedAt(task.getCreatedAt());
-        vo.setUpdatedAt(task.getUpdatedAt());
-        WfInstance instance = instanceMapper.selectById(task.getInstanceId());
-        if (instance != null) {
-            SysApprovalRequest approval = approvalRequestMapper.selectById(instance.getBusinessId());
-            if (approval != null) {
-                vo.setApprovalId(approval.getId());
-                vo.setApprovalType(approval.getType());
-                vo.setApprovalTitle(approval.getTitle());
-                vo.setApplicantName(approval.getUserName());
-                vo.setApprovalStatus(approval.getStatus());
-            }
-        }
-        return vo;
     }
 }

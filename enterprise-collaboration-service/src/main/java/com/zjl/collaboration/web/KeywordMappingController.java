@@ -1,77 +1,59 @@
 package com.zjl.collaboration.web;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjl.collaboration.entity.KbKeywordMapping;
-import com.zjl.collaboration.mapper.KbKeywordMappingMapper;
+import com.zjl.collaboration.service.KeywordMappingService;
 import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.Map;
 
+/**
+ * 关键词映射接口。
+ */
 @RestController
 @RequestMapping("/api/keyword-mappings")
 @RequiredArgsConstructor
 public class KeywordMappingController {
 
-    private final KbKeywordMappingMapper mapper;
+    private final KeywordMappingService keywordMappingService;
 
     @GetMapping
     public Result<PageResult<KbKeywordMapping>> list(
             @RequestParam(defaultValue = "1") int current,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String keyword) {
-        var wrapper = new LambdaQueryWrapper<KbKeywordMapping>()
-                .orderByDesc(KbKeywordMapping::getPriority);
-        if (keyword != null && !keyword.isBlank()) {
-            wrapper.like(KbKeywordMapping::getKeyword, keyword);
-        }
-        Page<KbKeywordMapping> page = mapper.selectPage(new Page<>(current, size), wrapper);
-        return Results.success(PageResult.of(current, size, page.getTotal(), page.getRecords()));
+        return Results.success(keywordMappingService.list(current, size, keyword));
     }
 
     @PostMapping
     public Result<KbKeywordMapping> create(@RequestBody KbKeywordMapping mapping) {
-        mapping.setEnabled(mapping.getEnabled() != null ? mapping.getEnabled() : 1);
-        mapper.insert(mapping);
-        return Results.success(mapping);
+        return Results.success(keywordMappingService.create(mapping));
     }
 
     @PutMapping("/{id}")
     public Result<KbKeywordMapping> update(@PathVariable Long id, @RequestBody KbKeywordMapping mapping) {
-        mapping.setId(id);
-        mapper.updateById(mapping);
-        return Results.success(mapper.selectById(id));
+        return Results.success(keywordMappingService.update(id, mapping));
     }
 
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        mapper.deleteById(id);
+        keywordMappingService.delete(id);
         return Results.success();
     }
 
     @PostMapping("/match")
     public Result<Map<String, Object>> match(@RequestBody Map<String, String> body) {
-        String query = body.getOrDefault("query", "");
-        if (query.isBlank()) {
-            Map<String, Object> result = new LinkedHashMap<>();
-            result.put("query", query);
-            result.put("hits", List.of());
-            return Results.success(result);
-        }
-        List<KbKeywordMapping> all = mapper.selectList(
-                new LambdaQueryWrapper<KbKeywordMapping>()
-                        .eq(KbKeywordMapping::getEnabled, 1)
-                        .orderByDesc(KbKeywordMapping::getPriority));
-        List<KbKeywordMapping> hits = all.stream()
-                .filter(m -> query.contains(m.getKeyword()))
-                .toList();
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("query", query);
-        result.put("hits", hits);
-        return Results.success(result);
+        return Results.success(keywordMappingService.match(body.getOrDefault("query", "")));
     }
 }

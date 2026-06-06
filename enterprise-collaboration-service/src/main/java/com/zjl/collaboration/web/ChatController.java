@@ -1,153 +1,67 @@
 package com.zjl.collaboration.web;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.zjl.collaboration.entity.ImConversation;
-import com.zjl.collaboration.entity.ImConversationMember;
+import com.zjl.collaboration.dto.ChatCreateConversationReq;
+import com.zjl.collaboration.dto.ChatReadReq;
 import com.zjl.collaboration.entity.ImMessage;
-import com.zjl.collaboration.integration.GatewayUserClient;
-import com.zjl.collaboration.integration.UserInfo;
-import com.zjl.collaboration.mapper.ImConversationMapper;
-import com.zjl.collaboration.mapper.ImConversationMemberMapper;
-import com.zjl.collaboration.mapper.ImMessageMapper;
+import com.zjl.collaboration.service.ChatService;
 import com.zjl.collaboration.service.ImFileService;
 import com.zjl.collaboration.service.ImReadService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
-@Slf4j
+/**
+ * 即时通讯接口。
+ */
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final ImConversationMapper convMapper;
-    private final ImConversationMemberMapper memberMapper;
-    private final ImMessageMapper msgMapper;
-    private final GatewayUserClient gatewayUserClient;
+    private final ChatService chatService;
     private final ImReadService readService;
     private final ImFileService fileService;
 
     @GetMapping("/conversations")
     public Result<List<Map<String, Object>>> conversations(@RequestHeader("X-User-Id") Long userId) {
-        log.debug("会话列表查询: userId={}", userId);
-        List<Long> convIds = memberMapper.selectList(
-                Wrappers.lambdaQuery(ImConversationMember.class).eq(ImConversationMember::getUserId, userId))
-                .stream().map(ImConversationMember::getConversationId).toList();
-        if (convIds.isEmpty()) return Results.success(List.of());
-
-        List<ImConversation> convs = convMapper.selectBatchIds(convIds).stream()
-                .sorted((a, b) -> {
-                    LocalDateTime ta = a.getLastMsgAt() != null ? a.getLastMsgAt() : a.getUpdatedAt();
-                    LocalDateTime tb = b.getLastMsgAt() != null ? b.getLastMsgAt() : b.getUpdatedAt();
-                    if (ta == null && tb == null) return 0;
-                    if (ta == null) return 1;
-                    if (tb == null) return -1;
-                    return tb.compareTo(ta);
-                }).toList();
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (ImConversation c : convs) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", c.getId());
-            m.put("name", c.getName());
-            m.put("type", c.getType());
-            m.put("last_msg", c.getLastMsgContent());
-            m.put("last_msg_time", c.getLastMsgAt());
-            m.put("last_msg_sender", c.getLastMsgSender());
-            m.put("unread", readService.unreadCount(userId, c.getId()));
-            m.put("updatedAt", c.getUpdatedAt());
-            result.add(m);
-        }
-        return Results.success(result);
+        return Results.success(chatService.conversations(userId));
     }
 
     @GetMapping("/unread-count")
     public Result<Integer> unreadCount(@RequestHeader("X-User-Id") Long userId) {
-        List<Long> convIds = memberMapper.selectList(
-                Wrappers.lambdaQuery(ImConversationMember.class)
-                        .eq(ImConversationMember::getUserId, userId))
-                .stream().map(ImConversationMember::getConversationId).toList();
-        if (convIds.isEmpty()) return Results.success(0);
-        int total = 0;
-        for (Long convId : convIds) {
-            total += readService.unreadCount(userId, convId);
-        }
-        return Results.success(total);
+        return Results.success(chatService.unreadCount(userId));
     }
 
     @GetMapping("/messages/{convId}")
     public Result<List<ImMessage>> messages(@PathVariable Long convId,
-                                             @RequestParam(defaultValue = "1") int page,
-                                             @RequestParam(defaultValue = "50") int size) {
-        Page<ImMessage> pageResult = msgMapper.selectPage(
-                new Page<>(page, size),
-                Wrappers.lambdaQuery(ImMessage.class)
-                        .eq(ImMessage::getConversationId, convId)
-                        .orderByDesc(ImMessage::getCreatedAt));
-        List<ImMessage> list = new ArrayList<>(pageResult.getRecords());
-        Collections.reverse(list);
-        return Results.success(list);
+                                            @RequestParam(defaultValue = "1") int page,
+                                            @RequestParam(defaultValue = "50") int size) {
+        return Results.success(chatService.messages(convId, page, size));
     }
 
     @PostMapping("/conversations")
-    public Result<Long> createConv(@RequestBody CreateConvReq req,
-                                    @RequestHeader("X-User-Id") Long userId) {
-        if ("private".equals(req.getType()) && req.getMemberIds() != null
-                && req.getMemberIds().size() == 1) {
-            Long targetUserId = req.getMemberIds().get(0);
-            List<ImConversationMember> myMemberships = memberMapper.selectList(
-                    Wrappers.lambdaQuery(ImConversationMember.class)
-                            .eq(ImConversationMember::getUserId, userId));
-            for (ImConversationMember myMem : myMemberships) {
-                ImConversation conv = convMapper.selectById(myMem.getConversationId());
-                if (conv != null && "private".equals(conv.getType())) {
-                    List<ImConversationMember> otherMembers = memberMapper.selectList(
-                            Wrappers.lambdaQuery(ImConversationMember.class)
-                                    .eq(ImConversationMember::getConversationId, conv.getId())
-                                    .eq(ImConversationMember::getUserId, targetUserId));
-                    if (!otherMembers.isEmpty()) {
-                        return Results.success(conv.getId());
-                    }
-                }
-            }
-        }
-        ImConversation c = new ImConversation();
-        c.setName(req.getName());
-        c.setType(req.getType());
-        c.setCreatedBy(userId);
-        c.setCreatedAt(LocalDateTime.now());
-        c.setUpdatedAt(LocalDateTime.now());
-        convMapper.insert(c);
-        ImConversationMember self = new ImConversationMember();
-        self.setConversationId(c.getId());
-        self.setUserId(userId);
-        memberMapper.insert(self);
-        if (req.getMemberIds() != null) {
-            for (Long uid : req.getMemberIds()) {
-                ImConversationMember m = new ImConversationMember();
-                m.setConversationId(c.getId());
-                m.setUserId(uid);
-                memberMapper.insert(m);
-            }
-        }
-        return Results.success(c.getId());
+    public Result<Long> createConv(@RequestBody ChatCreateConversationReq req,
+                                   @RequestHeader("X-User-Id") Long userId) {
+        return Results.success(chatService.createConversation(req.getName(), req.getType(), req.getMemberIds(), userId));
     }
 
     @PostMapping("/conversations/{id}/read")
     public Result<Void> markRead(@PathVariable Long id,
-                                  @RequestHeader("X-User-Id") Long userId,
-                                  @RequestBody ReadReq req) {
+                                 @RequestHeader("X-User-Id") Long userId,
+                                 @RequestBody ChatReadReq req) {
         readService.markRead(userId, id, req.getLastReadMsgId());
         return Results.success();
     }
@@ -160,36 +74,7 @@ public class ChatController {
 
     @GetMapping("/members/{convId}")
     public Result<List<Map<String, Object>>> members(@PathVariable Long convId) {
-        List<Long> userIds = memberMapper.selectList(
-                        Wrappers.lambdaQuery(ImConversationMember.class)
-                                .eq(ImConversationMember::getConversationId, convId))
-                .stream().map(ImConversationMember::getUserId).toList();
-        Map<Long, UserInfo> userMap = userIds.isEmpty() ? Collections.emptyMap()
-                : gatewayUserClient.batchQuery(userIds);
-        return Results.success(userIds.stream().map(uid -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", uid);
-            UserInfo u = userMap.get(uid);
-            if (u != null) {
-                m.put("username", u.username());
-                m.put("realName", u.realName());
-            } else {
-                m.put("username", "user" + uid);
-                m.put("realName", "用户" + uid);
-            }
-            return m;
-        }).toList());
+        return Results.success(chatService.members(convId));
     }
 
-    @Data
-    public static class CreateConvReq {
-        private String name;
-        private String type;
-        private List<Long> memberIds;
-    }
-
-    @Data
-    public static class ReadReq {
-        private Long lastReadMsgId;
-    }
 }
