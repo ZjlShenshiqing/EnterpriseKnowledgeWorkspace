@@ -2,11 +2,17 @@ package com.zjl.knowledge.service.impl;
 
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.knowledge.config.MilvusProperties;
+import com.zjl.knowledge.config.RagRetrievalProperties;
+import com.zjl.knowledge.domain.DocumentStatus;
 import com.zjl.knowledge.embedding.EmbeddingService;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.metadata.ChunkMetadata;
 import com.zjl.knowledge.milvus.ChunkVectorStore;
+import com.zjl.knowledge.milvus.MilvusVectorWriter;
+import com.zjl.knowledge.milvus.SearchResult;
+import com.zjl.knowledge.milvus.SparseVectorGenerator;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.KbMilvusRoutingService;
 import com.zjl.knowledge.service.VectorSyncService;
@@ -17,6 +23,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +36,10 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     private final EmbeddingService embeddingService;
     private final ChunkVectorStore chunkVectorStore;
     private final KbMilvusRoutingService kbMilvusRoutingService;
+    private final SparseVectorGenerator sparseVectorGenerator;
+    private final MilvusVectorWriter milvusVectorWriter;
+    private final RagRetrievalProperties retrievalProperties;
+    private final MilvusProperties milvusProperties;
 
     @Override
     public List<Float> embed(String text, KbDocument document) {
@@ -74,6 +85,13 @@ public class VectorSyncServiceImpl implements VectorSyncService {
                 .build();
         String collection = resolveCollection(document);
         chunkVectorStore.indexDocumentChunks(collection, document.getId(), List.of(vc));
+        if (isHybridMode()) {
+            milvusVectorWriter.indexHybridChunks(
+                    milvusProperties.getHybridCollection(),
+                    String.valueOf(document.getId()),
+                    List.of(withSparseVector(document, vc))
+            );
+        }
     }
 
     @Override
@@ -84,6 +102,13 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         List<VectorDocChunk> vectorChunks = buildVectorChunks(document, chunks);
         String collection = resolveCollection(document);
         chunkVectorStore.indexDocumentChunks(collection, document.getId(), vectorChunks);
+        if (isHybridMode()) {
+            milvusVectorWriter.indexHybridChunks(
+                    milvusProperties.getHybridCollection(),
+                    String.valueOf(document.getId()),
+                    withSparseVectors(document, vectorChunks)
+            );
+        }
     }
 
     @Override
@@ -91,14 +116,21 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         float[] vector = toArray(embed(chunk.getChunkText(), document));
         Map<String, Object> metaMap = buildMetaMap(chunk.getMetadataJson());
         String collection = resolveCollection(document);
-        chunkVectorStore.updateChunk(collection, document.getId(),
-                VectorDocChunk.builder()
-                        .chunkId(String.valueOf(chunk.getId()))
-                        .content(chunk.getChunkText())
-                        .index(chunk.getChunkIndex())
-                        .metadata(metaMap)
-                        .embedding(vector)
-                        .build());
+        VectorDocChunk vectorChunk = VectorDocChunk.builder()
+                .chunkId(String.valueOf(chunk.getId()))
+                .content(chunk.getChunkText())
+                .index(chunk.getChunkIndex())
+                .metadata(metaMap)
+                .embedding(vector)
+                .build();
+        chunkVectorStore.updateChunk(collection, document.getId(), vectorChunk);
+        if (isHybridMode()) {
+            milvusVectorWriter.upsertHybridChunk(
+                    milvusProperties.getHybridCollection(),
+                    String.valueOf(document.getId()),
+                    withSparseVector(document, vectorChunk)
+            );
+        }
     }
 
     @Override
@@ -108,28 +140,78 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         }
         String collection = resolveCollection(document);
         chunkVectorStore.indexDocumentChunks(collection, document.getId(), vectorChunks);
+        if (isHybridMode()) {
+            milvusVectorWriter.indexHybridChunks(
+                    milvusProperties.getHybridCollection(),
+                    String.valueOf(document.getId()),
+                    withSparseVectors(document, vectorChunks)
+            );
+        }
     }
 
     @Override
     public void deleteDocumentVectors(KbDocument document) {
         String collection = resolveCollectionOrDefault(document);
         chunkVectorStore.deleteDocumentVectors(collection, document.getId());
+        if (isHybridMode()) {
+            milvusVectorWriter.deleteByDocumentId(
+                    milvusProperties.getHybridCollection(),
+                    String.valueOf(document.getId())
+            );
+        }
     }
 
     @Override
     public void deleteChunkVector(KbDocument document, String chunkId) {
         String collection = resolveCollection(document);
         chunkVectorStore.deleteChunkById(collection, chunkId);
+        if (isHybridMode()) {
+            milvusVectorWriter.deleteByChunkId(milvusProperties.getHybridCollection(), chunkId);
+        }
     }
 
     @Override
     public void deleteChunkVectors(KbDocument document, List<String> chunkIds) {
         String collection = resolveCollection(document);
         chunkVectorStore.deleteChunksByIds(collection, chunkIds);
+        if (isHybridMode()) {
+            milvusVectorWriter.deleteByChunkIds(milvusProperties.getHybridCollection(), chunkIds);
+        }
     }
 
     @Override
-    public List<com.zjl.knowledge.milvus.SearchResult> searchSimilar(String query, int topK, KbDocument document) {
+    public List<SearchResult> searchSimilar(String query, int topK, KbDocument document) {
+        RagRetrievalProperties.RetrievalMode mode = retrievalProperties.getMode();
+        if (mode == RagRetrievalProperties.RetrievalMode.HYBRID_MILVUS) {
+            try {
+                return hybridSearchSimilar(query, topK, document);
+            } catch (Exception ex) {
+                log.warn("Hybrid search failed, falling back to VECTOR_ONLY. Error: {}", ex.getMessage());
+                return vectorOnlySearch(query, topK, document);
+            }
+        }
+        return vectorOnlySearch(query, topK, document);
+    }
+
+    @Override
+    public List<SearchResult> hybridSearchSimilar(String query, int topK, KbDocument document) {
+        float[] denseVec = toArray(embed(query, document));
+        Map<Long, Float> sparseVec = sparseVectorGenerator.generate(query);
+        String collection = milvusProperties.getHybridCollection();
+        RagRetrievalProperties.Ranker ranker = retrievalProperties.getRanker();
+        int multiplier = retrievalProperties.getTopNMultiplier();
+        List<SearchResult> results = milvusVectorWriter.hybridSearch(
+                collection, denseVec, sparseVec, topK, buildCoarseFilter(), ranker.getRrfK(), multiplier);
+        if (retrievalProperties.getMinScore().isEnabled()) {
+            double threshold = retrievalProperties.getMinScore().getValue();
+            results = results.stream()
+                    .filter(r -> r.score() >= threshold)
+                    .collect(Collectors.toList());
+        }
+        return results;
+    }
+
+    private List<SearchResult> vectorOnlySearch(String query, int topK, KbDocument document) {
         float[] vector = toArray(embed(query, document));
         String collection = resolveCollectionOrDefault(document);
         return chunkVectorStore.search(collection, vector, topK, null);
@@ -153,7 +235,10 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         for (int i = 0; i < chunks.size(); i++) {
             KbDocumentChunk c = chunks.get(i);
             ChunkMetadata meta = ChunkMetadata.fromJson(c.getMetadataJson());
-            Map<String, Object> metaMap = meta != null ? meta.toMap() : Collections.emptyMap();
+            Map<String, Object> metaMap = meta != null ? meta.toMap() : new HashMap<>();
+            metaMap.put("document_status", document.getStatus());
+            metaMap.put("document_enabled", document.getEnabled() == null || document.getEnabled() == 1);
+            metaMap.put("chunk_enabled", c.getEnabled() == null || c.getEnabled() == 1);
             result.add(VectorDocChunk.builder()
                     .chunkId(String.valueOf(c.getId()))
                     .content(c.getChunkText())
@@ -163,6 +248,55 @@ public class VectorSyncServiceImpl implements VectorSyncService {
                     .build());
         }
         return result;
+    }
+
+    private boolean isHybridMode() {
+        return retrievalProperties.getMode() == RagRetrievalProperties.RetrievalMode.HYBRID_MILVUS;
+    }
+
+    private List<VectorDocChunk> withSparseVectors(KbDocument document, List<VectorDocChunk> chunks) {
+        return chunks.stream()
+                .map(chunk -> withSparseVector(document, chunk))
+                .collect(Collectors.toList());
+    }
+
+    private VectorDocChunk withSparseVector(KbDocument document, VectorDocChunk chunk) {
+        return VectorDocChunk.builder()
+                .chunkId(chunk.getChunkId())
+                .content(chunk.getContent())
+                .index(chunk.getIndex())
+                .embedding(chunk.getEmbedding())
+                .sparseVector(sparseVectorGenerator.generate(chunk.getContent()))
+                .metadata(withHybridFilterMetadata(document, chunk.getMetadata()))
+                .build();
+    }
+
+    private Map<String, Object> withHybridFilterMetadata(KbDocument document, Map<String, Object> metadata) {
+        Map<String, Object> result = new HashMap<>();
+        if (metadata != null) {
+            result.putAll(metadata);
+        }
+        result.putIfAbsent("document_status", effectiveDocumentStatus(document));
+        result.putIfAbsent("document_enabled", document == null || document.getEnabled() == null || document.getEnabled() == 1);
+        result.putIfAbsent("chunk_enabled", true);
+        return result;
+    }
+
+    private String effectiveDocumentStatus(KbDocument document) {
+        if (document == null || !StringUtils.hasText(document.getStatus())
+                || DocumentStatus.RUNNING.name().equals(document.getStatus())) {
+            return DocumentStatus.SUCCESS.name();
+        }
+        return document.getStatus();
+    }
+
+    /**
+     * 构建 Milvus 粗过滤表达式，排除已禁用/已删除/未完成的文档和 chunk
+     */
+    private static String buildCoarseFilter() {
+        return "metadata[\"document_status\"] == \"SUCCESS\""
+                + " && metadata[\"document_enabled\"] == true"
+                + " && metadata[\"chunk_enabled\"] == true";
     }
 
     private Map<String, Object> buildMetaMap(String metadataJson) {

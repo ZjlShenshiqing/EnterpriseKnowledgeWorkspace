@@ -61,10 +61,22 @@ app:
         - 机密
         - 预算
         - 股权
+  rag:
+    retrieval:
+      mode: VECTOR_ONLY
+      top-n-multiplier: 5
+      ranker:
+        type: RRF
+        rrf-k: 60
+      min-score:
+        enabled: false
+        value: 0.3
   milvus:
     uri: http://localhost:19530
     collection: kb_chunk_embedding
+    hybrid-collection: kb_chunk_hybrid_v1
     vector-dimension: 1024
+    sparse-dimension: 65535
     # 为 true 时：启动必须完成 Milvus 建表与 load。当 embedding-model 为空且仅使用文档分块功能时，可设为 false 允许无 Milvus 启动
     fail-on-init: false
   agent:

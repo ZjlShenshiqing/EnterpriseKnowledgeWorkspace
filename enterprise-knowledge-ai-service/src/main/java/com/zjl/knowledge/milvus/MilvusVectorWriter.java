@@ -11,6 +11,7 @@ import io.milvus.v2.service.vector.request.DeleteReq;
 import io.milvus.v2.service.vector.request.InsertReq;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.UpsertReq;
+import io.milvus.v2.service.vector.request.data.SparseFloatVec;
 import io.milvus.v2.service.vector.response.DeleteResp;
 import io.milvus.v2.service.vector.response.InsertResp;
 import io.milvus.v2.service.vector.response.SearchResp;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.stream.Collectors;
 
 /**
@@ -311,6 +313,118 @@ public class MilvusVectorWriter {
         }
     }
 
+    /**
+     * Hybrid search：dense 向量 + sparse 向量双路检索，RRF 融合
+     *
+     * <p>分别执行 dense ANN (topK × multiplier) 和 sparse ANN (topK × multiplier)，
+     * 按 chunkId 去重后通过 RRF 公式融合排序，返回最终 topK 结果</p>
+     *
+     * @param collectionName Milvus hybrid 集合名
+     * @param denseVector    dense 查询向量
+     * @param sparseVector   sparse 查询向量
+     * @param topK           最终返回数量
+     * @param filter         标量过滤表达式（可选）
+     * @param rrfK           RRF k 参数
+     * @param topNMultiplier 每路 ANN 候选扩张倍数
+     * @return 融合后的搜索结果（按 RRF score 降序，最多 topK 条）
+     */
+    public List<SearchResult> hybridSearch(String collectionName,
+                                           float[] denseVector,
+                                           Map<Long, Float> sparseVector,
+                                           int topK,
+                                           String filter,
+                                           int rrfK,
+                                           int topNMultiplier) {
+        try {
+            int annTopK = topK * topNMultiplier;
+            String col = resolveCollection(collectionName);
+
+            List<SearchResult> denseResults = search(col, denseVector, annTopK, filter);
+            List<SearchResult> sparseResults = sparseSearch(col, sparseVector, annTopK, filter);
+
+            Map<String, Map<Integer, Float>> rrfScores = new java.util.LinkedHashMap<>();
+            for (int i = 0; i < denseResults.size(); i++) {
+                SearchResult r = denseResults.get(i);
+                String key = keyOf(r);
+                rrfScores.computeIfAbsent(key, k -> new java.util.HashMap<>())
+                        .put(0, 1.0f / (rrfK + i + 1));
+            }
+            for (int i = 0; i < sparseResults.size(); i++) {
+                SearchResult r = sparseResults.get(i);
+                String key = keyOf(r);
+                rrfScores.computeIfAbsent(key, k -> new java.util.HashMap<>())
+                        .put(1, 1.0f / (rrfK + i + 1));
+            }
+
+            Map<String, SearchResult> bestPerKey = new java.util.LinkedHashMap<>();
+            for (SearchResult r : denseResults) {
+                bestPerKey.putIfAbsent(keyOf(r), r);
+            }
+            for (SearchResult r : sparseResults) {
+                bestPerKey.putIfAbsent(keyOf(r), r);
+            }
+
+            return rrfScores.entrySet().stream()
+                    .sorted((a, b) -> {
+                        float sumB = b.getValue().values().stream().reduce(0f, Float::sum);
+                        float sumA = a.getValue().values().stream().reduce(0f, Float::sum);
+                        return Float.compare(sumB, sumA);
+                    })
+                    .limit(topK)
+                    .map(e -> {
+                        SearchResult base = bestPerKey.get(e.getKey());
+                        float rrfScore = e.getValue().values().stream().reduce(0f, Float::sum);
+                        return new SearchResult(
+                                base != null ? base.chunkId() : null,
+                                base != null ? base.docId() : null,
+                                rrfScore,
+                                base != null ? base.metadata() : Map.of());
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
+                    "Hybrid 检索失败: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * 稀疏向量检索
+     */
+    private List<SearchResult> sparseSearch(String collectionName, Map<Long, Float> sparseVector, int topK, String filter) {
+        try {
+            String col = resolveCollection(collectionName);
+            SortedMap<Long, Float> sorted = new java.util.TreeMap<>(sparseVector);
+            SearchReq req = SearchReq.builder()
+                    .collectionName(col)
+                    .data(Collections.singletonList(new SparseFloatVec(sorted)))
+                    .topK(topK)
+                    .outputFields(List.of("id", "metadata"))
+                    .filter(filter != null ? filter : "")
+                    .build();
+            SearchResp resp = milvusClient.search(req);
+
+            List<SearchResult> results = new ArrayList<>();
+            if (resp.getSearchResults() != null && !resp.getSearchResults().isEmpty()) {
+                for (List<SearchResp.SearchResult> resultList : resp.getSearchResults()) {
+                    for (SearchResp.SearchResult sr : resultList) {
+                        String chunkId = (String) sr.getEntity().get("id");
+                        Map<String, Object> metaObj = getMetadata(sr.getEntity());
+                        String docId = metaObj != null ? (String) metaObj.get("doc_id") : null;
+                        results.add(new SearchResult(chunkId, docId, sr.getScore(), metaObj));
+                    }
+                }
+            }
+            return results;
+        } catch (Exception ex) {
+            throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
+                    "稀疏向量检索失败: " + ex.getMessage());
+        }
+    }
+
+    private static String keyOf(SearchResult r) {
+        return r.chunkId() + "@" + r.docId();
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> getMetadata(Map<String, Object> entity) {
         Object meta = entity.get("metadata");
@@ -388,5 +502,134 @@ public class MilvusVectorWriter {
         metadata.addProperty("doc_id", docId);
         metadata.addProperty("chunk_index", chunk.getIndex());
         return metadata;
+    }
+
+    /**
+     * 批量写入文档切片向量到 hybrid collection（含 dense + sparse 双向量）
+     *
+     * @param collectionName Milvus hybrid 集合名
+     * @param docId          文档 ID 字符串
+     * @param chunks         待写入的切片列表（必须含 embedding 和 sparseVector）
+     */
+    public void indexHybridChunks(String collectionName, String docId, List<VectorDocChunk> chunks) {
+        if (chunks == null || chunks.isEmpty()) {
+            throw new BizException(ErrorCode.PARAM_INVALID, "文档分块不允许为空");
+        }
+        final int dim = milvusProperties.getVectorDimension();
+        String col = resolveCollection(collectionName);
+        String metaCollection = resolvedCollectionNameForMetadata(collectionName);
+        try {
+            List<JsonObject> rows = new ArrayList<>(chunks.size());
+            for (VectorDocChunk chunk : chunks) {
+                if (!StringUtils.hasText(chunk.getChunkId())) {
+                    throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 主键不能为空");
+                }
+                float[] vector = requireVector(chunk, dim);
+                Map<Long, Float> sparseVec = requireSparseVector(chunk);
+                String content = chunk.getContent() == null ? "" : chunk.getContent();
+                if (content.length() > CONTENT_MAX_LEN) {
+                    content = content.substring(0, CONTENT_MAX_LEN);
+                }
+                JsonObject metadata = buildMetadata(metaCollection, docId, chunk);
+                JsonObject row = new JsonObject();
+                row.addProperty("id", chunk.getChunkId());
+                row.addProperty("content", content);
+                row.add("metadata", metadata);
+                row.add("dense_vector", toJsonArray(vector));
+                row.add("sparse_vector", toSparseJson(sparseVec));
+                rows.add(row);
+            }
+            InsertReq req = InsertReq.builder()
+                    .collectionName(col)
+                    .data(rows)
+                    .build();
+            InsertResp resp = milvusClient.insert(req);
+            log.info("Milvus hybrid chunk 写入成功, collection={}, insertCnt={}", col, resp.getInsertCnt());
+        } catch (BizException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Milvus hybrid chunk 写入失败: collection={}, docId={}", col, docId, ex);
+            throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
+                    ErrorCode.VECTOR_WRITE_FAILED.getMessage() + ": " + ex.getMessage());
+        }
+    }
+
+    /**
+     * 更新单条切片向量到 hybrid collection（Upsert，含 dense + sparse）
+     *
+     * @param collectionName Milvus hybrid 集合名
+     * @param docId          文档 ID 字符串
+     * @param chunk          待更新的切片（必须含 embedding 和 sparseVector）
+     */
+    public void upsertHybridChunk(String collectionName, String docId, VectorDocChunk chunk) {
+        if (chunk == null) {
+            throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 不能为空");
+        }
+        final int dim = milvusProperties.getVectorDimension();
+        String col = resolveCollection(collectionName);
+        String metaCollection = resolvedCollectionNameForMetadata(collectionName);
+        String chunkPk = StringUtils.hasText(chunk.getChunkId()) ? chunk.getChunkId() : null;
+        if (!StringUtils.hasText(chunkPk)) {
+            throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 主键不能为空");
+        }
+        try {
+            float[] vector = requireVector(chunk, dim);
+            Map<Long, Float> sparseVec = requireSparseVector(chunk);
+            String content = chunk.getContent() == null ? "" : chunk.getContent();
+            if (content.length() > CONTENT_MAX_LEN) {
+                content = content.substring(0, CONTENT_MAX_LEN);
+            }
+            JsonObject metadata = buildMetadata(metaCollection, docId, chunk);
+            JsonObject row = new JsonObject();
+            row.addProperty("id", chunkPk);
+            row.addProperty("content", content);
+            row.add("metadata", metadata);
+            row.add("dense_vector", toJsonArray(vector));
+            row.add("sparse_vector", toSparseJson(sparseVec));
+
+            UpsertReq upsertReq = UpsertReq.builder()
+                    .collectionName(col)
+                    .data(List.of(row))
+                    .build();
+            UpsertResp resp = milvusClient.upsert(upsertReq);
+            log.info("Milvus hybrid 更新 chunk 成功, collection={}, docId={}, chunkId={}, upsertCnt={}",
+                    col, docId, chunkPk, resp.getUpsertCnt());
+        } catch (BizException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Milvus hybrid 更新 chunk 失败: collection={}, docId={}, chunkId={}", col, docId, chunkPk, ex);
+            throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
+                    "向量库更新失败: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * 校验稀疏向量非空（hybrid 写入必需）
+     *
+     * @param chunk 切片载荷
+     * @return 校验通过的稀疏向量
+     * @throws BizException 稀疏向量为空时抛出
+     */
+    private static Map<Long, Float> requireSparseVector(VectorDocChunk chunk) {
+        Map<Long, Float> sparseVec = chunk.getSparseVector();
+        if (sparseVec == null || sparseVec.isEmpty()) {
+            throw new BizException(ErrorCode.PARAM_INVALID,
+                    "稀疏向量不能为空（hybrid 模式必需）");
+        }
+        return sparseVec;
+    }
+
+    /**
+     * 将稀疏向量转为 Milvus JSON 对象（位置→权重）
+     *
+     * @param sparseVec 稀疏向量
+     * @return Gson JsonObject
+     */
+    private static JsonObject toSparseJson(Map<Long, Float> sparseVec) {
+        JsonObject obj = new JsonObject();
+        for (Map.Entry<Long, Float> entry : sparseVec.entrySet()) {
+            obj.addProperty(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        return obj;
     }
 }

@@ -19,9 +19,11 @@ import org.springframework.util.StringUtils;
 /**
  * Milvus 集合创建与管理工具
  *
- * <p>负责按 Schema 创建集合、建立 AUTOINDEX 索引并加载到内存
- * Schema 包含四个字段：{@code id}(VarChar PK)、{@code content}(VarChar)、
- * {@code metadata}(JSON)、{@code embedding}(FloatVector + COSINE)</p>
+ * <p>负责按 Schema 创建集合、建立索引并加载到内存。支持两种集合模式：</p>
+ * <ul>
+ *   <li><b>VECTOR_ONLY</b>：{@code id / content / metadata / embedding(FloatVector + COSINE)}</li>
+ *   <li><b>HYBRID_MILVUS</b>：{@code id / content / metadata / dense_vector(FloatVector + COSINE) / sparse_vector(SparseFloatVector + IP)}</li>
+ * </ul>
  *
  * <p>若环境中已有旧版集合（仅 chunk_id / document_id / embedding），
  * 需手动 drop 后由本类重建，否则字段不匹配会导致写入失败</p>
@@ -110,6 +112,82 @@ public class MilvusCollectionHelper {
             log.error("Milvus ensure collection failed, collection={}", collectionName, ex);
             throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
                     "Milvus 集合初始化失败: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * 确保 hybrid 集合存在并已加载到内存
+     *
+     * <p>Hybrid schema 包含 dense_vector(FloatVector+COSINE) 和
+     * sparse_vector(SparseFloatVector+IP) 两个向量字段</p>
+     *
+     * @param collectionName Hybrid 集合名，不可为空
+     */
+    public void ensureHybridCollectionLoaded(String collectionName) {
+        if (!StringUtils.hasText(collectionName)) {
+            throw new IllegalArgumentException("collectionName must not be blank");
+        }
+        try {
+            Boolean exists = milvusClient.hasCollection(
+                    HasCollectionReq.builder().collectionName(collectionName).build());
+            if (!Boolean.TRUE.equals(exists)) {
+                CreateCollectionReq.CollectionSchema schema =
+                        CreateCollectionReq.CollectionSchema.builder().build();
+                schema.addField(AddFieldReq.builder()
+                        .fieldName("id")
+                        .dataType(DataType.VarChar)
+                        .maxLength(128)
+                        .isPrimaryKey(true)
+                        .autoID(false)
+                        .build());
+                schema.addField(AddFieldReq.builder()
+                        .fieldName("content")
+                        .dataType(DataType.VarChar)
+                        .maxLength(CONTENT_MAX_LEN)
+                        .build());
+                schema.addField(AddFieldReq.builder()
+                        .fieldName("metadata")
+                        .dataType(DataType.JSON)
+                        .build());
+                schema.addField(AddFieldReq.builder()
+                        .fieldName("dense_vector")
+                        .dataType(DataType.FloatVector)
+                        .dimension(milvusProperties.getVectorDimension())
+                        .build());
+                schema.addField(AddFieldReq.builder()
+                        .fieldName("sparse_vector")
+                        .dataType(DataType.SparseFloatVector)
+                        .build());
+                CreateCollectionReq req = CreateCollectionReq.builder()
+                        .collectionName(collectionName)
+                        .collectionSchema(schema)
+                        .indexParams(List.of(
+                                IndexParam.builder()
+                                        .fieldName("dense_vector")
+                                        .indexType(IndexParam.IndexType.AUTOINDEX)
+                                        .metricType(IndexParam.MetricType.COSINE)
+                                        .build(),
+                                IndexParam.builder()
+                                        .fieldName("sparse_vector")
+                                        .indexType(IndexParam.IndexType.SPARSE_INVERTED_INDEX)
+                                        .metricType(IndexParam.MetricType.IP)
+                                        .build()
+                        ))
+                        .build();
+                milvusClient.createCollection(req);
+                log.info("Milvus hybrid collection created: {}", collectionName);
+            }
+            milvusClient.loadCollection(LoadCollectionReq.builder()
+                    .collectionName(collectionName)
+                    .async(false)
+                    .build());
+            log.info("Milvus hybrid collection loaded: {}", collectionName);
+        } catch (BizException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Milvus ensure hybrid collection failed, collection={}", collectionName, ex);
+            throw new BizException(ErrorCode.VECTOR_WRITE_FAILED,
+                    "Milvus hybrid 集合初始化失败: " + ex.getMessage());
         }
     }
 }

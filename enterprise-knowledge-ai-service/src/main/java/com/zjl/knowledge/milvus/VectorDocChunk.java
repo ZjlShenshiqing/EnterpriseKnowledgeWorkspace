@@ -8,8 +8,9 @@ import java.util.Map;
 /**
  * 写入向量库的一条切片载荷
  *
- * <p>结构对齐 Milvus 集合 Schema：chunkId→id、content→content、
+ * <p>VECTOR_ONLY 模式使用：chunkId→id、content→content、
  * index+metadata→metadata(JSON)、embedding→embedding</p>
+ * <p>HYBRID 模式额外需要 sparseVector</p>
  */
 @Data
 @Builder
@@ -34,6 +35,11 @@ public class VectorDocChunk {
      * FloatVector 向量数组，维度需与集合 Schema 一致
      */
     private float[] embedding;
+
+    /**
+     * 稀疏向量（仅在 HYBRID 模式下使用），term 位置 → 权重
+     */
+    private Map<Long, Float> sparseVector;
 
     /**
      * 可选扩展元数据，写入时会合并到 Milvus metadata JSON 中

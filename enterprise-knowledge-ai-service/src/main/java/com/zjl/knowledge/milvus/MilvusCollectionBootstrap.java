@@ -1,5 +1,6 @@
 package com.zjl.knowledge.milvus;
 
+import com.zjl.knowledge.config.RagRetrievalProperties;
 import com.zjl.knowledge.config.MilvusProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,11 @@ public class MilvusCollectionBootstrap {
     private final MilvusProperties milvusProperties;
 
     /**
+     * RAG 检索配置。
+     */
+    private final RagRetrievalProperties ragRetrievalProperties;
+
+    /**
      * 初始化默认集合并加载到内存
      *
      * <p>若 {@code fail-on-init=true} 且初始化失败，抛出
@@ -38,6 +44,9 @@ public class MilvusCollectionBootstrap {
         String collection = milvusProperties.getCollection();
         try {
             milvusCollectionHelper.ensureCollectionLoaded(collection);
+            if (ragRetrievalProperties.getMode() == RagRetrievalProperties.RetrievalMode.HYBRID_MILVUS) {
+                milvusCollectionHelper.ensureHybridCollectionLoaded(milvusProperties.getHybridCollection());
+            }
         } catch (Exception ex) {
             log.error("Milvus init failed, collection={}", collection, ex);
             if (milvusProperties.isFailOnInit()) {

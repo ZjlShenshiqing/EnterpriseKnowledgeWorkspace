@@ -35,4 +35,14 @@ public interface VectorSyncService {
     void deleteChunkVectors(KbDocument document, List<String> chunkIds);
 
     List<com.zjl.knowledge.milvus.SearchResult> searchSimilar(String query, int topK, KbDocument document);
+
+    /**
+     * Hybrid 检索：同时生成 dense 和 sparse 向量，执行双路检索 + RRF 融合
+     *
+     * @param query    用户查询文本
+     * @param topK     最终返回数量
+     * @param document 知识库文档（用于路由）
+     * @return 融合后的搜索结果
+     */
+    List<com.zjl.knowledge.milvus.SearchResult> hybridSearchSimilar(String query, int topK, KbDocument document);
 }
