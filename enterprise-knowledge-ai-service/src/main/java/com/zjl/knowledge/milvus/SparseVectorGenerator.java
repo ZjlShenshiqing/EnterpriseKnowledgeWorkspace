@@ -1,11 +1,11 @@
 package com.zjl.knowledge.milvus;
 
 import com.zjl.knowledge.config.MilvusProperties;
+import com.zjl.knowledge.tokenization.ChineseTokenizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * 稀疏向量生成器
  *
- * <p>对文本做分词（中文按字符二元组，英文按空白拆分），统计词频后哈希到稀疏维度空间</p>
+ * <p>使用统一中文分词器生成词项，统计词频后哈希到稀疏维度空间</p>
  */
 @Slf4j
 @Component
@@ -21,19 +21,37 @@ import java.util.Map;
 public class SparseVectorGenerator {
 
     private final MilvusProperties milvusProperties;
+    private final ChineseTokenizer chineseTokenizer;
 
     /**
-     * 对文本生成稀疏向量（词频归一化 + 哈希映射）
+     * 使用查询分词模式生成稀疏向量。
      *
      * @param text 输入文本，空/null 返回空 Map
      * @return 稀疏向量：位置 → 权重
      */
-    public Map<Long, Float> generate(String text) {
+    public Map<Long, Float> generateQuery(String text) {
         if (text == null || text.isBlank()) {
             log.warn("Sparse vector input is empty, returning empty map");
             return Map.of();
         }
-        List<String> tokens = tokenize(text);
+        return generateFromTokens(chineseTokenizer.tokenizeQuery(text));
+    }
+
+    /**
+     * 使用文档分词模式生成稀疏向量。
+     *
+     * @param text 文档文本，空/null 返回空 Map
+     * @return 稀疏向量：位置 → 权重
+     */
+    public Map<Long, Float> generateDocument(String text) {
+        if (text == null || text.isBlank()) {
+            log.warn("Sparse vector input is empty, returning empty map");
+            return Map.of();
+        }
+        return generateFromTokens(chineseTokenizer.tokenizeDocument(text));
+    }
+
+    private Map<Long, Float> generateFromTokens(List<String> tokens) {
         if (tokens.isEmpty()) {
             return Map.of();
         }
@@ -50,62 +68,6 @@ public class SparseVectorGenerator {
             sparseVec.merge(pos, weight, Float::sum);
         }
         return sparseVec;
-    }
-
-    /**
-     * 分词：中文走字符二元组 + 一元组，英文/数字按空白和标点拆分
-     */
-    List<String> tokenize(String text) {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder buf = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            char ch = text.charAt(i);
-            if (Character.isWhitespace(ch) || isPunctuation(ch)) {
-                addIfNotEmpty(tokens, buf);
-                buf.setLength(0);
-                continue;
-            }
-            if (isCjk(ch)) {
-                addIfNotEmpty(tokens, buf);
-                buf.setLength(0);
-                tokens.add(String.valueOf(ch));
-            } else {
-                buf.append(ch);
-            }
-        }
-        addIfNotEmpty(tokens, buf);
-
-        List<String> bigrams = new ArrayList<>();
-        for (int i = 0; i < text.length() - 1; i++) {
-            char a = text.charAt(i);
-            char b = text.charAt(i + 1);
-            if (isCjk(a) && isCjk(b)) {
-                bigrams.add(String.valueOf(a) + b);
-            }
-        }
-        tokens.addAll(bigrams);
-        return tokens;
-    }
-
-    private boolean isCjk(char ch) {
-        return Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS
-                || Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A
-                || Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B;
-    }
-
-    private boolean isPunctuation(char ch) {
-        int type = Character.getType(ch);
-        return type == Character.DASH_PUNCTUATION
-                || type == Character.START_PUNCTUATION
-                || type == Character.END_PUNCTUATION
-                || type == Character.CONNECTOR_PUNCTUATION
-                || type == Character.OTHER_PUNCTUATION;
-    }
-
-    private void addIfNotEmpty(List<String> tokens, StringBuilder buf) {
-        if (buf.length() > 0) {
-            tokens.add(buf.toString().toLowerCase());
-        }
     }
 
     /**

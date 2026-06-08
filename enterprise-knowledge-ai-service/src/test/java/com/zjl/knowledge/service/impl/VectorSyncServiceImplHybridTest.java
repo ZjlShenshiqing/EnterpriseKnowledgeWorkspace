@@ -8,6 +8,7 @@ import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
 import com.zjl.knowledge.milvus.ChunkVectorStore;
 import com.zjl.knowledge.milvus.MilvusVectorWriter;
+import com.zjl.knowledge.milvus.SearchResult;
 import com.zjl.knowledge.milvus.SparseVectorGenerator;
 import com.zjl.knowledge.milvus.VectorDocChunk;
 import com.zjl.knowledge.service.KbMilvusRoutingService;
@@ -89,7 +90,7 @@ class VectorSyncServiceImplHybridTest {
         KbDocument document = document();
         VectorDocChunk chunk = vectorChunk();
         when(kbMilvusRoutingService.collectionForVectorWrite(document)).thenReturn("kb_chunk_embedding");
-        when(sparseVectorGenerator.generate("差旅报销材料")).thenReturn(Map.of(12L, 1.0f));
+        when(sparseVectorGenerator.generateDocument("差旅报销材料")).thenReturn(Map.of(12L, 1.0f));
 
         service.indexDocumentChunks(document, List.of(chunk));
 
@@ -121,7 +122,7 @@ class VectorSyncServiceImplHybridTest {
         when(kbMilvusRoutingService.embeddingModelOrDefault(document)).thenReturn("");
         when(kbMilvusRoutingService.collectionForVectorWrite(document)).thenReturn("kb_chunk_embedding");
         when(embeddingService.embedBatch(List.of("OA-2025-001"))).thenReturn(List.of(List.of(0.3f, 0.4f)));
-        when(sparseVectorGenerator.generate("OA-2025-001")).thenReturn(Map.of(99L, 1.0f));
+        when(sparseVectorGenerator.generateDocument("OA-2025-001")).thenReturn(Map.of(99L, 1.0f));
 
         service.syncChunks(document, List.of(chunk));
 
@@ -149,7 +150,7 @@ class VectorSyncServiceImplHybridTest {
         when(kbMilvusRoutingService.embeddingModelOrDefault(document)).thenReturn("");
         when(kbMilvusRoutingService.collectionForVectorWrite(document)).thenReturn("kb_chunk_embedding");
         when(embeddingService.embed("制度编号")).thenReturn(List.of(0.5f, 0.6f));
-        when(sparseVectorGenerator.generate("制度编号")).thenReturn(Map.of(31L, 1.0f));
+        when(sparseVectorGenerator.generateDocument("制度编号")).thenReturn(Map.of(31L, 1.0f));
 
         service.updateChunk(document, chunk);
 
@@ -171,7 +172,7 @@ class VectorSyncServiceImplHybridTest {
 
         when(kbMilvusRoutingService.embeddingModelOrDefault(document)).thenReturn("");
         when(embeddingService.embedBatch(List.of("历史制度编号"))).thenReturn(List.of(List.of(0.7f, 0.8f)));
-        when(sparseVectorGenerator.generate("历史制度编号")).thenReturn(Map.of(77L, 1.0f));
+        when(sparseVectorGenerator.generateDocument("历史制度编号")).thenReturn(Map.of(77L, 1.0f));
 
         service.rebuildHybridChunks(document, List.of(chunk));
 
@@ -181,6 +182,30 @@ class VectorSyncServiceImplHybridTest {
         verify(milvusVectorWriter).indexHybridChunks(eq("kb_chunk_hybrid_v1"), eq("1001"), chunksCaptor.capture());
         assertThat(chunksCaptor.getValue()).hasSize(1);
         assertThat(chunksCaptor.getValue().get(0).getSparseVector()).containsEntry(77L, 1.0f);
+    }
+
+    @Test
+    void hybridSearchUsesQuerySparseTokenizationMode() {
+        retrievalProperties.setMode(RagRetrievalProperties.RetrievalMode.HYBRID_MILVUS);
+        KbDocument document = document();
+        when(kbMilvusRoutingService.embeddingModelOrDefault(document)).thenReturn("");
+        when(embeddingService.embed("差旅报销材料")).thenReturn(List.of(0.1f, 0.2f));
+        when(sparseVectorGenerator.generateQuery("差旅报销材料")).thenReturn(Map.of(12L, 1.0f));
+        when(milvusVectorWriter.hybridSearch(
+                eq("kb_chunk_hybrid_v1"),
+                org.mockito.ArgumentMatchers.any(float[].class),
+                eq(Map.of(12L, 1.0f)),
+                eq(5),
+                org.mockito.ArgumentMatchers.anyString(),
+                eq(60),
+                eq(5)))
+                .thenReturn(List.of(new SearchResult("2001", "1001", 0.9f, Map.of())));
+
+        List<SearchResult> results = service.hybridSearchSimilar("差旅报销材料", 5, document);
+
+        assertThat(results).hasSize(1);
+        verify(sparseVectorGenerator).generateQuery("差旅报销材料");
+        verify(sparseVectorGenerator, never()).generateDocument("差旅报销材料");
     }
 
     private KbDocument document() {
