@@ -145,6 +145,11 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
             if (chunkId == null) continue;
             KbDocumentChunk chunk = chunkMap.get(chunkId);
             if (chunk == null) continue;
+            if (!Objects.equals(chunk.getDocumentId(), docId)) {
+                log.warn("RAG chunk ownership mismatch: chunkId={}, searchDocId={}, databaseDocId={}",
+                        chunkId, docId, chunk.getDocumentId());
+                continue;
+            }
             rank++;
             candidates.add(new RerankedCandidate(
                     docId,
