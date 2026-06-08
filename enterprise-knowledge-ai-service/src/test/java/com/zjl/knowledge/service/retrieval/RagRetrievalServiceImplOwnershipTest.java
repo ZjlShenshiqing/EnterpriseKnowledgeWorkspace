@@ -78,11 +78,11 @@ class RagRetrievalServiceImplOwnershipTest {
         KbDocument document = searchableDocument(1001L);
         KbDocumentChunk mismatchedChunk = chunk(2001L, 9001L, "unauthorized content", 0);
         stubVisibleDocuments(List.of(document));
-        when(vectorSyncService.searchSimilar(eq("question"), eq(15), any(KbDocument.class)))
+        when(vectorSyncService.searchSimilar(eq("question"), org.mockito.ArgumentMatchers.anyInt(), any(KbDocument.class)))
                 .thenReturn(List.of(searchResult(2001L, 1001L)));
         when(kbDocumentChunkMapper.selectBatchIds(anyCollection())).thenReturn(List.of(mismatchedChunk));
 
-        RetrievalResult result = service.retrieve("question", 5, user);
+        RetrievalResult result = service.retrieve("question", 5, user, null);
 
         assertThat(result.documents()).isEmpty();
         verify(ragRerankService, never()).rerank(any());
@@ -94,14 +94,14 @@ class RagRetrievalServiceImplOwnershipTest {
         KbDocumentChunk validChunk = chunk(2001L, 1001L, "authorized content", 0);
         KbDocumentChunk mismatchedChunk = chunk(2002L, 9001L, "unauthorized content", 1);
         stubVisibleDocuments(List.of(document));
-        when(vectorSyncService.searchSimilar(eq("question"), eq(15), any(KbDocument.class)))
+        when(vectorSyncService.searchSimilar(eq("question"), org.mockito.ArgumentMatchers.anyInt(), any(KbDocument.class)))
                 .thenReturn(List.of(searchResult(2001L, 1001L), searchResult(2002L, 1001L)));
         when(kbDocumentChunkMapper.selectBatchIds(anyCollection()))
                 .thenReturn(List.of(validChunk, mismatchedChunk));
         when(ragRerankService.rerank(any())).thenAnswer(invocation ->
                 invocation.<RerankRequest>getArgument(0).candidates());
 
-        RetrievalResult result = service.retrieve("question", 5, user);
+        RetrievalResult result = service.retrieve("question", 5, user, null);
 
         ArgumentCaptor<RerankRequest> requestCaptor = ArgumentCaptor.forClass(RerankRequest.class);
         verify(ragRerankService).rerank(requestCaptor.capture());
@@ -119,11 +119,11 @@ class RagRetrievalServiceImplOwnershipTest {
     void returnsEmptyResultWithoutRerankingWhenChunkIsMissing() {
         KbDocument document = searchableDocument(1001L);
         stubVisibleDocuments(List.of(document));
-        when(vectorSyncService.searchSimilar(eq("question"), eq(15), any(KbDocument.class)))
+        when(vectorSyncService.searchSimilar(eq("question"), org.mockito.ArgumentMatchers.anyInt(), any(KbDocument.class)))
                 .thenReturn(List.of(searchResult(2001L, 1001L)));
         when(kbDocumentChunkMapper.selectBatchIds(anyCollection())).thenReturn(List.of());
 
-        RetrievalResult result = service.retrieve("question", 5, user);
+        RetrievalResult result = service.retrieve("question", 5, user, null);
 
         assertThat(result.documents()).isEmpty();
         verify(ragRerankService, never()).rerank(any());
@@ -134,11 +134,11 @@ class RagRetrievalServiceImplOwnershipTest {
         KbDocument document = searchableDocument(1001L);
         KbDocumentChunk chunkWithoutOwner = chunk(2001L, null, "unowned content", 0);
         stubVisibleDocuments(List.of(document));
-        when(vectorSyncService.searchSimilar(eq("question"), eq(15), any(KbDocument.class)))
+        when(vectorSyncService.searchSimilar(eq("question"), org.mockito.ArgumentMatchers.anyInt(), any(KbDocument.class)))
                 .thenReturn(List.of(searchResult(2001L, 1001L)));
         when(kbDocumentChunkMapper.selectBatchIds(anyCollection())).thenReturn(List.of(chunkWithoutOwner));
 
-        RetrievalResult result = service.retrieve("question", 5, user);
+        RetrievalResult result = service.retrieve("question", 5, user, null);
 
         assertThat(result.documents()).isEmpty();
         verify(ragRerankService, never()).rerank(any());

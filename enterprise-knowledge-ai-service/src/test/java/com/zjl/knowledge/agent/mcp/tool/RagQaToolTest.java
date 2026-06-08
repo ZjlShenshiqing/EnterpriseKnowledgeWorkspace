@@ -41,7 +41,7 @@ class RagQaToolTest {
                 .admin(false)
                 .build();
 
-        when(ragRetrievalService.retrieve("question", 5, user))
+        when(ragRetrievalService.retrieve("question", 5, user, null))
                 .thenReturn(new RetrievalResult(List.of()));
 
         ToolResult result = ragQaTool.execute(Map.of("question", "question"), user);
@@ -66,7 +66,7 @@ class RagQaToolTest {
                 1024L, null, Map.of(),
                 List.of(new RetrievalResult.ChunkResult(0, "content", 0.9f, Map.of()))
         );
-        when(ragRetrievalService.retrieve("question", 5, user))
+        when(ragRetrievalService.retrieve("question", 5, user, null))
                 .thenReturn(new RetrievalResult(List.of(doc)));
 
         ToolResult result = ragQaTool.execute(Map.of("question", "question"), user);

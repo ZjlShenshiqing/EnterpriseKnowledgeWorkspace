@@ -22,11 +22,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 public class RagRetrievalServiceImpl implements RagRetrievalService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final int MAX_RECALL_ROUNDS = 3;
 
     private final VectorSyncService vectorSyncService;
     private final KbDocumentMapper kbDocumentMapper;
@@ -52,42 +55,62 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
     @Override
     public RetrievalResult retrieve(String question, int topK, UserContext user, Long kbId) {
         KbDocument contextDoc = constructKbDocument(kbId);
-        List<SearchResult> searchResults = vectorSyncService.searchSimilar(question, topK * 3, contextDoc);
 
-        if (searchResults.isEmpty()) {
-            return new RetrievalResult(List.of());
+        Set<Long> seenChunkIds = new HashSet<>();
+        List<SearchResult> accumulated = new ArrayList<>();
+        Map<Long, KbDocument> docMap = new LinkedHashMap<>();
+        int multiplier = retrievalProperties.getTopNMultiplier();
+
+        for (int round = 0; round < MAX_RECALL_ROUNDS; round++) {
+            List<SearchResult> roundResults = vectorSyncService.searchSimilar(
+                    question, topK * multiplier, contextDoc);
+            if (roundResults.isEmpty()) break;
+
+            // 去重：跳过已在之前轮次中见过的 chunk
+            for (SearchResult r : roundResults) {
+                Optional<Long> chunkId = parseLong(r.chunkId());
+                if (chunkId.isEmpty()) continue;
+                if (!seenChunkIds.add(chunkId.get())) continue;
+                if (parseLong(r.docId()).isEmpty()) continue;
+                accumulated.add(r);
+            }
+
+            // 将本轮新出现的 docId 查 DB 做权限过滤
+            Set<Long> allDocIds = accumulated.stream()
+                    .map(r -> parseLong(r.docId()).orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            List<Long> newDocIds = allDocIds.stream()
+                    .filter(id -> !docMap.containsKey(id))
+                    .collect(Collectors.toList());
+            if (!newDocIds.isEmpty()) {
+                Map<Long, KbDocument> newDocMap = kbDocumentMapper.selectBatchIds(newDocIds).stream()
+                        .filter(this::isNotDeleted)
+                        .filter(this::isSearchable)
+                        .filter(d -> isVisible(d, user))
+                        .collect(Collectors.toMap(KbDocument::getId, d -> d, (l, r) -> l, LinkedHashMap::new));
+                docMap.putAll(newDocMap);
+            }
+
+            if (docMap.size() >= topK) break;
+            multiplier *= 2;
         }
 
-        List<SearchResult> validResults = searchResults.stream()
-                .filter(r -> parseLong(r.docId()).isPresent())
-                .filter(r -> parseLong(r.chunkId()).isPresent())
+        // 仅保留通过权限终检的 accumulated 结果
+        List<SearchResult> validResults = accumulated.stream()
+                .filter(r -> docMap.containsKey(parseLong(r.docId()).orElse(null)))
                 .collect(Collectors.toList());
         if (validResults.isEmpty()) {
             return new RetrievalResult(List.of());
         }
 
-        List<Long> docIds = validResults.stream()
-                .map(r -> parseLong(r.docId()).orElse(null))
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-
-        Map<Long, KbDocument> docMap = kbDocumentMapper.selectBatchIds(docIds).stream()
-                .filter(this::isNotDeleted)
-                .filter(this::isSearchable)
-                .filter(d -> isVisible(d, user))
-                .collect(Collectors.toMap(KbDocument::getId, d -> d, (l, r) -> l, LinkedHashMap::new));
-
-        // 构建 rerank 候选：在 DB 权限终检后、rerank 前完成 chunk 查询
         List<RerankedCandidate> candidates = buildCandidates(validResults, docMap);
         if (candidates.isEmpty()) {
             return new RetrievalResult(List.of());
         }
 
-        // rerank
         List<RerankedCandidate> reranked = ragRerankService.rerank(new RerankRequest(question, candidates));
 
-        // 按 rerank 顺序分组文档，topK 截断
         Map<Long, KbDocument> docById = new LinkedHashMap<>();
         List<RetrievalResult.DocumentResult> documents = new ArrayList<>();
         for (RerankedCandidate c : reranked) {

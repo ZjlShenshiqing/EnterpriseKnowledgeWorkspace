@@ -30,6 +30,7 @@ class MilvusCollectionBootstrapTest {
         milvusProperties.setCollection("kb_chunk_embedding");
         milvusProperties.setHybridCollection("kb_chunk_hybrid_v1");
         retrievalProperties = new RagRetrievalProperties();
+        retrievalProperties.setMode(RagRetrievalProperties.RetrievalMode.VECTOR_ONLY);
     }
 
     @Test
