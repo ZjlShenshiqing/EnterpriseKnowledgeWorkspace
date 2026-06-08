@@ -9,5 +9,8 @@ public enum RerankStrategy {
     NONE,
 
     /** 本地特征 rerank */
-    LOCAL_FEATURE
+    LOCAL_FEATURE,
+
+    /** 阿里云百炼 Qwen3 rerank */
+    BAILIAN_QWEN3
 }
