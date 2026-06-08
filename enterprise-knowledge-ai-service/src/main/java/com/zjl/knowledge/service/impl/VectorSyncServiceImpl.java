@@ -76,6 +76,9 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     public void syncChunk(KbDocument document, KbDocumentChunk chunk) {
         float[] vector = toArray(embed(chunk.getChunkText(), document));
         Map<String, Object> metaMap = buildMetaMap(chunk.getMetadataJson());
+        if (document != null && document.getKbId() != null) {
+            metaMap.put("kb_id", document.getKbId());
+        }
         VectorDocChunk vc = VectorDocChunk.builder()
                 .chunkId(String.valueOf(chunk.getId()))
                 .content(chunk.getChunkText())
@@ -115,6 +118,9 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     public void updateChunk(KbDocument document, KbDocumentChunk chunk) {
         float[] vector = toArray(embed(chunk.getChunkText(), document));
         Map<String, Object> metaMap = buildMetaMap(chunk.getMetadataJson());
+        if (document != null && document.getKbId() != null) {
+            metaMap.put("kb_id", document.getKbId());
+        }
         String collection = resolveCollection(document);
         VectorDocChunk vectorChunk = VectorDocChunk.builder()
                 .chunkId(String.valueOf(chunk.getId()))
@@ -215,8 +221,9 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         String collection = milvusProperties.getHybridCollection();
         RagRetrievalProperties.Ranker ranker = retrievalProperties.getRanker();
         int multiplier = retrievalProperties.getTopNMultiplier();
+        Long kbId = document != null ? document.getKbId() : null;
         List<SearchResult> results = milvusVectorWriter.hybridSearch(
-                collection, denseVec, sparseVec, topK, buildCoarseFilter(), ranker.getRrfK(), multiplier);
+                collection, denseVec, sparseVec, topK, buildCoarseFilter(kbId), ranker.getRrfK(), multiplier);
         if (retrievalProperties.getMinScore().isEnabled()) {
             double threshold = retrievalProperties.getMinScore().getValue();
             results = results.stream()
@@ -229,7 +236,19 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     private List<SearchResult> vectorOnlySearch(String query, int topK, KbDocument document) {
         float[] vector = toArray(embed(query, document));
         String collection = resolveCollectionOrDefault(document);
-        return chunkVectorStore.search(collection, vector, topK, null);
+        Long kbId = document != null ? document.getKbId() : null;
+        String filter = buildKbIdFilter(kbId);
+        return chunkVectorStore.search(collection, vector, topK, filter);
+    }
+
+    /**
+     * 为 kbId 构建 Milvus 标量过滤表达式，null 时返回 null（不过滤）
+     */
+    private static String buildKbIdFilter(Long kbId) {
+        if (kbId == null) {
+            return null;
+        }
+        return "metadata[\"kb_id\"] == " + kbId;
     }
 
     private float[] toArray(List<Float> list) {
@@ -254,6 +273,7 @@ public class VectorSyncServiceImpl implements VectorSyncService {
             metaMap.put("document_status", document.getStatus());
             metaMap.put("document_enabled", document.getEnabled() == null || document.getEnabled() == 1);
             metaMap.put("chunk_enabled", c.getEnabled() == null || c.getEnabled() == 1);
+            metaMap.put("kb_id", document.getKbId());
             result.add(VectorDocChunk.builder()
                     .chunkId(String.valueOf(c.getId()))
                     .content(c.getChunkText())
@@ -294,6 +314,9 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         result.putIfAbsent("document_status", effectiveDocumentStatus(document));
         result.putIfAbsent("document_enabled", document == null || document.getEnabled() == null || document.getEnabled() == 1);
         result.putIfAbsent("chunk_enabled", true);
+        if (document != null && document.getKbId() != null) {
+            result.putIfAbsent("kb_id", document.getKbId());
+        }
         return result;
     }
 
@@ -307,11 +330,17 @@ public class VectorSyncServiceImpl implements VectorSyncService {
 
     /**
      * 构建 Milvus 粗过滤表达式，排除已禁用/已删除/未完成的文档和 chunk
+     *
+     * @param kbId 知识库 ID，为 {@code null} 时不限制知识库范围
      */
-    private static String buildCoarseFilter() {
-        return "metadata[\"document_status\"] == \"SUCCESS\""
+    private static String buildCoarseFilter(Long kbId) {
+        String filter = "metadata[\"document_status\"] == \"SUCCESS\""
                 + " && metadata[\"document_enabled\"] == true"
                 + " && metadata[\"chunk_enabled\"] == true";
+        if (kbId != null) {
+            filter += " && metadata[\"kb_id\"] == " + kbId;
+        }
+        return filter;
     }
 
     private Map<String, Object> buildMetaMap(String metadataJson) {

@@ -43,7 +43,7 @@ public interface VectorSyncService {
      *
      * @param query    用户查询文本
      * @param topK     最终返回数量
-     * @param document 知识库文档（用于路由）
+     * @param document 知识库文档（用于路由和 kbId 过滤，kbId 为 {@code null} 时检索所有知识库）
      * @return 融合后的搜索结果
      */
     List<com.zjl.knowledge.milvus.SearchResult> hybridSearchSimilar(String query, int topK, KbDocument document);

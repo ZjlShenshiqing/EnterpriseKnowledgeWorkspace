@@ -50,8 +50,8 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
     private final RagRerankService ragRerankService;
 
     @Override
-    public RetrievalResult retrieve(String question, int topK, UserContext user) {
-        KbDocument contextDoc = new KbDocument();
+    public RetrievalResult retrieve(String question, int topK, UserContext user, Long kbId) {
+        KbDocument contextDoc = constructKbDocument(kbId);
         List<SearchResult> searchResults = vectorSyncService.searchSimilar(question, topK * 3, contextDoc);
 
         if (searchResults.isEmpty()) {
@@ -186,6 +186,12 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
             case KEYWORD_DB -> "KEYWORD_DB";
             default -> "VECTOR_ONLY";
         };
+    }
+
+    private KbDocument constructKbDocument(Long kbId) {
+        KbDocument doc = new KbDocument();
+        doc.setKbId(kbId);
+        return doc;
     }
 
     private boolean isNotDeleted(KbDocument doc) {

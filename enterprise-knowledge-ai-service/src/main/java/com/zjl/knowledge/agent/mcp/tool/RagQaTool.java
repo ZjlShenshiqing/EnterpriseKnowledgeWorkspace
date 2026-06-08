@@ -42,6 +42,10 @@ public class RagQaTool implements McpTool {
                                     .description("返回的文档数量，默认5，最大10")
                                     .defaultValue(5)
                                     .build());
+                            put("kbId", ToolDefinition.PropertyDef.builder()
+                                    .type("integer")
+                                    .description("知识库 ID，不传时检索所有知识库")
+                                    .build());
                         }})
                         .build())
                 .build();
@@ -51,8 +55,9 @@ public class RagQaTool implements McpTool {
     public ToolResult execute(Map<String, Object> args, UserContext user) {
         String question = (String) args.get("question");
         int topK = getInt(args, "topK", 5);
+        Long kbId = getLong(args, "kbId");
 
-        RetrievalResult result = ragRetrievalService.retrieve(question, topK, user);
+        RetrievalResult result = ragRetrievalService.retrieve(question, topK, user, kbId);
 
         List<Map<String, Object>> documents = new ArrayList<>();
         for (RetrievalResult.DocumentResult doc : result.documents()) {
@@ -90,5 +95,13 @@ public class RagQaTool implements McpTool {
             return Math.min(n.intValue(), 10);
         }
         return defaultValue;
+    }
+
+    private Long getLong(Map<String, Object> args, String key) {
+        Object v = args.get(key);
+        if (v instanceof Number n) {
+            return n.longValue();
+        }
+        return null;
     }
 }
