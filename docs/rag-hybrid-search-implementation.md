@@ -257,6 +257,8 @@ app:
 
 新 hybrid collection 不会自动拥有历史数据。历史 `SUCCESS` 文档需要执行一次重建索引或重新同步 chunk，才能进入 `kb_chunk_hybrid_v1`。
 
+引入 IK Analyzer 后，即使 hybrid collection 已经包含历史数据，也必须重新构建全部 hybrid 索引。原因是文档 sparse vector 改为 IK 最大化分词，而查询 sparse vector 改为 IK 智能分词；旧 sparse vector 与新查询分词不一致会直接影响关键词召回。dense collection、数据库表和 Milvus schema 不需要迁移。
+
 当前已提供后台重建接口：
 
 ```http
@@ -276,10 +278,11 @@ POST /api/kb/admin/hybrid-index/documents/{documentId}/rebuild
 
 1. 部署代码，保持 `VECTOR_ONLY`。
 2. 创建并验证 hybrid collection。
-3. 对历史 `SUCCESS` 文档执行重建索引。
-4. 抽样验证 hybrid collection 中 dense / sparse 字段。
-5. 切换 `HYBRID_MILVUS` 灰度。
-6. 观察召回效果和 fallback 日志。
+3. 使用管理员身份调用批量重建接口，设置足以覆盖当前成功文档数的 `limit`；接口当前最多接受 1000，且没有分页游标。
+4. 对失败文档使用单文档接口重试，并确认失败文档 ID 为空；如果成功文档超过 1000，需使用单文档接口补齐或先为批量接口增加分页能力，不能依赖重复调用批量接口。
+5. 抽样验证中文词语和 `OA-2025-001` 这类完整编号能够通过 sparse 检索命中。
+6. 切换 `HYBRID_MILVUS` 灰度。
+7. 观察召回效果、hybrid fallback 日志和 IK fallback 警告。
 
 ## 11. 测试覆盖
 

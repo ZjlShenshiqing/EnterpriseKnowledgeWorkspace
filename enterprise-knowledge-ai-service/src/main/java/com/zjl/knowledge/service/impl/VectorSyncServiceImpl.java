@@ -211,7 +211,7 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     @Override
     public List<SearchResult> hybridSearchSimilar(String query, int topK, KbDocument document) {
         float[] denseVec = toArray(embed(query, document));
-        Map<Long, Float> sparseVec = sparseVectorGenerator.generate(query);
+        Map<Long, Float> sparseVec = sparseVectorGenerator.generateQuery(query);
         String collection = milvusProperties.getHybridCollection();
         RagRetrievalProperties.Ranker ranker = retrievalProperties.getRanker();
         int multiplier = retrievalProperties.getTopNMultiplier();
@@ -281,7 +281,7 @@ public class VectorSyncServiceImpl implements VectorSyncService {
                 .content(chunk.getContent())
                 .index(chunk.getIndex())
                 .embedding(chunk.getEmbedding())
-                .sparseVector(sparseVectorGenerator.generate(chunk.getContent()))
+                .sparseVector(sparseVectorGenerator.generateDocument(chunk.getContent()))
                 .metadata(withHybridFilterMetadata(document, chunk.getMetadata()))
                 .build();
     }
