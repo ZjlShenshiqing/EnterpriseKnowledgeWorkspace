@@ -22,7 +22,7 @@ public class RagRetrievalProperties {
     /**
      * 检索模式，默认 VECTOR_ONLY
      */
-    private RetrievalMode mode = RetrievalMode.VECTOR_ONLY;
+    private RetrievalMode mode = RetrievalMode.HYBRID_MILVUS;
 
     /**
      * 每路 ANN 请求的 topK 倍数，用于扩大候选集
