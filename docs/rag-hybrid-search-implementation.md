@@ -257,6 +257,21 @@ app:
 
 新 hybrid collection 不会自动拥有历史数据。历史 `SUCCESS` 文档需要执行一次重建索引或重新同步 chunk，才能进入 `kb_chunk_hybrid_v1`。
 
+当前已提供后台重建接口：
+
+```http
+POST /api/kb/admin/hybrid-index/rebuild?limit=100
+POST /api/kb/admin/hybrid-index/documents/{documentId}/rebuild
+```
+
+说明：
+
+1. 接口只允许管理员调用。
+2. 批量接口只扫描 `SUCCESS` 文档。
+3. 重建时即使当前仍是 `VECTOR_ONLY`，也会强制写入 hybrid collection，便于灰度前预热。
+4. 单个文档重建会先删除该文档在 hybrid collection 中的旧向量，再重新写入 dense + sparse 双向量。
+5. 返回值包含扫描数、成功数、跳过数、失败数、成功写入切片数、失败文档 ID 和跳过文档 ID。
+
 建议流程：
 
 1. 部署代码，保持 `VECTOR_ONLY`。
@@ -283,12 +298,18 @@ app:
    - hybrid 写入时生成 sparse vector。
    - batch sync 时补齐过滤 metadata。
    - update chunk 时 upsert hybrid collection。
+   - 历史重建即使在 `VECTOR_ONLY` 模式下也能强制写 hybrid collection。
 
-3. `MilvusCollectionBootstrapTest`
+3. `HybridIndexRebuildServiceImplTest`
+   - 文档不存在时返回业务错误。
+   - 非 `SUCCESS` 文档会跳过，不写 Milvus。
+   - 批量重建时单文档失败不影响后续文档。
+
+4. `MilvusCollectionBootstrapTest`
    - `VECTOR_ONLY` 只初始化 dense collection。
    - `HYBRID_MILVUS` 同时初始化 dense 和 hybrid collection。
 
-4. `RagQaToolTest`
+5. `RagQaToolTest`
    - `RagQaTool` 委托 `RagRetrievalService` 后输出结构保持兼容。
 
 验证命令：
@@ -310,13 +331,13 @@ BUILD SUCCESS
 
 1. sparse vector 使用本地轻量 tokenizer + term frequency，不是完整 BM25 语料级 IDF。
 2. 没有引入 jieba、OpenSearch、Elasticsearch 或外部 sparse encoder。
-3. 没有自动迁移历史 dense collection 数据到 hybrid collection。
+3. 历史索引重建是后台同步接口，不是带进度持久化的异步任务。
 4. hybrid collection schema 变更仍建议通过新 collection 迁移，不建议原地修改旧 collection。
 5. 还没有真实 Milvus 服务端集成测试；当前测试主要覆盖服务编排、配置分支和本地 sparse 生成。
 
 ## 13. 后续建议
 
-1. 增加历史文档 hybrid 索引重建任务或管理接口。
+1. 将历史文档 hybrid 索引重建升级为异步任务，记录批次进度和失败明细。
 2. 增加真实 Milvus 集成测试，验证 `SparseFloatVector` 写入和检索兼容当前服务端版本。
 3. 按真实问答日志调优 `top-n-multiplier`、`rrf-k`、`min-score`。
 4. 若编号、制度条款和表格字段仍不稳定，可替换 `SparseVectorGenerator` 为更强分词或 sparse encoder。

@@ -71,6 +71,12 @@ app:
       min-score:
         enabled: false
         value: 0.3
+    rerank:
+      enabled: true
+      strategy: LOCAL_FEATURE
+      candidate-limit: 50
+      timeout-ms: 800
+      fallback-to-original-order: true
   milvus:
     uri: http://localhost:19530
     collection: kb_chunk_embedding

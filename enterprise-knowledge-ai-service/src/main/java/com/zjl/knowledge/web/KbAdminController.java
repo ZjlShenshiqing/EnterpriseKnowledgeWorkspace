@@ -1,13 +1,20 @@
 package com.zjl.knowledge.web;
 
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.knowledge.dto.kb.HybridIndexRebuildResult;
 import com.zjl.knowledge.dto.kb.KbAdminStatsVO;
+import com.zjl.knowledge.service.HybridIndexRebuildService;
 import com.zjl.knowledge.service.KbAdminStatsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -21,8 +28,33 @@ public class KbAdminController {
 
     private final KbAdminStatsService adminStatsService;
 
+    private final HybridIndexRebuildService hybridIndexRebuildService;
+
     @GetMapping("/stats")
     public Result<KbAdminStatsVO> stats() {
         return Results.success(adminStatsService.compute());
+    }
+
+    @PostMapping("/hybrid-index/documents/{documentId}/rebuild")
+    public Result<HybridIndexRebuildResult> rebuildHybridIndexForDocument(
+            @PathVariable("documentId") Long documentId
+    ) {
+        requireAdmin();
+        return Results.success(hybridIndexRebuildService.rebuildDocument(documentId));
+    }
+
+    @PostMapping("/hybrid-index/rebuild")
+    public Result<HybridIndexRebuildResult> rebuildHybridIndex(
+            @RequestParam(name = "limit", defaultValue = "100") int limit
+    ) {
+        requireAdmin();
+        return Results.success(hybridIndexRebuildService.rebuildSuccessDocuments(limit));
+    }
+
+    private void requireAdmin() {
+        UserContext user = UserContextHolder.get();
+        if (user == null || !user.isAdmin()) {
+            throw new BizException(ErrorCode.FORBIDDEN);
+        }
     }
 }

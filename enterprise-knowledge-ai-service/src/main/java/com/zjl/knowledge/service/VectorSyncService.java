@@ -28,6 +28,8 @@ public interface VectorSyncService {
 
     void indexDocumentChunks(KbDocument document, List<VectorDocChunk> vectorChunks);
 
+    void rebuildHybridChunks(KbDocument document, List<KbDocumentChunk> chunks);
+
     void deleteDocumentVectors(KbDocument document);
 
     void deleteChunkVector(KbDocument document, String chunkId);

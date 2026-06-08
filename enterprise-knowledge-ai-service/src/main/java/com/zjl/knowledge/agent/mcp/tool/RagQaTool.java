@@ -63,6 +63,9 @@ public class RagQaTool implements McpTool {
                 chunkInfo.put("text", chunk.text());
                 chunkInfo.put("score", chunk.score());
                 chunkInfo.put("metadata", chunk.metadata());
+                chunkInfo.put("rerankScore", chunk.rerankScore());
+                chunkInfo.put("rerankStrategy", chunk.rerankStrategy());
+                chunkInfo.put("rerankReason", chunk.rerankReason());
                 matchedChunks.add(chunkInfo);
             }
             Map<String, Object> docInfo = new LinkedHashMap<>();

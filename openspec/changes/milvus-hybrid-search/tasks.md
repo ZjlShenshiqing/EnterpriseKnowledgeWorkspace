@@ -64,3 +64,11 @@
 - [x] 10.3 Delete hybrid collection rows alongside dense rows when HYBRID_MILVUS mode is active
 - [x] 10.4 Initialize the hybrid collection on startup when `app.rag.retrieval.mode=HYBRID_MILVUS`
 - [x] 10.5 Add tests for hybrid write closure and startup collection initialization
+
+## 11. Historical Hybrid Index Rebuild
+
+- [x] 11.1 Add forced hybrid rebuild method that writes hybrid collection even when retrieval mode remains VECTOR_ONLY
+- [x] 11.2 Add admin API to rebuild one document or a bounded batch of SUCCESS documents
+- [x] 11.3 Return rebuild totals, skipped documents, failed documents, and indexed chunk count
+- [x] 11.4 Add unit tests for skip/failure behavior and forced hybrid rebuild
+- [x] 11.5 Update hybrid search implementation docs with rebuild endpoints and rollout notes

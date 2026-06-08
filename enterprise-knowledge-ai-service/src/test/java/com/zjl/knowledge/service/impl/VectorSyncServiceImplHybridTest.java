@@ -158,6 +158,31 @@ class VectorSyncServiceImplHybridTest {
         assertThat(chunkCaptor.getValue().getSparseVector()).containsEntry(31L, 1.0f);
     }
 
+    @Test
+    void rebuildHybridChunksWritesHybridCollectionEvenInVectorOnlyMode() {
+        KbDocument document = document();
+        document.setStatus(DocumentStatus.SUCCESS.name());
+        document.setEnabled(1);
+        KbDocumentChunk chunk = new KbDocumentChunk();
+        chunk.setId(2001L);
+        chunk.setChunkText("历史制度编号");
+        chunk.setChunkIndex(0);
+        chunk.setEnabled(1);
+
+        when(kbMilvusRoutingService.embeddingModelOrDefault(document)).thenReturn("");
+        when(embeddingService.embedBatch(List.of("历史制度编号"))).thenReturn(List.of(List.of(0.7f, 0.8f)));
+        when(sparseVectorGenerator.generate("历史制度编号")).thenReturn(Map.of(77L, 1.0f));
+
+        service.rebuildHybridChunks(document, List.of(chunk));
+
+        verify(milvusVectorWriter).deleteByDocumentId("kb_chunk_hybrid_v1", "1001");
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<VectorDocChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(milvusVectorWriter).indexHybridChunks(eq("kb_chunk_hybrid_v1"), eq("1001"), chunksCaptor.capture());
+        assertThat(chunksCaptor.getValue()).hasSize(1);
+        assertThat(chunksCaptor.getValue().get(0).getSparseVector()).containsEntry(77L, 1.0f);
+    }
+
     private KbDocument document() {
         KbDocument document = new KbDocument();
         document.setId(1001L);

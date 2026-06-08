@@ -97,6 +97,8 @@ milvusClient.search(...)
        -> ranker fusion
   -> DB 查询文档和 chunk
   -> 权限终检
+  -> rerank（RagRerankService 二次排序）
+  -> topK 截断
   -> 返回 matchedChunks
 ```
 
@@ -107,10 +109,11 @@ RagQaTool
   -> RagRetrievalService
        -> MilvusHybridRetrievalProvider
        -> RetrievalPermissionFilter
+       -> RagRerankService（二次排序）
        -> RetrievalResultAssembler
 ```
 
-`RagQaTool` 不再直接编排向量召回、文档查询、权限过滤和结果组装。
+`RagQaTool` 不再直接编排向量召回、文档查询、权限过滤和结果组装。Rerank 作为独立服务层接在权限终检之后、结果组装之前。
 
 ## 6. Milvus Collection Schema 设计
 
@@ -322,9 +325,35 @@ List<SearchResult> hybridSearchSimilar(String query, int topK, KbDocument contex
 2. 执行 `VECTOR_ONLY` / `HYBRID_MILVUS`。
 3. 查询 DB chunk 和 document。
 4. 做权限终检。
-5. 按文档聚合 matchedChunks。
+5. 调用 rerank 二次排序。
+6. 按文档聚合 matchedChunks。
 
-### 11.5 RagQaTool
+### 11.5 RagRerankService
+
+Rerank 是检索链路中独立的一层，接在 DB 权限终检之后、topK 截断之前：
+
+```text
+召回候选 -> DB chunk/document -> 权限终检 -> RagRerankService -> topK -> matchedChunks
+```
+
+当前实现 `LocalFeatureRagReranker`，基于关键词覆盖、标题/章节命中、召回来源、chunk 长度等特征计算 rerank 分。后续可扩展 cross-encoder / LLM reranker。
+
+配置：
+
+```yaml
+app:
+  rag:
+    rerank:
+      enabled: true
+      strategy: LOCAL_FEATURE
+      candidate-limit: 50
+      timeout-ms: 800
+      fallback-to-original-order: true
+```
+
+关闭 `enabled=false` 或 `strategy=NONE` 时保持原始召回顺序。
+
+### 11.6 RagQaTool
 
 从直接调用 `vectorSyncService.searchSimilar(...)` 改成：
 
@@ -345,6 +374,12 @@ app:
         rrf-k: 60
       min-score:
         enabled: false
+    rerank:
+      enabled: true
+      strategy: LOCAL_FEATURE
+      candidate-limit: 50
+      timeout-ms: 800
+      fallback-to-original-order: true
   milvus:
     collection: kb_chunk_embedding
     hybrid-collection: kb_chunk_hybrid_v1
@@ -410,6 +445,15 @@ app:
 1. 对历史 `SUCCESS` 文档重新构建 hybrid 向量。
 2. 记录重建进度和失败日志。
 3. 灰度切换默认检索模式为 `HYBRID_MILVUS`。
+
+当前实现提供同步后台接口：
+
+```http
+POST /api/kb/admin/hybrid-index/rebuild?limit=100
+POST /api/kb/admin/hybrid-index/documents/{documentId}/rebuild
+```
+
+该接口用于灰度前预热 hybrid collection。即使默认检索模式仍是 `VECTOR_ONLY`，重建接口也会强制写入 hybrid collection。
 
 ### 阶段四：效果评测
 

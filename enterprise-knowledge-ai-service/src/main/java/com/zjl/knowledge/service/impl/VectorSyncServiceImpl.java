@@ -150,6 +150,21 @@ public class VectorSyncServiceImpl implements VectorSyncService {
     }
 
     @Override
+    public void rebuildHybridChunks(KbDocument document, List<KbDocumentChunk> chunks) {
+        if (chunks == null || chunks.isEmpty()) {
+            return;
+        }
+        String docId = String.valueOf(document.getId());
+        List<VectorDocChunk> vectorChunks = buildVectorChunks(document, chunks);
+        milvusVectorWriter.deleteByDocumentId(milvusProperties.getHybridCollection(), docId);
+        milvusVectorWriter.indexHybridChunks(
+                milvusProperties.getHybridCollection(),
+                docId,
+                withSparseVectors(document, vectorChunks)
+        );
+    }
+
+    @Override
     public void deleteDocumentVectors(KbDocument document) {
         String collection = resolveCollectionOrDefault(document);
         chunkVectorStore.deleteDocumentVectors(collection, document.getId());

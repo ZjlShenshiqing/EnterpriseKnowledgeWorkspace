@@ -24,12 +24,23 @@ public record RetrievalResult(List<DocumentResult> documents) {
     ) {}
 
     /**
-     * 检索命中的单个 chunk
+     * 检索命中的单个 chunk，包含 rerank 调试字段
      */
     public record ChunkResult(
             int chunkIndex,
             String text,
             float score,
-            Map<String, Object> metadata
-    ) {}
+            Map<String, Object> metadata,
+            /** rerank 得分，未启用时为原始分数 */
+            float rerankScore,
+            /** 使用的 rerank 策略 */
+            String rerankStrategy,
+            /** rerank 排序原因 */
+            String rerankReason
+    ) {
+        /** 兼容构造：没有 rerank 元数据 */
+        public ChunkResult(int chunkIndex, String text, float score, Map<String, Object> metadata) {
+            this(chunkIndex, text, score, metadata, score, "NONE", "");
+        }
+    }
 }
