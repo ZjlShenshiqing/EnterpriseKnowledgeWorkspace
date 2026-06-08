@@ -1,20 +1,20 @@
 package com.zjl.knowledge.service.rerank;
 
+import com.zjl.knowledge.tokenization.ChineseTokenizer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 本地特征 reranker：基于关键词覆盖、标题命中、召回来源、chunk 长度等特征计算 rerank 分
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class LocalFeatureRagReranker implements RagReranker {
 
     private static final int MIN_CHUNK_LENGTH = 50;
@@ -26,6 +26,8 @@ public class LocalFeatureRagReranker implements RagReranker {
     private static final float WEIGHT_TITLE_SECTION = 0.15f;
     private static final float WEIGHT_SOURCE = 0.10f;
     private static final float WEIGHT_LENGTH_QUALITY = 0.10f;
+
+    private final ChineseTokenizer chineseTokenizer;
 
     @Override
     public boolean supports(RerankStrategy strategy) {
@@ -41,7 +43,7 @@ public class LocalFeatureRagReranker implements RagReranker {
                     .toList();
         }
 
-        List<String> queryTokens = tokenize(query);
+        List<String> queryTokens = chineseTokenizer.tokenizeQuery(query);
         if (queryTokens.isEmpty()) {
             return request.candidates().stream()
                     .sorted(Comparator.comparingDouble(RerankedCandidate::originalScore).reversed())
@@ -89,23 +91,6 @@ public class LocalFeatureRagReranker implements RagReranker {
 
         scored.sort(Comparator.comparingDouble(RerankedCandidate::rerankScore).reversed());
         return scored;
-    }
-
-    /**
-     * 简单的中文/英文 token 提取
-     */
-    List<String> tokenize(String text) {
-        if (text == null || text.isBlank()) {
-            return List.of();
-        }
-        String cleaned = text.toLowerCase().trim();
-        if (cleaned.length() <= 2) {
-            return List.of(cleaned);
-        }
-        // 按空白、标点分词，保留长度 >= 1 的 token
-        return Arrays.stream(cleaned.split("[\\s，。！？、；：\"'（）\\[\\]【】,.!?;:()\\-]+"))
-                .filter(t -> !t.isEmpty())
-                .collect(Collectors.toList());
     }
 
     /**

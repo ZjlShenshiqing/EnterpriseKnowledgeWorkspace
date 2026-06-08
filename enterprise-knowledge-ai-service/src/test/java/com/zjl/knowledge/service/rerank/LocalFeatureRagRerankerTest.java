@@ -1,5 +1,8 @@
 package com.zjl.knowledge.service.rerank;
 
+import com.zjl.knowledge.config.RagTokenizationProperties;
+import com.zjl.knowledge.tokenization.DefaultIkTokenizationEngine;
+import com.zjl.knowledge.tokenization.IkChineseTokenizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +18,8 @@ class LocalFeatureRagRerankerTest {
 
     @BeforeEach
     void setUp() {
-        reranker = new LocalFeatureRagReranker();
+        reranker = new LocalFeatureRagReranker(
+                new IkChineseTokenizer(new DefaultIkTokenizationEngine(), new RagTokenizationProperties()));
     }
 
     @Test
@@ -110,17 +114,15 @@ class LocalFeatureRagRerankerTest {
 
     @Test
     void shouldComputeKeywordCoverage() {
-        List<String> tokens = reranker.tokenize("差旅报销 申请表");
         float coverage = reranker.computeKeywordCoverage(
-                "差旅报销需要填写申请表并提交给财务部门", tokens);
+                "差旅报销需要填写申请表并提交给财务部门", List.of("差旅", "报销", "申请表"));
         assertThat(coverage).isEqualTo(1.0f);
     }
 
     @Test
     void shouldComputePartialKeywordCoverage() {
-        List<String> tokens = reranker.tokenize("差旅报销 申请表 审批");
         float coverage = reranker.computeKeywordCoverage(
-                "差旅报销需要填写申请表并提交给财务部门", tokens);
+                "差旅报销需要填写申请表并提交给财务部门", List.of("差旅", "报销", "申请表", "审批"));
         assertThat(coverage).isGreaterThan(0.5f).isLessThan(1.0f);
     }
 
@@ -158,22 +160,16 @@ class LocalFeatureRagRerankerTest {
     }
 
     @Test
-    void tokenizeShouldHandleChinese() {
-        List<String> tokens = reranker.tokenize("什么是RAG检索增强生成？");
-        assertThat(tokens).isNotEmpty();
-        assertThat(tokens).contains("什么是rag检索增强生成");
-    }
+    void shouldRankChineseCandidateBySharedQueryTokens() {
+        List<RerankedCandidate> candidates = new ArrayList<>();
+        candidates.add(candidate(1L, 80L, 0, "差旅审批流程和负责人说明", 0.7f, 1));
+        candidates.add(candidate(1L, 81L, 1, "差旅报销需要提交发票和行程材料", 0.7f, 2));
 
-    @Test
-    void tokenizeShouldHandleMixedText() {
-        List<String> tokens = reranker.tokenize("差旅报销,申请表 审批");
-        assertThat(tokens).contains("差旅报销").contains("申请表").contains("审批");
-    }
+        List<RerankedCandidate> result = reranker.rerank(
+                new RerankRequest("差旅报销需要哪些材料", candidates));
 
-    @Test
-    void tokenizeShouldHandleShortText() {
-        List<String> tokens = reranker.tokenize("ab");
-        assertThat(tokens).contains("ab");
+        assertThat(result.get(0).chunkId()).isEqualTo(81L);
+        assertThat(result.get(0).rerankReason()).contains("kw=");
     }
 
     private static RerankedCandidate candidate(Long docId, Long chunkId, int chunkIndex,
