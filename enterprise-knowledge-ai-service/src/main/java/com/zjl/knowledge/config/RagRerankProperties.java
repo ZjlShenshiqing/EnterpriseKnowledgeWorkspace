@@ -24,4 +24,13 @@ public class RagRerankProperties {
 
     /** 失败时是否回退到原始召回顺序 */
     private boolean fallbackToOriginalOrder = true;
+
+    /** 百炼 rerank 模型 */
+    private String model = "qwen3-rerank";
+
+    /** 百炼 OpenAI 兼容 API 地址 */
+    private String baseUrl = "https://dashscope.aliyuncs.com/compatible-api/v1";
+
+    /** 百炼返回的模型排序结果数量 */
+    private int topN = 10;
 }

@@ -73,10 +73,13 @@ app:
         value: 0.3
     rerank:
       enabled: true
-      strategy: LOCAL_FEATURE
+      strategy: BAILIAN_QWEN3
       candidate-limit: 50
-      timeout-ms: 800
+      timeout-ms: 3000
       fallback-to-original-order: true
+      model: qwen3-rerank
+      base-url: https://dashscope.aliyuncs.com/compatible-api/v1
+      top-n: 10
   milvus:
     uri: http://localhost:19530
     collection: kb_chunk_embedding
