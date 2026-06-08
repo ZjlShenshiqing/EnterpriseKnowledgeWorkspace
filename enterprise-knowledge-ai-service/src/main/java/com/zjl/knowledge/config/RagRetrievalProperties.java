@@ -54,6 +54,6 @@ public class RagRetrievalProperties {
         private boolean enabled = false;
 
         /** 最低分数阈值 */
-        private double value = 0.3;
+        private double value = 0.01;
     }
 }

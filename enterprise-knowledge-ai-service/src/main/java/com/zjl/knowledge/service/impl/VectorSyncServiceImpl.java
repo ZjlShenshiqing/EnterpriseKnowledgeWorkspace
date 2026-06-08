@@ -224,13 +224,7 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         Long kbId = document != null ? document.getKbId() : null;
         List<SearchResult> results = milvusVectorWriter.hybridSearch(
                 collection, denseVec, sparseVec, topK, buildCoarseFilter(kbId), ranker.getRrfK(), multiplier);
-        if (retrievalProperties.getMinScore().isEnabled()) {
-            double threshold = retrievalProperties.getMinScore().getValue();
-            results = results.stream()
-                    .filter(r -> r.score() >= threshold)
-                    .collect(Collectors.toList());
-        }
-        return results;
+        return applyMinScoreFilter(results);
     }
 
     private List<SearchResult> vectorOnlySearch(String query, int topK, KbDocument document) {
@@ -238,7 +232,18 @@ public class VectorSyncServiceImpl implements VectorSyncService {
         String collection = resolveCollectionOrDefault(document);
         Long kbId = document != null ? document.getKbId() : null;
         String filter = buildKbIdFilter(kbId);
-        return chunkVectorStore.search(collection, vector, topK, filter);
+        List<SearchResult> results = chunkVectorStore.search(collection, vector, topK, filter);
+        return applyMinScoreFilter(results);
+    }
+
+    private List<SearchResult> applyMinScoreFilter(List<SearchResult> results) {
+        if (!retrievalProperties.getMinScore().isEnabled()) {
+            return results;
+        }
+        double threshold = retrievalProperties.getMinScore().getValue();
+        return results.stream()
+                .filter(r -> r.score() >= threshold)
+                .collect(Collectors.toList());
     }
 
     /**

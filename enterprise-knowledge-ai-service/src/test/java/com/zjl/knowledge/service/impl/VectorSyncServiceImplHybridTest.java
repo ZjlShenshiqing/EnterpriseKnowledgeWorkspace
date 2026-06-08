@@ -59,6 +59,7 @@ class VectorSyncServiceImplHybridTest {
     @BeforeEach
     void setUp() {
         retrievalProperties = new RagRetrievalProperties();
+        retrievalProperties.setMode(RagRetrievalProperties.RetrievalMode.VECTOR_ONLY);
         milvusProperties = new MilvusProperties();
         milvusProperties.setHybridCollection("kb_chunk_hybrid_v1");
         service = new VectorSyncServiceImpl(
