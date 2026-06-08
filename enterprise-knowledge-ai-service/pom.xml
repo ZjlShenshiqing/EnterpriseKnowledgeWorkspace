@@ -21,6 +21,7 @@
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <milvus-sdk.version>2.4.4</milvus-sdk.version>
         <tika.version>2.9.3</tika.version>
+        <ik-analyzer.version>5.1.0</ik-analyzer.version>
     </properties>
 
     <dependencyManagement>
@@ -95,6 +96,11 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers-standard-package</artifactId>
             <version>${tika.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.truenewx</groupId>
+            <artifactId>ik-analyzer-core</artifactId>
+            <version>${ik-analyzer.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
