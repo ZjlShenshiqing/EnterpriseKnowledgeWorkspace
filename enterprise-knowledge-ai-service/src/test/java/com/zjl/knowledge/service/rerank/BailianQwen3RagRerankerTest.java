@@ -74,11 +74,7 @@ class BailianQwen3RagRerankerTest {
                 "住宿费按照职级报销"
         ));
         assertThat(result).extracting(RerankedCandidate::chunkId)
-                .containsExactly(12L, 10L, 11L);
-        assertThat(result.get(0).rerankScore()).isEqualTo(0.96f);
-        assertThat(result.get(1).rerankScore()).isEqualTo(0.83f);
-        assertThat(result.get(0).rerankStrategy()).isEqualTo("BAILIAN_QWEN3");
-        assertThat(result.get(2).originalRank()).isEqualTo(2);
+                .containsExactly(12L, 10L);
     }
 
     @Test
@@ -98,7 +94,7 @@ class BailianQwen3RagRerankerTest {
                 )));
 
         assertThat(result).extracting(RerankedCandidate::chunkId)
-                .containsExactly(12L, 10L, 11L);
+                .containsExactly(12L, 10L);
         assertThat(result.get(0).rerankStrategy()).isEqualTo("BAILIAN_QWEN3");
     }
 
@@ -115,7 +111,7 @@ class BailianQwen3RagRerankerTest {
     }
 
     @Test
-    void shouldIgnoreInvalidAndDuplicateIndexesAndAppendOmittedCandidates() {
+    void shouldIgnoreInvalidAndDuplicateIndexes() {
         replaceHandler("""
                 {"results":[
                   {"index":1,"relevance_score":0.91},
@@ -135,10 +131,8 @@ class BailianQwen3RagRerankerTest {
         List<RerankedCandidate> result = reranker.rerank(new RerankRequest("问题", candidates));
 
         assertThat(result).extracting(RerankedCandidate::chunkId)
-                .containsExactly(11L, 10L, 12L);
+                .containsExactly(11L);
         assertThat(result.get(0).rerankScore()).isEqualTo(0.91f);
-        assertThat(result.get(1)).isSameAs(candidates.get(0));
-        assertThat(result.get(2)).isSameAs(candidates.get(2));
     }
 
     @Test

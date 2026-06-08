@@ -124,14 +124,6 @@ public class BailianQwen3RagReranker implements RagReranker {
             reranked.add(withRerankScore(candidates.get(index), score));
         }
 
-        List<RerankedCandidate> omitted = new ArrayList<>();
-        for (int index = 0; index < candidates.size(); index++) {
-            if (!includedIndexes.contains(index)) {
-                omitted.add(candidates.get(index));
-            }
-        }
-        omitted.sort(java.util.Comparator.comparingInt(RerankedCandidate::originalRank));
-        reranked.addAll(omitted);
         return reranked;
     }
 
