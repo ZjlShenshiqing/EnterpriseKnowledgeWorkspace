@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -139,12 +140,14 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     }
 
     private List<KbAgentMessage> fetchMessages(Long sessionId, int maxMessages) {
-        return messageMapper.selectList(
+        List<KbAgentMessage> messages = messageMapper.selectList(
                 Wrappers.lambdaQuery(KbAgentMessage.class)
                         .eq(KbAgentMessage::getSessionId, sessionId)
-                        .orderByAsc(KbAgentMessage::getCreatedAt)
+                        .orderByDesc(KbAgentMessage::getCreatedAt)
                         .last("LIMIT " + maxMessages)
         );
+        Collections.reverse(messages);
+        return messages;
     }
 
     private List<ChatMessage> toChatMessages(List<KbAgentMessage> messages) {

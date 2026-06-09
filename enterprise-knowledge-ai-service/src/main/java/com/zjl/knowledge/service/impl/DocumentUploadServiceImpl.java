@@ -136,12 +136,10 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         }
 
         // 使用文件头检测真实类型，避免只依赖前端传入的 Content-Type。
-        String detectedType = tikaDocumentParser.detectMime(
+        String typeFromHeader = tikaDocumentParser.detectMime(
                 fileBytes.length > 512 ? java.util.Arrays.copyOf(fileBytes, 512) : fileBytes,
                 file.getOriginalFilename());
-        if (!StringUtils.hasText(detectedType)) {
-            detectedType = file.getContentType();
-        }
+        final String detectedType = StringUtils.hasText(typeFromHeader) ? typeFromHeader : file.getContentType();
         if (!SUPPORTED_MIME_TYPES.contains(detectedType)) {
             throw new BizException(ErrorCode.PARAM_INVALID,
                     "不支持的文件类型: " + detectedType + "（支持 PDF、Word、Excel、PPT、文本、图片）");
@@ -152,7 +150,7 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         String tempFileName = java.util.UUID.randomUUID().toString() + "_" + 
                 (originalFilename != null ? originalFilename : "upload.bin");
         
-        String storedPath = null;
+        final String storedPath;
         try (InputStream in = new ByteArrayInputStream(fileBytes)) {
             storedPath = fileStorageService.store(null, tempFileName, in);
             log.info("文件预存储成功: path={}", storedPath);
