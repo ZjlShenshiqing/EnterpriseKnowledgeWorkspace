@@ -3,6 +3,7 @@ package com.zjl.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -12,6 +13,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
+@SQLRestriction("deleted = 0")
 @Table(name = "sys_role", indexes = {
         @Index(name = "idx_sys_role_code", columnList = "code", unique = true)
 })
@@ -26,6 +28,9 @@ public class SysRole {
 
     @Column(nullable = false, length = 128)
     private String name;
+
+    @Column(nullable = false)
+    private Integer deleted = 0;
 
     @Column(nullable = false)
     private Instant createdAt = Instant.now();

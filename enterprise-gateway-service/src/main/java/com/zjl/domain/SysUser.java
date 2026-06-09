@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -15,6 +16,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
+@SQLRestriction("deleted = 0")
 @Table(name = "sys_user", indexes = {
         @Index(name = "idx_sys_user_username", columnList = "username", unique = true)
 })
@@ -58,6 +60,12 @@ public class SysUser {
      */
     @Column(nullable = false)
     private boolean enabled = true;
+
+    /**
+     * 逻辑删除（0=正常，1=已删除）
+     */
+    @Column(nullable = false)
+    private Integer deleted = 0;
 
     /**
      * 用户角色集合

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -13,6 +14,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
+@SQLRestriction("deleted = 0")
 @Table(name = "sys_dept", indexes = {
         @Index(name = "idx_sys_dept_name", columnList = "name", unique = true)
 })
@@ -37,6 +39,12 @@ public class SysDept {
      */
     @Column
     private Long parentId;
+
+    /**
+     * 逻辑删除（0=正常，1=已删除）
+     */
+    @Column(nullable = false)
+    private Integer deleted = 0;
 
     /**
      * 创建时间
