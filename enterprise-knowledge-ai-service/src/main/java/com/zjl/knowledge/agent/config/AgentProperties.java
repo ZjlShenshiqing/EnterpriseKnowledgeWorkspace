@@ -22,6 +22,9 @@ public class AgentProperties {
     /** 协同服务配置（会议预约等） */
     private Collaboration collaboration = new Collaboration();
 
+    /** 线程池配置 */
+    private ThreadPool threadPool = new ThreadPool();
+
     @Data
     public static class Collaboration {
 
@@ -78,5 +81,24 @@ public class AgentProperties {
 
         /** 时间范围：noLimit / oneDay / oneWeek / oneMonth / oneYear */
         private String freshness = "noLimit";
+    }
+
+    @Data
+    public static class ThreadPool {
+
+        /** 核心线程数 */
+        private int coreSize = 10;
+
+        /** 最大线程数 */
+        private int maxSize = 30;
+
+        /** 队列容量 */
+        private int queueCapacity = 100;
+
+        /** 空闲线程存活时间（秒） */
+        private int keepAliveSeconds = 120;
+
+        /** 线程名前缀 */
+        private String threadNamePrefix = "agent-chat-";
     }
 }

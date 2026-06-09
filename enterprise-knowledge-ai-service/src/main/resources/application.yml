@@ -109,6 +109,12 @@ app:
       freshness: noLimit
     collaboration:
       base-url: http://localhost:8090
+    thread-pool:
+      core-size: 10
+      max-size: 30
+      queue-capacity: 100
+      keep-alive-seconds: 120
+      thread-name-prefix: agent-chat-
 
 logging:
   pattern:

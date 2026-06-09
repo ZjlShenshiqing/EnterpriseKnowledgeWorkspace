@@ -2,6 +2,7 @@ package com.zjl.knowledge.agent;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.knowledge.agent.config.AgentThreadPoolConfig;
 import com.zjl.knowledge.agent.entity.KbAgentSession;
 import com.zjl.knowledge.service.FileStorageService;
 import com.zjl.knowledge.web.UserContext;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Agent 对话与会话管理接口
@@ -36,8 +38,16 @@ import java.util.Map;
  *   <li>会话归档 - 删除/归档会话</li>
  * </ul>
  *
+ * <p>线程管理：</p>
+ * <ul>
+ *   <li>使用 TTL 线程池执行异步任务，替代直接 new Thread()</li>
+ *   <li>保证 UserContext 等 ThreadLocal 变量正确传递</li>
+ *   <li>线程池参数由 app.agent.thread-pool 配置</li>
+ * </ul>
+ *
  * @see AgentLoop
  * @see AgentSessionService
+ * @see AgentThreadPoolConfig
  */
 @Slf4j
 @RestController
@@ -59,6 +69,11 @@ public class AgentController {
      * 文件存储服务，用于聊天附件上传
      */
     private final FileStorageService fileStorageService;
+
+    /**
+     * TTL 线程池，用于异步执行 Agent 对话
+     */
+    private final ExecutorService agentExecutor;
 
     /**
      * 对话接口（SSE 流式响应）
@@ -90,14 +105,15 @@ public class AgentController {
         UserContext user = UserContextHolder.get();
         AgentSseEmitter emitter = new AgentSseEmitter();
 
-        // 异步执行 Agent 循环，避免阻塞 HTTP 线程
-        new Thread(() -> {
+        // 使用 TTL 线程池异步执行 Agent 循环，避免阻塞 HTTP 线程
+        // TTL 保证 UserContext 正确传递到异步线程
+        agentExecutor.execute(() -> {
             try {
                 // 获取或创建会话，使用消息前100字符作为标题
                 KbAgentSession session = sessionService.getOrCreateSession(
                         request.getSessionId(), user.getUserId(),
                         truncate(request.getMessage(), 100));
-                
+
                 // 保存用户消息到历史记录
                 sessionService.saveUserMessage(session.getId(), buildUserMessageText(request, user));
 
@@ -107,7 +123,7 @@ public class AgentController {
                 log.error("Agent 对话异常", e);
                 emitter.error("对话处理失败: " + e.getMessage());
             }
-        }, "agent-chat-" + user.getUserId()).start();
+        });
 
         return emitter.getDelegate();
     }
