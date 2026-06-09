@@ -17,6 +17,7 @@
     <modules>
         <module>common</module>
         <module>web</module>
+        <module>log</module>
     </modules>
 
     <properties>
