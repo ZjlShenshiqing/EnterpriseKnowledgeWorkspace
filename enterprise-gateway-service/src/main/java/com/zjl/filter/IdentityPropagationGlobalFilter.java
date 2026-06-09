@@ -114,6 +114,11 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
         if (user != null && user.getDept() != null) {
             builder.header("X-Department-Id", String.valueOf(user.getDept().getId()));
         }
+        // 透传项目ID，用于 PROJECT 权限文档的授权
+        String projectId = exchange.getRequest().getHeaders().getFirst("X-Project-Id");
+        if (projectId != null && !projectId.isBlank()) {
+            builder.header("X-Project-Id", projectId.trim());
+        }
         return exchange.mutate().request(builder.build()).build();
     }
 
