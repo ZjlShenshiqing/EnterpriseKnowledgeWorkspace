@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import reactor.core.Disposable;
+
 /**
  * 基于 Spring AI 的 LLM 客户端实现
  *
@@ -123,8 +125,11 @@ public class SpringAiLlmClient implements LlmClient {
             Map<Integer, ToolCall> toolCallMap = new LinkedHashMap<>();
             Map<Integer, StringBuilder> toolArgBufferMap = new HashMap<>();
             Set<Integer> notifiedToolCalls = new HashSet<>();
+            
+            // 保存订阅引用，用于超时取消
+            AtomicReference<Disposable> subscriptionRef = new AtomicReference<>();
 
-            openAiApi.chatCompletionStream(request)
+            Disposable subscription = openAiApi.chatCompletionStream(request)
                     .subscribe(
                             chunk -> processChunk(chunk, listener, toolCallMap, toolArgBufferMap, notifiedToolCalls),
                             error -> {
@@ -152,9 +157,18 @@ public class SpringAiLlmClient implements LlmClient {
                                 latch.countDown();
                             }
                     );
+            
+            subscriptionRef.set(subscription);
 
             boolean completed = latch.await(130, TimeUnit.SECONDS);
             if (!completed) {
+                // 超时后取消订阅，避免继续产生费用和回调
+                log.warn("LLM 流式响应超时，取消订阅");
+                Disposable sub = subscriptionRef.get();
+                if (sub != null && !sub.isDisposed()) {
+                    sub.dispose();
+                    log.info("LLM 订阅已取消");
+                }
                 listener.onError(new RuntimeException("LLM 流式响应超时（130秒）"));
             }
         } catch (Exception e) {

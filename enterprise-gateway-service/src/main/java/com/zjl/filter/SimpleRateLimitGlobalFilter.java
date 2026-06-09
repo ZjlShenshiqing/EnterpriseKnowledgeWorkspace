@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -147,14 +148,23 @@ public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 获取客户端 IP（基于 remoteAddress）
-     *
-     * <p>注意：若服务部署在反向代理后 且需要识别真实 IP 建议改为解析 X-Forwarded-For 等头并配置可信代理</p>
-     *
-     * @param exchange exchange
-     * @return ip
+     * 每 5 分钟清理超过 10 分钟未更新的计数器条目，避免内存泄漏
      */
+    @Scheduled(fixedRate = 300_000)
+    public void cleanupStaleCounters() {
+        long threshold = Instant.now().getEpochSecond() - 600;
+        counters.values().removeIf(c -> c.windowStartEpochSec < threshold);
+    }
+
     private static String ip(ServerWebExchange exchange) {
+        String xff = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        String xri = exchange.getRequest().getHeaders().getFirst("X-Real-IP");
+        if (xri != null && !xri.isBlank()) {
+            return xri.trim();
+        }
         InetSocketAddress addr = exchange.getRequest().getRemoteAddress();
         if (addr == null || addr.getAddress() == null) {
             return null;
@@ -162,11 +172,6 @@ public class SimpleRateLimitGlobalFilter implements GlobalFilter, Ordered {
         return addr.getAddress().getHostAddress();
     }
 
-    /**
-     * 从 MDC 获取 traceId
-     *
-     * @return traceId
-     */
     private String traceId() {
         return MDC.get(TraceIdHolder.key());
     }

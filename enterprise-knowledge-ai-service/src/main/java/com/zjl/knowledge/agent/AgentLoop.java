@@ -187,8 +187,9 @@ public class AgentLoop {
         int turn = 0;
         StringBuilder fullResponse = new StringBuilder();  // 累积最终响应
         final boolean[] llmError = {false};                 // LLM 调用是否出错
+        final boolean[] disconnected = {false};             // 连接是否断开
 
-        while (turn < MAX_TURNS) {
+        while (turn < MAX_TURNS && !disconnected[0]) {
             turn++;
             final List<ToolCall> collectedToolCalls = new ArrayList<>();  // 收集本轮的工具调用
             final StringBuilder turnText = new StringBuilder();            // 本轮的文本响应
@@ -199,19 +200,39 @@ public class AgentLoop {
                 @Override
                 public void onTextDelta(String delta) {
                     // 文本片段回调：实时推送文本到客户端
+                    if (emitter.isDisconnected()) {
+                        log.warn("SSE 连接已断开，跳过文本发送");
+                        disconnected[0] = true;
+                        return;
+                    }
                     turnText.append(delta);
-                    emitter.send("message", Map.of("delta", delta, "type", "text"));
+                    try {
+                        emitter.send("message", Map.of("delta", delta, "type", "text"));
+                    } catch (IllegalStateException e) {
+                        log.warn("发送消息失败，连接已断开: {}", e.getMessage());
+                        disconnected[0] = true;
+                    }
                 }
 
                 @Override
                 public void onToolCall(ToolCall call) {
                     // 工具调用回调：记录工具调用并通知客户端
+                    if (emitter.isDisconnected()) {
+                        log.warn("SSE 连接已断开，跳过工具调用通知");
+                        disconnected[0] = true;
+                        return;
+                    }
                     hasToolCalls[0] = true;
                     collectedToolCalls.add(call);
-                    Map<String, Object> payload = new LinkedHashMap<>();
-                    payload.put("tool", call.getName());
-                    payload.put("args", call.getArguments() != null ? call.getArguments() : Map.of());
-                    emitter.send("tool_call", payload);
+                    try {
+                        Map<String, Object> payload = new LinkedHashMap<>();
+                        payload.put("tool", call.getName());
+                        payload.put("args", call.getArguments() != null ? call.getArguments() : Map.of());
+                        emitter.send("tool_call", payload);
+                    } catch (IllegalStateException e) {
+                        log.warn("发送工具调用失败，连接已断开: {}", e.getMessage());
+                        disconnected[0] = true;
+                    }
                 }
 
                 @Override
@@ -224,11 +245,13 @@ public class AgentLoop {
                 public void onError(Throwable error) {
                     // 错误回调：发送错误消息到客户端并标记错误
                     llmError[0] = true;
-                    emitter.error("LLM 调用失败: " + error.getMessage());
+                    if (!emitter.isDisconnected()) {
+                        emitter.error("LLM 调用失败: " + error.getMessage());
+                    }
                 }
             });
 
-            if (llmError[0]) {
+            if (llmError[0] || disconnected[0]) {
                 return;
             }
 
@@ -253,13 +276,25 @@ public class AgentLoop {
 
             // 执行所有工具调用
             for (ToolCall tc : collectedToolCalls) {
+                // 检查连接状态，避免无效的工具执行
+                if (disconnected[0] || emitter.isDisconnected()) {
+                    log.warn("SSE 连接已断开，跳过工具执行: {}", tc.getName());
+                    return;
+                }
+
                 String toolCallId = resolveToolCallId(tc);
                 if (tc.getName() == null || tc.getName().isBlank()) {
                     log.warn("跳过无效工具调用: id={}", toolCallId);
                     Map<String, Object> skipPayload = new LinkedHashMap<>();
                     skipPayload.put("tool", "");
                     skipPayload.put("result", "工具名称为空，跳过执行");
-                    emitter.send("tool_result", skipPayload);
+                    try {
+                        emitter.send("tool_result", skipPayload);
+                    } catch (IllegalStateException e) {
+                        log.warn("发送工具结果失败，连接已断开: {}", e.getMessage());
+                        disconnected[0] = true;
+                        return;
+                    }
                     messages.add(ChatMessage.builder()
                             .role("tool")
                             .toolCallId(toolCallId)
@@ -277,7 +312,13 @@ public class AgentLoop {
                 Map<String, Object> resultPayload = new LinkedHashMap<>();
                 resultPayload.put("tool", tc.getName());
                 resultPayload.put("result", toolData != null ? toolData : "");
-                emitter.send("tool_result", resultPayload);
+                try {
+                    emitter.send("tool_result", resultPayload);
+                } catch (IllegalStateException e) {
+                    log.warn("发送工具结果失败，连接已断开: {}", e.getMessage());
+                    disconnected[0] = true;
+                    return;
+                }
 
                 // 保存工具调用记录到数据库
                 sessionService.saveToolMessage(session.getId(), tc.getName(), tc.getArguments(), result.getData());
@@ -293,8 +334,12 @@ public class AgentLoop {
         }
 
         // 达到最大轮次限制时提示用户
-        if (turn >= MAX_TURNS) {
-            emitter.send("message", Map.of("delta", "\n\n已达到最大对话轮次，请重新提问。", "type", "text"));
+        if (turn >= MAX_TURNS && !disconnected[0]) {
+            try {
+                emitter.send("message", Map.of("delta", "\n\n已达到最大对话轮次，请重新提问。", "type", "text"));
+            } catch (IllegalStateException e) {
+                log.warn("发送消息失败，连接已断开: {}", e.getMessage());
+            }
         }
 
         // ④ 保存助手回复消息到数据库
@@ -305,8 +350,14 @@ public class AgentLoop {
         }
 
         // 发送对话结束标记，完成 SSE 连接
-        emitter.send("done", Map.of("sessionId", String.valueOf(session.getId())));
-        emitter.complete();
+        if (!disconnected[0]) {
+            try {
+                emitter.send("done", Map.of("sessionId", String.valueOf(session.getId())));
+                emitter.complete();
+            } catch (IllegalStateException e) {
+                log.warn("发送结束消息失败，连接已断开: {}", e.getMessage());
+            }
+        }
     }
 
     /**

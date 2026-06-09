@@ -175,17 +175,18 @@ public class IpAccessGlobalFilter implements GlobalFilter, Ordered {
      * @return 客户端 IP；如果无法获取，则返回 null
      */
     private static String ip(ServerWebExchange exchange) {
-
-        // 获取请求的远程地址信息
+        String xff = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        String xri = exchange.getRequest().getHeaders().getFirst("X-Real-IP");
+        if (xri != null && !xri.isBlank()) {
+            return xri.trim();
+        }
         InetSocketAddress addr = exchange.getRequest().getRemoteAddress();
-
-        // 如果远程地址为空，或者地址中的 IP 信息为空，则说明无法获取客户端 IP
         if (addr == null || addr.getAddress() == null) {
             return null;
         }
-
-        // 返回 IP 地址字符串
-        // 例如：127.0.0.1、192.168.1.10、0:0:0:0:0:0:0:1
         return addr.getAddress().getHostAddress();
     }
 

@@ -2,11 +2,10 @@ package com.zjl;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-/**
- * enterprise-gateway-service 启动入口。
- */
 @SpringBootApplication
+@EnableScheduling
 public class GatewaySpringbootStarter {
 
     /**
