@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.ChatCreateConversationReq;
 import com.zjl.collaboration.dto.ChatReadReq;
 import com.zjl.collaboration.entity.ImMessage;
@@ -53,7 +54,7 @@ public class ChatController {
     }
 
     @PostMapping("/conversations")
-    public Result<Long> createConv(@RequestBody ChatCreateConversationReq req,
+    public Result<Long> createConv(@Valid @RequestBody ChatCreateConversationReq req,
                                    @RequestHeader("X-User-Id") Long userId) {
         return Results.success(chatService.createConversation(req.getName(), req.getType(), req.getMemberIds(), userId));
     }
@@ -61,7 +62,7 @@ public class ChatController {
     @PostMapping("/conversations/{id}/read")
     public Result<Void> markRead(@PathVariable Long id,
                                  @RequestHeader("X-User-Id") Long userId,
-                                 @RequestBody ChatReadReq req) {
+                                 @Valid @RequestBody ChatReadReq req) {
         readService.markRead(userId, id, req.getLastReadMsgId());
         return Results.success();
     }

@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.TaskReq;
 import com.zjl.collaboration.entity.SysTaskComment;
 import com.zjl.collaboration.service.TaskService;
@@ -36,13 +37,13 @@ public class TaskController {
     }
 
     @PostMapping
-    public Result<Long> create(@RequestBody TaskReq req, @RequestHeader("X-User-Id") Long userId) {
+    public Result<Long> create(@Valid @RequestBody TaskReq req, @RequestHeader("X-User-Id") Long userId) {
         return Results.success(taskService.create(req.getTitle(), req.getDescription(),
                 req.getAssigneeId(), req.getPriority(), userId));
     }
 
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody TaskReq req) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody TaskReq req) {
         taskService.update(id, req.getTitle(), req.getDescription(), req.getAssigneeId(), req.getPriority());
         return Results.success();
     }

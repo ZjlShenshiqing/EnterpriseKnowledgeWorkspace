@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjl.collaboration.entity.KbKeywordMapping;
 import com.zjl.collaboration.mapper.KbKeywordMappingMapper;
 import com.zjl.collaboration.service.KeywordMappingService;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.common.response.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,10 @@ public class KeywordMappingServiceImpl implements KeywordMappingService {
 
     @Override
     public KbKeywordMapping update(Long id, KbKeywordMapping mapping) {
+        KbKeywordMapping existing = mapper.selectById(id);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "关键词映射不存在");
+        }
         mapping.setId(id);
         mapper.updateById(mapping);
         return mapper.selectById(id);
@@ -49,6 +55,10 @@ public class KeywordMappingServiceImpl implements KeywordMappingService {
 
     @Override
     public void delete(Long id) {
+        KbKeywordMapping existing = mapper.selectById(id);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "关键词映射不存在");
+        }
         mapper.deleteById(id);
     }
 

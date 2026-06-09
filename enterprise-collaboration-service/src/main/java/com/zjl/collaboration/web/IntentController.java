@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.IntentBindKbReq;
 import com.zjl.collaboration.dto.IntentMatchReq;
 import com.zjl.collaboration.dto.IntentSortReq;
@@ -40,12 +41,12 @@ public class IntentController {
     }
 
     @PostMapping("/nodes")
-    public Result<KbIntentNode> createNode(@RequestBody KbIntentNode node) {
+    public Result<KbIntentNode> createNode(@Valid @RequestBody KbIntentNode node) {
         return Results.success(intentService.createNode(node));
     }
 
     @PutMapping("/nodes/{id}")
-    public Result<Void> updateNode(@PathVariable Long id, @RequestBody KbIntentNode node) {
+    public Result<Void> updateNode(@PathVariable Long id, @Valid @RequestBody KbIntentNode node) {
         intentService.updateNode(id, node);
         return Results.success();
     }
@@ -57,7 +58,7 @@ public class IntentController {
     }
 
     @PutMapping("/nodes/{id}/sort")
-    public Result<Void> updateSort(@PathVariable Long id, @RequestBody IntentSortReq req) {
+    public Result<Void> updateSort(@PathVariable Long id, @Valid @RequestBody IntentSortReq req) {
         intentService.updateSort(id, req.getParentId(), req.getSortOrder());
         return Results.success();
     }
@@ -68,12 +69,12 @@ public class IntentController {
     }
 
     @PostMapping("/nodes/{id}/rules")
-    public Result<KbIntentRule> createRule(@PathVariable Long id, @RequestBody KbIntentRule rule) {
+    public Result<KbIntentRule> createRule(@PathVariable Long id, @Valid @RequestBody KbIntentRule rule) {
         return Results.success(intentService.createRule(id, rule));
     }
 
     @PutMapping("/rules/{ruleId}")
-    public Result<Void> updateRule(@PathVariable Long ruleId, @RequestBody KbIntentRule rule) {
+    public Result<Void> updateRule(@PathVariable Long ruleId, @Valid @RequestBody KbIntentRule rule) {
         intentService.updateRule(ruleId, rule);
         return Results.success();
     }
@@ -90,12 +91,12 @@ public class IntentController {
     }
 
     @PostMapping("/nodes/{id}/kbs")
-    public Result<KbIntentKbRel> bindKb(@PathVariable Long id, @RequestBody IntentBindKbReq req) {
+    public Result<KbIntentKbRel> bindKb(@PathVariable Long id, @Valid @RequestBody IntentBindKbReq req) {
         return Results.success(intentService.bindKb(id, req.getKbId(), req.getWeight()));
     }
 
     @PutMapping("/kb-rel/{relId}")
-    public Result<Void> updateKbRel(@PathVariable Long relId, @RequestBody IntentBindKbReq req) {
+    public Result<Void> updateKbRel(@PathVariable Long relId, @Valid @RequestBody IntentBindKbReq req) {
         intentService.updateKbRel(relId, req.getWeight());
         return Results.success();
     }
@@ -107,7 +108,7 @@ public class IntentController {
     }
 
     @PostMapping("/match")
-    public Result<Map<String, Object>> match(@RequestBody IntentMatchReq req) {
+    public Result<Map<String, Object>> match(@Valid @RequestBody IntentMatchReq req) {
         return Results.success(intentService.match(req.getQuery()));
     }
 }

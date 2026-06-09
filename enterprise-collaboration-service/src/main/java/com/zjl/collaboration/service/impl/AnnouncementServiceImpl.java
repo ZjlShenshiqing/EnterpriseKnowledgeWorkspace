@@ -6,6 +6,8 @@ import com.zjl.collaboration.integration.GatewayUserClient;
 import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.collaboration.mapper.SysAnnouncementMapper;
 import com.zjl.collaboration.service.AnnouncementService;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +49,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     public void delete(Long id) {
+        SysAnnouncement ann = announcementMapper.selectById(id);
+        if (ann == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "公告不存在");
+        }
         announcementMapper.deleteById(id);
     }
 }

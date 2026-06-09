@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.TodoReq;
 import com.zjl.collaboration.entity.SysTodo;
 import com.zjl.collaboration.service.TodoService;
@@ -34,12 +35,12 @@ public class TodoController {
     }
 
     @PostMapping
-    public Result<Long> create(@RequestBody TodoReq req, @RequestHeader("X-User-Id") Long userId) {
+    public Result<Long> create(@Valid @RequestBody TodoReq req, @RequestHeader("X-User-Id") Long userId) {
         return Results.success(todoService.create(req.getTitle(), req.getPriority(), req.getDueDate(), userId));
     }
 
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody TodoReq req) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody TodoReq req) {
         todoService.update(id, req.getTitle(), req.getPriority(), req.getDueDate());
         return Results.success();
     }

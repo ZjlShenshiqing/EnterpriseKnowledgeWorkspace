@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.*;
 import com.zjl.collaboration.mapper.*;
 import com.zjl.collaboration.service.IntentService;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -68,12 +70,20 @@ public class IntentServiceImpl implements IntentService {
 
     @Override
     public void updateNode(Long id, KbIntentNode node) {
+        KbIntentNode existing = nodeMapper.selectById(id);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "意图节点不存在");
+        }
         node.setId(id);
         nodeMapper.updateById(node);
     }
 
     @Override
     public void deleteNode(Long id) {
+        KbIntentNode existing = nodeMapper.selectById(id);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "意图节点不存在");
+        }
         List<KbIntentNode> children = nodeMapper.selectList(
                 Wrappers.lambdaQuery(KbIntentNode.class).eq(KbIntentNode::getParentId, id));
         for (KbIntentNode child : children) {
@@ -86,6 +96,10 @@ public class IntentServiceImpl implements IntentService {
 
     @Override
     public void updateSort(Long id, Long parentId, Integer sortOrder) {
+        KbIntentNode existing = nodeMapper.selectById(id);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "意图节点不存在");
+        }
         KbIntentNode node = new KbIntentNode();
         node.setId(id);
         node.setParentId(parentId);
@@ -110,12 +124,20 @@ public class IntentServiceImpl implements IntentService {
 
     @Override
     public void updateRule(Long ruleId, KbIntentRule rule) {
+        KbIntentRule existing = ruleMapper.selectById(ruleId);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "意图规则不存在");
+        }
         rule.setId(ruleId);
         ruleMapper.updateById(rule);
     }
 
     @Override
     public void deleteRule(Long ruleId) {
+        KbIntentRule existing = ruleMapper.selectById(ruleId);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "意图规则不存在");
+        }
         ruleMapper.deleteById(ruleId);
     }
 
@@ -137,6 +159,10 @@ public class IntentServiceImpl implements IntentService {
 
     @Override
     public void updateKbRel(Long relId, Double weight) {
+        KbIntentKbRel existing = kbRelMapper.selectById(relId);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "知识库关联不存在");
+        }
         KbIntentKbRel rel = new KbIntentKbRel();
         rel.setId(relId);
         rel.setWeight(weight);
@@ -145,6 +171,10 @@ public class IntentServiceImpl implements IntentService {
 
     @Override
     public void unbindKb(Long relId) {
+        KbIntentKbRel existing = kbRelMapper.selectById(relId);
+        if (existing == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "知识库关联不存在");
+        }
         kbRelMapper.deleteById(relId);
     }
 

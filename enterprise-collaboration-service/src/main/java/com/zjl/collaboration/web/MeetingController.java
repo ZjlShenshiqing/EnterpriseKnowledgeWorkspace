@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.MeetingConflictCheckReq;
 import com.zjl.collaboration.dto.MeetingConflictCheckResp;
 import com.zjl.collaboration.dto.MeetingReq;
@@ -44,13 +45,13 @@ public class MeetingController {
     }
 
     @PostMapping
-    public Result<Long> create(@RequestBody MeetingReq req, @RequestHeader("X-User-Id") Long userId) {
+    public Result<Long> create(@Valid @RequestBody MeetingReq req, @RequestHeader("X-User-Id") Long userId) {
         return Results.success(meetingService.create(req.getTitle(), req.getRoom(), req.getDate(),
                 req.getStartTime(), req.getEndTime(), req.getAttendees(), req.getDescription(), userId));
     }
 
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody MeetingReq req) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody MeetingReq req) {
         meetingService.update(id, req.getTitle(), req.getRoom(), req.getDate(), req.getStartTime(),
                 req.getEndTime(), req.getAttendees(), req.getDescription());
         return Results.success();
@@ -63,7 +64,7 @@ public class MeetingController {
     }
 
     @PostMapping("/check-conflict")
-    public Result<MeetingConflictCheckResp> checkConflict(@RequestBody MeetingConflictCheckReq req) {
+    public Result<MeetingConflictCheckResp> checkConflict(@Valid @RequestBody MeetingConflictCheckReq req) {
         MeetingService.ConflictCheckResult result = meetingService.checkConflict(
                 req.getDate(), req.getStartTime(), req.getEndTime(), req.getRoom(), req.getExcludeId());
         return Results.success(new MeetingConflictCheckResp(result.conflict(), result.conflicts(), result.message()));

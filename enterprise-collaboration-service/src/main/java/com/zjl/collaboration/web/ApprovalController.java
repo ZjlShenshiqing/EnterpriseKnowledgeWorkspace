@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.workflow.dto.ApprovalCreateRequest;
 import com.zjl.collaboration.workflow.service.ApprovalApplicationService;
 import com.zjl.collaboration.workflow.vo.ApprovalCreateVO;
@@ -25,7 +26,7 @@ public class ApprovalController {
     private final ApprovalApplicationService approvalApplicationService;
 
     @PostMapping
-    public Result<ApprovalCreateVO> create(@RequestBody ApprovalCreateRequest request,
+    public Result<ApprovalCreateVO> create(@Valid @RequestBody ApprovalCreateRequest request,
                                            @RequestHeader("X-User-Id") Long userId) {
         return Results.success(approvalApplicationService.create(request, userId));
     }

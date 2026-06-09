@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.DocCreateReq;
 import com.zjl.collaboration.dto.DocUpdateReq;
 import com.zjl.collaboration.service.DocService;
@@ -44,13 +45,13 @@ public class DocController {
     }
 
     @PostMapping
-    public Result<Map<String, Object>> create(@RequestBody DocCreateReq req,
+    public Result<Map<String, Object>> create(@Valid @RequestBody DocCreateReq req,
                                               @RequestHeader("X-User-Id") Long userId) {
         return Results.success(docService.create(req.getTitle(), userId));
     }
 
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody DocUpdateReq req) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody DocUpdateReq req) {
         docService.update(id, req.getTitle());
         return Results.success();
     }

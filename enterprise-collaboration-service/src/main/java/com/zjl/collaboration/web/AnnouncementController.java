@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.AnnouncementReq;
 import com.zjl.collaboration.entity.SysAnnouncement;
 import com.zjl.collaboration.service.AnnouncementService;
@@ -35,7 +36,7 @@ public class AnnouncementController {
     }
 
     @PostMapping
-    public Result<Long> publish(@RequestBody AnnouncementReq req, @RequestHeader("X-User-Id") Long userId) {
+    public Result<Long> publish(@Valid @RequestBody AnnouncementReq req, @RequestHeader("X-User-Id") Long userId) {
         return Results.success(announcementService.publish(req.getTitle(), req.getContent(), userId));
     }
 

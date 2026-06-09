@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.entity.KbKeywordMapping;
 import com.zjl.collaboration.service.KeywordMappingService;
 import com.zjl.common.response.PageResult;
@@ -37,12 +38,12 @@ public class KeywordMappingController {
     }
 
     @PostMapping
-    public Result<KbKeywordMapping> create(@RequestBody KbKeywordMapping mapping) {
+    public Result<KbKeywordMapping> create(@Valid @RequestBody KbKeywordMapping mapping) {
         return Results.success(keywordMappingService.create(mapping));
     }
 
     @PutMapping("/{id}")
-    public Result<KbKeywordMapping> update(@PathVariable Long id, @RequestBody KbKeywordMapping mapping) {
+    public Result<KbKeywordMapping> update(@PathVariable Long id, @Valid @RequestBody KbKeywordMapping mapping) {
         return Results.success(keywordMappingService.update(id, mapping));
     }
 
@@ -53,7 +54,7 @@ public class KeywordMappingController {
     }
 
     @PostMapping("/match")
-    public Result<Map<String, Object>> match(@RequestBody Map<String, String> body) {
+    public Result<Map<String, Object>> match(@Valid @RequestBody Map<String, String> body) {
         return Results.success(keywordMappingService.match(body.getOrDefault("query", "")));
     }
 }

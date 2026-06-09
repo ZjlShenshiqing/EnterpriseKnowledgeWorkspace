@@ -1,12 +1,11 @@
 package com.zjl.collaboration.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-/**
- * 意图绑定知识库请求。
- */
 @Data
 public class IntentBindKbReq {
+    @NotNull(message = "知识库ID不能为空")
     private Long kbId;
     private Double weight;
 }

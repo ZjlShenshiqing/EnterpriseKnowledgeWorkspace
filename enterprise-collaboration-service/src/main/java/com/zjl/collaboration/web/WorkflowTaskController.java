@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.workflow.dto.WorkflowActionRequest;
 import com.zjl.collaboration.workflow.service.WorkflowRuntimeService;
 import com.zjl.collaboration.workflow.service.WorkflowTaskQueryService;
@@ -37,7 +38,7 @@ public class WorkflowTaskController {
 
     @PostMapping("/{taskId}/actions")
     public Result<Void> handle(@PathVariable Long taskId,
-                               @RequestBody WorkflowActionRequest request,
+                               @Valid @RequestBody WorkflowActionRequest request,
                                @RequestHeader("X-User-Id") Long userId) {
         if (request != null && "APPROVE".equals(request.getAction())) {
             runtimeService.approveTask(taskId, userId, request.getComment());

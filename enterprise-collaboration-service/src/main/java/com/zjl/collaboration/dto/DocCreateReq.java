@@ -1,11 +1,10 @@
 package com.zjl.collaboration.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
-/**
- * 文档创建请求。
- */
 @Data
 public class DocCreateReq {
+    @NotBlank(message = "文档标题不能为空")
     private String title;
 }

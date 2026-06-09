@@ -1,5 +1,6 @@
 package com.zjl.collaboration.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -7,6 +8,7 @@ import lombok.Data;
  */
 @Data
 public class MeetingReq {
+    @NotBlank(message = "会议标题不能为空")
     private String title;
     private String room;
     private String date;

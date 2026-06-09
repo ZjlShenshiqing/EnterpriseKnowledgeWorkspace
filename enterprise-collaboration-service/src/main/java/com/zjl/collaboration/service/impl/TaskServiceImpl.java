@@ -3,6 +3,8 @@ package com.zjl.collaboration.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.SysTask;
 import com.zjl.collaboration.entity.SysTaskComment;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.collaboration.integration.GatewayUserClient;
 import com.zjl.collaboration.integration.UserInfo;
 import com.zjl.collaboration.mapper.SysTaskCommentMapper;
@@ -71,7 +73,7 @@ public class TaskServiceImpl implements TaskService {
     public void update(Long id, String title, String description, Long assigneeId, String priority) {
         SysTask task = taskMapper.selectById(id);
         if (task == null) {
-            return;
+            throw new BizException(ErrorCode.NOT_FOUND, "任务不存在");
         }
         task.setTitle(title);
         task.setDescription(description);
@@ -85,7 +87,7 @@ public class TaskServiceImpl implements TaskService {
     public void updateStatus(Long id, String status) {
         SysTask task = taskMapper.selectById(id);
         if (task == null) {
-            return;
+            throw new BizException(ErrorCode.NOT_FOUND, "任务不存在");
         }
         String oldStatus = task.getStatus();
         task.setStatus(status);
@@ -96,6 +98,10 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void delete(Long id) {
+        SysTask task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "任务不存在");
+        }
         taskMapper.deleteById(id);
     }
 
@@ -108,6 +114,10 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void addComment(Long taskId, String content, Long userId) {
+        SysTask task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "任务不存在");
+        }
         UserInfo user = gatewayUserClient.getById(userId);
         SysTaskComment comment = new SysTaskComment();
         comment.setTaskId(taskId);

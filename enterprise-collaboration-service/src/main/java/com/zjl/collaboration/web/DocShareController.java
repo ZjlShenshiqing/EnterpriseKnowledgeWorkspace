@@ -1,5 +1,6 @@
 package com.zjl.collaboration.web;
 
+import jakarta.validation.Valid;
 import com.zjl.collaboration.dto.DocCollaboratorReq;
 import com.zjl.collaboration.dto.DocShareReq;
 import com.zjl.collaboration.service.DocShareService;
@@ -35,14 +36,14 @@ public class DocShareController {
 
     @PostMapping("/docs/{docId}/collaborators")
     public Result<Map<String, Object>> addCollaborator(@PathVariable Long docId,
-                                                       @RequestBody DocCollaboratorReq req) {
+                                                       @Valid @RequestBody DocCollaboratorReq req) {
         return Results.success(docShareService.addCollaborator(
                 docId, req.getTargetType(), req.getTargetId(), req.getPermission()));
     }
 
     @PutMapping("/collaborators/{id}")
     public Result<Void> updateCollaborator(@PathVariable Long id,
-                                           @RequestBody DocCollaboratorReq req) {
+                                           @Valid @RequestBody DocCollaboratorReq req) {
         docShareService.updateCollaborator(id, req.getPermission());
         return Results.success();
     }
@@ -60,7 +61,7 @@ public class DocShareController {
 
     @PostMapping("/docs/{docId}/shares")
     public Result<Map<String, Object>> createShare(@PathVariable Long docId,
-                                                   @RequestBody DocShareReq req) {
+                                                   @Valid @RequestBody DocShareReq req) {
         return Results.success(docShareService.createShare(docId, req.getPermission(), req.getExpiredAt()));
     }
 

@@ -3,6 +3,8 @@ package com.zjl.collaboration.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.SysMeeting;
 import com.zjl.collaboration.integration.WorkbenchCacheNotifier;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.collaboration.integration.ZoomMeetingClient;
 import com.zjl.collaboration.mapper.SysMeetingMapper;
 import com.zjl.collaboration.service.MeetingService;
@@ -68,7 +70,7 @@ public class MeetingServiceImpl implements MeetingService {
                        String attendees, String description) {
         SysMeeting meeting = meetingMapper.selectById(id);
         if (meeting == null) {
-            return;
+            throw new BizException(ErrorCode.NOT_FOUND, "会议不存在");
         }
         meeting.setTitle(title);
         meeting.setRoom(room);

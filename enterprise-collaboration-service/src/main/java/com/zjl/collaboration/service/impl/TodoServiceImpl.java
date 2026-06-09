@@ -3,6 +3,8 @@ package com.zjl.collaboration.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.SysTodo;
 import com.zjl.collaboration.mapper.SysTodoMapper;
+import com.zjl.common.enums.ErrorCode;
+import com.zjl.common.exception.BizException;
 import com.zjl.collaboration.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +48,7 @@ public class TodoServiceImpl implements TodoService {
     public void update(Long id, String title, String priority, Date dueDate) {
         SysTodo todo = todoMapper.selectById(id);
         if (todo == null) {
-            return;
+            throw new BizException(ErrorCode.NOT_FOUND, "待办不存在");
         }
         todo.setTitle(title);
         todo.setPriority(priority);
@@ -58,7 +60,7 @@ public class TodoServiceImpl implements TodoService {
     public void toggle(Long id) {
         SysTodo todo = todoMapper.selectById(id);
         if (todo == null) {
-            return;
+            throw new BizException(ErrorCode.NOT_FOUND, "待办不存在");
         }
         todo.setDone(todo.getDone() == 1 ? 0 : 1);
         todoMapper.updateById(todo);
@@ -66,6 +68,10 @@ public class TodoServiceImpl implements TodoService {
 
     @Override
     public void delete(Long id) {
+        SysTodo todo = todoMapper.selectById(id);
+        if (todo == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "待办不存在");
+        }
         todoMapper.deleteById(id);
     }
 }
