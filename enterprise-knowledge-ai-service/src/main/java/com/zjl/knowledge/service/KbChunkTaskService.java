@@ -89,7 +89,7 @@ public class KbChunkTaskService {
                 .eq(KbChunkTask::getId, taskId)
                 .set(KbChunkTask::getStatus, "SUCCESS")
                 .set(KbChunkTask::getEndedAt, LocalDateTime.now())
-                .set(KbChunkTask::setUpdatedAt, LocalDateTime.now()));
+                .set(KbChunkTask::getUpdatedAt, LocalDateTime.now()));
         log.info("任务执行成功: taskId={}", taskId);
     }
 
@@ -162,7 +162,7 @@ public class KbChunkTaskService {
                             .set(KbChunkTask::getStatus, "PENDING")
                             .set(KbChunkTask::getRetryCount, newRetryCount)
                             .set(KbChunkTask::getErrorMessage, "任务超时，重置为 PENDING")
-                            .set(KbChunkTask::getUpdatedAt, LocalDateTime.now()));
+                            .set(KbChunkTask::setUpdatedAt, LocalDateTime.now()));
                     
                     // 重置文档状态为 FAILED，允许重新提交
                     documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
