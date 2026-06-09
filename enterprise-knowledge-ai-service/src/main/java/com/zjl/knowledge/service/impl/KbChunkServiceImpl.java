@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.common.toolkit.Assert;
 import com.zjl.framework.starter.distributedid.toolkit.SnowflakeIdUtil;
 import com.zjl.knowledge.domain.DocumentStatus;
 import com.zjl.knowledge.dto.chunk.ChunkSensitivityUpdateRequest;
@@ -232,9 +233,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         assertDocNotBusy(document);
 
         KbDocumentChunk chunk = baseMapper.selectById(chunkId);
-        if (chunk == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "Chunk 不存在");
-        }
+        Assert.notNull(chunk, ErrorCode.NOT_FOUND);
         if (!chunk.getDocumentId().equals(docId)) {
             throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 不属于该文档");
         }
@@ -268,9 +267,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         assertDocNotBusy(document);
 
         KbDocumentChunk chunk = baseMapper.selectById(chunkId);
-        if (chunk == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "Chunk 不存在");
-        }
+        Assert.notNull(chunk, ErrorCode.NOT_FOUND);
         if (!chunk.getDocumentId().equals(docId)) {
             throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 不属于该文档");
         }
@@ -296,9 +293,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         validateDocumentEnabledForChunkEnable(document, enabled);
 
         KbDocumentChunk chunk = baseMapper.selectById(chunkId);
-        if (chunk == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "Chunk 不存在");
-        }
+        Assert.notNull(chunk, ErrorCode.NOT_FOUND);
         if (!chunk.getDocumentId().equals(docId)) {
             throw new BizException(ErrorCode.PARAM_INVALID, "Chunk 不属于该文档");
         }

@@ -129,6 +129,12 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
+        <!-- 分布式 ID 生成器 -->
+        <dependency>
+            <groupId>com.zjl</groupId>
+            <artifactId>frameworks-distributedid-spring-boot-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

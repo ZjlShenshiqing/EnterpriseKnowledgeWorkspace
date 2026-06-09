@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.common.toolkit.Assert;
 import com.zjl.framework.starter.distributedid.toolkit.SnowflakeIdUtil;
 import com.zjl.knowledge.chunk.ChunkingOptions;
 import com.zjl.knowledge.chunk.ChunkingStrategy;
@@ -84,9 +85,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
     @Override
     public void startChunk(Long documentId, UserContext user) {
         KbDocument current = kbDocumentMapper.selectById(documentId);
-        if (current == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "文档不存在");
-        }
+        Assert.notNull(current, ErrorCode.NOT_FOUND);
         // 严格限定只能从 PENDING 或 FAILED 状态转换为 RUNNING
         if (!DocumentStatus.PENDING.name().equals(current.getStatus())
                 && !DocumentStatus.FAILED.name().equals(current.getStatus())) {
@@ -103,9 +102,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
                         .eq(KbDocument::getStatus, DocumentStatus.FAILED.name())));
         if (rows == 0) {
             KbDocument doc = kbDocumentMapper.selectById(documentId);
-            if (doc == null) {
-                throw new BizException(ErrorCode.NOT_FOUND, "文档不存在");
-            }
+            Assert.notNull(doc, ErrorCode.NOT_FOUND);
             throw new BizException(ErrorCode.PARAM_INVALID, "文档分块操作正在进行中，请稍后再试");
         }
         applicationEventPublisher.publishEvent(new DocumentChunkRequestedEvent(documentId, user.getUserId()));
@@ -130,9 +127,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
     @Override
     public void executeChunkAsUser(Long documentId, UserContext user) {
         KbDocument doc = kbDocumentMapper.selectById(documentId);
-        if (doc == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "文档不存在");
-        }
+        Assert.notNull(doc, ErrorCode.NOT_FOUND);
         if (!user.isAdmin() && !Objects.equals(doc.getOwnerId(), user.getUserId())) {
             throw new BizException(ErrorCode.FORBIDDEN);
         }
