@@ -5,17 +5,12 @@ import com.zjl.common.exception.BizException;
 import com.zjl.knowledge.agent.config.AgentProperties;
 import com.zjl.knowledge.agent.mcp.ToolDefinition;
 import com.zjl.knowledge.agent.model.ChatMessage;
-import com.zjl.knowledge.agent.model.ChatUsage;
-import com.zjl.knowledge.agent.model.ToolCall;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(value = "app.agent.llm.provider", havingValue = "anthropic")
