@@ -1,6 +1,6 @@
 package com.zjl.knowledge.agent.config;
 
-import com.alibaba.ttl.TtlExecutors;
+import com.alibaba.ttl.threadpool.TtlExecutors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
