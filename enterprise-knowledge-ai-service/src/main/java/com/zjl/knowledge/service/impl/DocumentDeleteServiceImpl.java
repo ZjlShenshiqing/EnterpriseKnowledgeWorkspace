@@ -19,7 +19,7 @@ import com.zjl.knowledge.web.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Objects;
 
@@ -44,6 +44,7 @@ public class DocumentDeleteServiceImpl implements DocumentDeleteService {
     private final KbDocumentPermissionMapper kbDocumentPermissionMapper;
     private final VectorSyncService vectorSyncService;
     private final FileStorageService fileStorageService;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 删除文档：校验权限与状态 → 删 DB 记录 → 删 Milvus 向量 → 删 S3 文件
@@ -65,8 +66,16 @@ public class DocumentDeleteServiceImpl implements DocumentDeleteService {
         // 保存文件路径用于后续删除
         String fileUrl = doc.getFileUrl();
         
-        // 第一步：在事务中删除数据库记录
-        deleteFromDatabase(id);
+        // 第一步：使用 TransactionTemplate 在事务中删除数据库记录（避免 Spring 自调用事务失效）
+        transactionTemplate.execute(status -> {
+            kbDocumentChunkMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, id));
+            kbDocumentChunkLogMapper.delete(new LambdaQueryWrapper<KbDocumentChunkLog>().eq(KbDocumentChunkLog::getDocumentId, id));
+            kbDocumentPermissionMapper.delete(
+                    new LambdaQueryWrapper<KbDocumentPermission>().eq(KbDocumentPermission::getDocumentId, id));
+            kbDocumentMapper.deleteById(id);
+            log.info("数据库记录已删除: docId={}", id);
+            return null;
+        });
         
         // 第二步：事务成功后删除 Milvus 向量（外部操作放在事务外）
         try {
@@ -87,18 +96,5 @@ public class DocumentDeleteServiceImpl implements DocumentDeleteService {
                 log.error("删除 S3 文件失败: docId={}, path={}, error={}", id, fileUrl, ex.getMessage());
             }
         }
-    }
-
-    /**
-     * 在事务中删除数据库记录
-     */
-    @Transactional(rollbackFor = Exception.class)
-    protected void deleteFromDatabase(Long id) {
-        kbDocumentChunkMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, id));
-        kbDocumentChunkLogMapper.delete(new LambdaQueryWrapper<KbDocumentChunkLog>().eq(KbDocumentChunkLog::getDocumentId, id));
-        kbDocumentPermissionMapper.delete(
-                new LambdaQueryWrapper<KbDocumentPermission>().eq(KbDocumentPermission::getDocumentId, id));
-        kbDocumentMapper.deleteById(id);
-        log.info("数据库记录已删除: docId={}", id);
     }
 }

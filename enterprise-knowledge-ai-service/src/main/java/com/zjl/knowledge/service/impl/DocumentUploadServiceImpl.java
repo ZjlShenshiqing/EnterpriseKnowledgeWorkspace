@@ -24,7 +24,7 @@ import com.zjl.knowledge.web.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -71,6 +71,7 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
     private final TikaDocumentParser tikaDocumentParser;
     private final FileStorageService fileStorageService;
     private final ObjectMapper objectMapper;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 上传文档：校验参数 → 检测文件类型 → 文件预存储 → 创建文档记录 → 更新存储路径 → 写入权限。
@@ -159,11 +160,42 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
             throw new BizException(ErrorCode.SYSTEM_ERROR, "文件存储失败: " + ex.getMessage());
         }
 
-        // 文件存储成功后，在事务中插入数据库记录
+        // 文件存储成功后，使用 TransactionTemplate 在事务中插入数据库记录（避免 Spring 自调用事务失效）
         Long docId;
         try {
-            docId = createDocumentWithTransaction(user, meta, file, detectedType, 
-                    chunkConfigJson, processMode, chunkingMode, storedPath);
+            docId = transactionTemplate.execute(status -> {
+                KbDocument doc = new KbDocument();
+                doc.setTitle(meta.getTitle().trim());
+                doc.setCategoryId(meta.getCategoryId());
+                doc.setKbId(meta.getKbId());
+                doc.setOwnerId(user.getUserId());
+                doc.setDepartmentId(user.getDepartmentId());
+                doc.setFileName(file.getOriginalFilename());
+                doc.setFileType(detectedType);
+                doc.setFileSize((long) file.getSize());
+                doc.setTags(meta.getTags());
+                doc.setPermissionType(meta.getPermissionType());
+                doc.setStatus(DocumentStatus.PENDING.name());
+                doc.setCurrentVersion(1);
+                doc.setChunkCount(0);
+                doc.setEnabled(1);
+                doc.setProcessMode(processMode.name());
+                doc.setChunkStrategy(chunkingMode.name());
+                doc.setChunkConfig(chunkConfigJson);
+                doc.setPipelineId(meta.getPipelineId());
+                doc.setSourceType(SourceType.FILE.name());
+                doc.setSourceLocation(StringUtils.hasText(meta.getSourceLocation()) ? meta.getSourceLocation().trim() : null);
+                doc.setScheduleEnabled(Boolean.TRUE.equals(meta.getScheduleEnabled()) ? 1 : 0);
+                doc.setScheduleCron(StringUtils.hasText(meta.getScheduleCron()) ? meta.getScheduleCron().trim() : null);
+                doc.setFilterTags(StringUtils.hasText(meta.getFilterTags()) ? meta.getFilterTags().trim() : null);
+                doc.setFileUrl(storedPath);
+                doc.setCreatedAt(LocalDateTime.now());
+                doc.setUpdatedAt(LocalDateTime.now());
+
+                kbDocumentMapper.insert(doc);
+                savePermissionRows(doc.getId(), DocumentPermissionType.valueOf(meta.getPermissionType()), meta, user.getUserId());
+                return doc.getId();
+            });
             log.info("文档记录已创建: docId={}", docId);
             return docId;
         } catch (Exception ex) {
@@ -176,49 +208,6 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
             }
             throw ex;
         }
-    }
-
-    /**
-     * 在事务中创建文档记录
-     */
-    @Transactional(rollbackFor = Exception.class)
-    private Long createDocumentWithTransaction(UserContext user, KbDocumentUploadRequest meta, 
-            MultipartFile file, String detectedType, String chunkConfigJson,
-            ProcessMode processMode, ChunkingMode chunkingMode, String storedPath) {
-        
-        KbDocument doc = new KbDocument();
-        doc.setTitle(meta.getTitle().trim());
-        doc.setCategoryId(meta.getCategoryId());
-        doc.setKbId(meta.getKbId());
-        doc.setOwnerId(user.getUserId());
-        doc.setDepartmentId(user.getDepartmentId());
-        doc.setFileName(file.getOriginalFilename());
-        doc.setFileType(detectedType);
-        doc.setFileSize((long) file.getSize());
-        doc.setTags(meta.getTags());
-        doc.setPermissionType(meta.getPermissionType());
-        doc.setStatus(DocumentStatus.PENDING.name());
-        doc.setCurrentVersion(1);
-        doc.setChunkCount(0);
-        doc.setEnabled(1);
-        doc.setProcessMode(processMode.name());
-        doc.setChunkStrategy(chunkingMode.name());
-        doc.setChunkConfig(chunkConfigJson);
-        doc.setPipelineId(meta.getPipelineId());
-        doc.setSourceType(SourceType.FILE.name());
-        doc.setSourceLocation(StringUtils.hasText(meta.getSourceLocation()) ? meta.getSourceLocation().trim() : null);
-        doc.setScheduleEnabled(Boolean.TRUE.equals(meta.getScheduleEnabled()) ? 1 : 0);
-        doc.setScheduleCron(StringUtils.hasText(meta.getScheduleCron()) ? meta.getScheduleCron().trim() : null);
-        doc.setFilterTags(StringUtils.hasText(meta.getFilterTags()) ? meta.getFilterTags().trim() : null);
-        doc.setFileUrl(storedPath);
-        doc.setCreatedAt(LocalDateTime.now());
-        doc.setUpdatedAt(LocalDateTime.now());
-        
-        kbDocumentMapper.insert(doc);
-
-        savePermissionRows(doc.getId(), DocumentPermissionType.valueOf(meta.getPermissionType()), meta, user.getUserId());
-        
-        return doc.getId();
     }
 
     /**
