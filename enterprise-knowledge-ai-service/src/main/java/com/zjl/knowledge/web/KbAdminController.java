@@ -32,6 +32,7 @@ public class KbAdminController {
 
     @GetMapping("/stats")
     public Result<KbAdminStatsVO> stats() {
+        requireAdmin();
         return Results.success(adminStatsService.compute());
     }
 

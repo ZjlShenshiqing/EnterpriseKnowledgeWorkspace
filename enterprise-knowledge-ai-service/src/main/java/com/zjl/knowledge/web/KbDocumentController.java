@@ -81,6 +81,7 @@ public class KbDocumentController {
      */
     @GetMapping("/document-stats")
     public Result<KbDocumentStatsVO> documentStats() {
+        requireAdmin();
         return Results.success(adminStatsService.computeDocumentStats());
     }
 
@@ -200,5 +201,15 @@ public class KbDocumentController {
         UserContext user = UserContextHolder.get();
         kbDocumentService.deleteVisible(id, user);
         return Results.success();
+    }
+
+    /**
+     * 校验当前用户是否为管理员
+     */
+    private void requireAdmin() {
+        UserContext user = UserContextHolder.get();
+        if (user == null || !user.isAdmin()) {
+            throw new BizException(ErrorCode.FORBIDDEN);
+        }
     }
 }
