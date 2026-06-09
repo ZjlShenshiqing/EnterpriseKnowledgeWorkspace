@@ -2,6 +2,7 @@ package com.zjl.knowledge.agent;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import com.zjl.knowledge.agent.config.AgentThreadPoolConfig;
 import com.zjl.knowledge.agent.entity.KbAgentSession;
 import com.zjl.knowledge.service.FileStorageService;
@@ -53,6 +54,7 @@ import java.util.concurrent.ExecutorService;
 @RestController
 @RequestMapping("/api/kb/agent")
 @RequiredArgsConstructor
+@ILog
 public class AgentController {
 
     /**

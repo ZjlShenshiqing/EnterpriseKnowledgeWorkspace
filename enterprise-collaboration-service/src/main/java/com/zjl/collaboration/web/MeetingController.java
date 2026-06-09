@@ -8,6 +8,7 @@ import com.zjl.collaboration.entity.SysMeeting;
 import com.zjl.collaboration.service.MeetingService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
+@ILog
 public class MeetingController {
 
     private final MeetingService meetingService;

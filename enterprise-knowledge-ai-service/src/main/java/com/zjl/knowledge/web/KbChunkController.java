@@ -10,6 +10,7 @@ import com.zjl.knowledge.dto.chunk.KbChunkUpdateRequest;
 import com.zjl.knowledge.dto.chunk.KbChunkVO;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import com.zjl.knowledge.service.KbChunkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/kb/documents/{docId}/chunks")
 @RequiredArgsConstructor
+@ILog
 public class KbChunkController {
 
     private final KbChunkService kbChunkService;

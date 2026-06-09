@@ -4,6 +4,7 @@ import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import com.zjl.knowledge.dto.kb.HybridIndexRebuildResult;
 import com.zjl.knowledge.dto.kb.KbAdminStatsVO;
 import com.zjl.knowledge.service.HybridIndexRebuildService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/kb/admin")
 @RequiredArgsConstructor
+@ILog
 public class KbAdminController {
 
     private final KbAdminStatsService adminStatsService;

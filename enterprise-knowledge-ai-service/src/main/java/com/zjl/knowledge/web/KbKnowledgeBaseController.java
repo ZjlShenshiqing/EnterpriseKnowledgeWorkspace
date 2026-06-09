@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zjl.common.response.PageResult;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import com.zjl.knowledge.dto.kb.KbKnowledgeBaseCreateRequest;
 import com.zjl.knowledge.dto.kb.KbKnowledgeBasePageRequest;
 import com.zjl.knowledge.dto.kb.KbKnowledgeBaseRenameRequest;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/kb/bases")
 @RequiredArgsConstructor
+@ILog
 public class KbKnowledgeBaseController {
 
     private final KbKnowledgeBaseService kbKnowledgeBaseService;

@@ -9,6 +9,7 @@ import com.zjl.collaboration.service.ImFileService;
 import com.zjl.collaboration.service.ImReadService;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
+@ILog
 public class ChatController {
 
     private final ChatService chatService;

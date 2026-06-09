@@ -2,6 +2,7 @@ package com.zjl.knowledge.web;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjl.common.enums.ErrorCode;
+import com.zjl.framework.starter.log.annotation.ILog;
 import lombok.extern.slf4j.Slf4j;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.response.PageResult;
@@ -44,6 +45,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/kb")
 @RequiredArgsConstructor
+@ILog
 public class KbDocumentController {
 
     /**

@@ -4,6 +4,7 @@ import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.framework.starter.log.annotation.ILog;
 import com.zjl.knowledge.dto.KbCategoryRequest;
 import com.zjl.knowledge.entity.KbCategory;
 import com.zjl.knowledge.service.KbCategoryService;
@@ -28,6 +29,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/kb/categories")
 @RequiredArgsConstructor
+@ILog
 public class KbCategoryController {
 
     /**
