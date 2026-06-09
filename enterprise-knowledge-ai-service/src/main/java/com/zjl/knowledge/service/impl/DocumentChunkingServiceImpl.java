@@ -87,15 +87,20 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
         if (current == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "文档不存在");
         }
+        // 严格限定只能从 PENDING 或 FAILED 状态转换为 RUNNING
         if (!DocumentStatus.PENDING.name().equals(current.getStatus())
                 && !DocumentStatus.FAILED.name().equals(current.getStatus())) {
             throw new BizException(ErrorCode.PARAM_INVALID, "仅 PENDING 或 FAILED 状态的文档可提交分块任务");
         }
+        // CAS 更新：严格限定当前状态必须是 PENDING 或 FAILED
         int rows = kbDocumentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
                 .set(KbDocument::getStatus, DocumentStatus.RUNNING.name())
                 .set(KbDocument::getUpdatedAt, LocalDateTime.now())
                 .eq(KbDocument::getId, documentId)
-                .ne(KbDocument::getStatus, DocumentStatus.RUNNING.name()));
+                .and(wrapper -> wrapper
+                        .eq(KbDocument::getStatus, DocumentStatus.PENDING.name())
+                        .or()
+                        .eq(KbDocument::getStatus, DocumentStatus.FAILED.name())));
         if (rows == 0) {
             KbDocument doc = kbDocumentMapper.selectById(documentId);
             if (doc == null) {
