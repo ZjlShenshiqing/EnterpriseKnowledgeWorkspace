@@ -18,18 +18,12 @@ spring:
   sql:
     init:
       mode: never
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
-
 server:
   port: 8090
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-
-flyway:
-  enabled: false
 
 rocketmq:
   name-server: localhost:9876

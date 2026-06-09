@@ -1,6 +1,6 @@
 -- ============================================================
 -- Enterprise Knowledge Workspace 全量数据库初始化
--- 包含 2 个数据库共 16 张表
+-- 包含 4 个数据库的全部表结构与种子数据
 -- MySQL 8+
 -- ============================================================
 
@@ -231,6 +231,210 @@ INSERT INTO kb_category (id, parent_id, category_name, category_type, sort_order
 SELECT 1001, NULL, '默认分类', 'COMMON', 0, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
 WHERE NOT EXISTS (SELECT 1 FROM kb_category WHERE id = 1001);
 
+-- -------------------- 意图树种子数据（场景 + 意图 + 匹配规则） --------------------
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT NULL, '会议预约', 1, 0, '会议室预约、取消、查询等协作场景', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_intent_node WHERE name = '会议预约' AND parent_id IS NULL);
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT NULL, '人事行政', 1, 1, '请假、加班、考勤等人事相关场景', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_intent_node WHERE name = '人事行政' AND parent_id IS NULL);
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT NULL, '财务报销', 1, 2, '费用报销、发票、审批进度查询', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_intent_node WHERE name = '财务报销' AND parent_id IS NULL);
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT NULL, 'IT 服务', 1, 3, '账号、VPN、设备报修等 IT 支持场景', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_intent_node WHERE name = 'IT 服务' AND parent_id IS NULL);
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '创建会议', 2, 0, '预约会议室、安排线上会议', 1
+FROM kb_intent_node p
+WHERE p.name = '会议预约' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '创建会议');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '取消会议', 2, 1, '取消已预约的会议', 1
+FROM kb_intent_node p
+WHERE p.name = '会议预约' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '取消会议');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '查询我的会议', 2, 2, '查看今日/本周会议安排', 1
+FROM kb_intent_node p
+WHERE p.name = '会议预约' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '查询我的会议');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '请假申请', 2, 0, '年假、事假、病假、调休', 1
+FROM kb_intent_node p
+WHERE p.name = '人事行政' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '请假申请');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '加班申请', 2, 1, '加班登记与审批', 1
+FROM kb_intent_node p
+WHERE p.name = '人事行政' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '加班申请');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '考勤查询', 2, 2, '打卡记录、迟到早退统计', 1
+FROM kb_intent_node p
+WHERE p.name = '人事行政' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '考勤查询');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '提交报销', 2, 0, '差旅、餐饮、办公用品等费用报销', 1
+FROM kb_intent_node p
+WHERE p.name = '财务报销' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '提交报销');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '报销进度', 2, 1, '查询报销单审批状态', 1
+FROM kb_intent_node p
+WHERE p.name = '财务报销' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '报销进度');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, '重置密码', 2, 0, '邮箱、OA、VPN 密码重置', 1
+FROM kb_intent_node p
+WHERE p.name = 'IT 服务' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = '重置密码');
+
+INSERT INTO kb_intent_node (parent_id, name, level, sort_order, description, enabled)
+SELECT p.id, 'VPN 申请', 2, 1, '远程办公 VPN 开通', 1
+FROM kb_intent_node p
+WHERE p.name = 'IT 服务' AND p.parent_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_node c WHERE c.parent_id = p.id AND c.name = 'VPN 申请');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '预约会议', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '会议预约' AND n.name = '创建会议'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '预约会议');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '订会议室', 1.5, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '会议预约' AND n.name = '创建会议'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '订会议室');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'regex', '.*(取消|删掉).*(会议|例会).*', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '会议预约' AND n.name = '取消会议'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.rule_type = 'regex' AND r.expression LIKE '%取消%');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '我的会议', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '会议预约' AND n.name = '查询我的会议'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '我的会议');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '今天有什么会', 1.5, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '会议预约' AND n.name = '查询我的会议'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '今天有什么会');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '请假', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '人事行政' AND n.name = '请假申请'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '请假');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '年假', 1.5, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '人事行政' AND n.name = '请假申请'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '年假');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '加班', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '人事行政' AND n.name = '加班申请'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '加班');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '报销', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '财务报销' AND n.name = '提交报销'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '报销');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '审批到哪了', 1.5, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = '财务报销' AND n.name = '报销进度'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '审批到哪了');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', '重置密码', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = 'IT 服务' AND n.name = '重置密码'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = '重置密码');
+
+INSERT INTO kb_intent_rule (node_id, rule_type, expression, weight, enabled)
+SELECT n.id, 'keyword', 'VPN', 2.0, 1
+FROM kb_intent_node n
+JOIN kb_intent_node p ON n.parent_id = p.id
+WHERE p.name = 'IT 服务' AND n.name = 'VPN 申请'
+  AND NOT EXISTS (SELECT 1 FROM kb_intent_rule r WHERE r.node_id = n.id AND r.expression = 'VPN');
+
+-- -------------------- 知识库 + 流水线种子数据 --------------------
+
+INSERT INTO kb_knowledge_base (id, name, embedding_model, collection_name, owner_id, created_at, updated_at, deleted)
+SELECT 910001, '财务制度知识库', NULL, 'kb_finance', 1, NOW(), NOW(), 0
+WHERE NOT EXISTS (SELECT 1 FROM kb_knowledge_base WHERE name = '财务制度知识库' AND deleted = 0);
+
+INSERT INTO kb_knowledge_base (id, name, embedding_model, collection_name, owner_id, created_at, updated_at, deleted)
+SELECT 910002, '人事制度知识库', NULL, 'kb_hr', 1, NOW(), NOW(), 0
+WHERE NOT EXISTS (SELECT 1 FROM kb_knowledge_base WHERE name = '人事制度知识库' AND deleted = 0);
+
+INSERT INTO kb_knowledge_base (id, name, embedding_model, collection_name, owner_id, created_at, updated_at, deleted)
+SELECT 910003, '协作流程知识库', NULL, 'kb_collab', 1, NOW(), NOW(), 0
+WHERE NOT EXISTS (SELECT 1 FROM kb_knowledge_base WHERE name = '协作流程知识库' AND deleted = 0);
+
+INSERT INTO kb_knowledge_base (id, name, embedding_model, collection_name, owner_id, created_at, updated_at, deleted)
+SELECT 910004, 'IT 运维知识库', NULL, 'kb_it', 1, NOW(), NOW(), 0
+WHERE NOT EXISTS (SELECT 1 FROM kb_knowledge_base WHERE name = 'IT 运维知识库' AND deleted = 0);
+
+INSERT INTO kb_knowledge_base (id, name, embedding_model, collection_name, owner_id, created_at, updated_at, deleted)
+SELECT 910005, '法务合规知识库', NULL, 'kb_legal', 1, NOW(), NOW(), 0
+WHERE NOT EXISTS (SELECT 1 FROM kb_knowledge_base WHERE name = '法务合规知识库' AND deleted = 0);
+
+INSERT INTO kb_knowledge_base (id, name, embedding_model, collection_name, owner_id, created_at, updated_at, deleted)
+SELECT 910006, '平台使用手册', NULL, 'kb_platform', 1, NOW(), NOW(), 0
+WHERE NOT EXISTS (SELECT 1 FROM kb_knowledge_base WHERE name = '平台使用手册' AND deleted = 0);
+
+INSERT INTO kb_pipeline (id, knowledge_base_id, name, description, stages,
+                         chunk_strategy, vector_enabled, embedding_model,
+                         status, created_at, updated_at, deleted)
+SELECT kb.id, kb.id,
+       CONCAT(kb.name, ' · 文档入库链路'),
+       '覆盖上传、解析、分块、向量写入和主表回写',
+       JSON_ARRAY('上传', '解析', '分块', '向量写入', '回写'),
+       'PARAGRAPH', 0, COALESCE(kb.embedding_model, ''),
+       'ACTIVE', NOW(), NOW(), 0
+FROM kb_knowledge_base kb
+WHERE kb.deleted = 0
+  AND kb.name IN ('财务制度知识库','人事制度知识库','协作流程知识库','IT 运维知识库','法务合规知识库','平台使用手册')
+  AND NOT EXISTS (
+      SELECT 1 FROM kb_pipeline p WHERE p.knowledge_base_id = kb.id AND p.deleted = 0
+  );
+
 -- ============================================================
 -- 数据库 enterprise_gateway（网关服务）
 -- ============================================================
@@ -243,6 +447,7 @@ CREATE TABLE sys_dept (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
     name VARCHAR(128) NOT NULL COMMENT '部门名称（唯一）',
     parent_id BIGINT NULL COMMENT '父部门ID（根部门可为空）',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY idx_sys_dept_name (name)
@@ -257,6 +462,7 @@ CREATE TABLE sys_user (
     real_name VARCHAR(64) NULL COMMENT '真实姓名',
     dept_id BIGINT NULL COMMENT '所属部门ID',
     enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用 0-禁用 1-启用',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY idx_sys_user_username (username),
@@ -269,6 +475,7 @@ CREATE TABLE sys_role (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
     code VARCHAR(64) NOT NULL COMMENT '角色编码（唯一）',
     name VARCHAR(128) NOT NULL COMMENT '角色名称',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY idx_sys_role_code (code)
@@ -280,6 +487,7 @@ CREATE TABLE sys_permission (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
     code VARCHAR(128) NOT NULL COMMENT '权限编码（domain:action形式）',
     name VARCHAR(200) NOT NULL COMMENT '权限名称',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY idx_sys_permission_code (code)
@@ -803,3 +1011,281 @@ VALUES (1, 'admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhW
        (3, 'lisi', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李四', 2, 0),
        (4, 'wangwu', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '王五', 1, 0),
        (5, 'zhaoliu', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '赵六', 3, 0);
+
+-- -------------------- 关键词映射种子数据 --------------------
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '报销', '财务制度知识库', 100, '优先检索报销流程、发票规范与审批节点', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '报销' AND kb_name = '财务制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '差旅', '财务制度知识库', 90, '返回差旅标准、交通住宿限额说明', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '差旅' AND kb_name = '财务制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '发票', '财务制度知识库', 85, '优先返回发票开具、验真与归档要求', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '发票' AND kb_name = '财务制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '请假', '人事制度知识库', 100, '返回请假类型、审批链与剩余假期规则', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '请假' AND kb_name = '人事制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '年假', '人事制度知识库', 95, '优先展示年假计算方式与申请入口', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '年假' AND kb_name = '人事制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '加班', '人事制度知识库', 90, '返回加班申请、调休与补贴政策', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '加班' AND kb_name = '人事制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '考勤', '人事制度知识库', 80, '优先检索打卡规则与异常处理说明', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '考勤' AND kb_name = '人事制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '会议', '协作流程知识库', 100, '返回会议室预约、冲突检测与取消流程', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '会议' AND kb_name = '协作流程知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '会议室', '协作流程知识库', 95, '优先展示会议室容量、设备与预约规范', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '会议室' AND kb_name = '协作流程知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT 'Zoom', '协作流程知识库', 85, '返回线上会议创建与入会链接说明', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = 'Zoom' AND kb_name = '协作流程知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT 'VPN', 'IT 运维知识库', 100, '优先返回 VPN 申请、安装与故障排查', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = 'VPN' AND kb_name = 'IT 运维知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '密码', 'IT 运维知识库', 95, '返回账号密码重置流程与安全要求', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '密码' AND kb_name = 'IT 运维知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '邮箱', 'IT 运维知识库', 80, '优先展示企业邮箱配置与常见问题', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '邮箱' AND kb_name = 'IT 运维知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '合同', '法务合规知识库', 100, '返回合同审批、模板与归档规范', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '合同' AND kb_name = '法务合规知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '采购', '采购管理知识库', 90, '优先检索采购申请、比价与验收流程', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '采购' AND kb_name = '采购管理知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '入职', '人事制度知识库', 85, '返回新员工 onboarding 清单与材料要求', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '入职' AND kb_name = '人事制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '离职', '人事制度知识库', 85, '返回离职交接、账号回收与证明开具流程', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '离职' AND kb_name = '人事制度知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '安全', '信息安全知识库', 100, '优先展示数据分级、脱敏与违规上报指引', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '安全' AND kb_name = '信息安全知识库');
+
+INSERT INTO kb_keyword_mapping (keyword, kb_name, priority, strategy, enabled)
+SELECT '知识库', '平台使用手册', 70, '返回文档上传、检索与权限配置说明', 1
+WHERE NOT EXISTS (SELECT 1 FROM kb_keyword_mapping WHERE keyword = '知识库' AND kb_name = '平台使用手册');
+
+-- -------------------- 今日会议种子数据 --------------------
+
+INSERT INTO sys_meeting (title, room, creator_id, date, start_time, end_time, attendees, status, description)
+SELECT '产品周会', 'A301 (20人)', 1, CURDATE(), '10:00', '11:00', '张三,李四', 'confirmed', '同步本周迭代与风险'
+WHERE NOT EXISTS (
+    SELECT 1 FROM sys_meeting WHERE date = CURDATE() AND title = '产品周会' AND deleted = 0
+);
+
+INSERT INTO sys_meeting (title, room, creator_id, date, start_time, end_time, attendees, status, description)
+SELECT '需求评审', 'B205 (8人)', 1, CURDATE(), '14:30', '15:30', '产品,研发,测试', 'confirmed', '评审会议预约相关需求'
+WHERE NOT EXISTS (
+    SELECT 1 FROM sys_meeting WHERE date = CURDATE() AND title = '需求评审' AND deleted = 0
+);
+
+INSERT INTO sys_meeting (title, room, creator_id, date, start_time, end_time, attendees, status, description)
+SELECT '项目站会', 'C102 (12人)', 1, CURDATE(), '09:30', '09:45', '项目组全员', 'confirmed', '15 分钟站会'
+WHERE NOT EXISTS (
+    SELECT 1 FROM sys_meeting WHERE date = CURDATE() AND title = '项目站会' AND deleted = 0
+);
+
+-- -------------------- 任务 / 待办 / 审批种子数据 --------------------
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT '竞品分析报告整理', '汇总三家竞品的功能对比与定价策略，供产品周会讨论', 1, 3, 'high', 'todo', DATE_ADD(CURDATE(), INTERVAL 5 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = '竞品分析报告整理');
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT '会议室设备巡检清单', '检查各会议室投影、麦克风、网络，输出巡检表', 1, 4, 'medium', 'todo', DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = '会议室设备巡检清单');
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT 'UI 原型 v2', '根据需求评审结论更新首页与会议页交互原型', 1, 5, 'high', 'in_progress', DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = 'UI 原型 v2');
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT '知识库 API 对接文档', '补充文档上传、切片状态查询、权限说明章节', 1, 2, 'medium', 'in_progress', DATE_ADD(CURDATE(), INTERVAL 4 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = '知识库 API 对接文档');
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT '周报模板优化', '统一各部门周报字段，提交行政审核', 1, 2, 'low', 'review', DATE_ADD(CURDATE(), INTERVAL 2 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = '周报模板优化');
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT 'Q1 复盘材料归档', '整理 Q1 项目复盘 PPT 与会议纪要至共享盘', 1, 3, 'medium', 'done', DATE_SUB(CURDATE(), INTERVAL 2 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = 'Q1 复盘材料归档');
+
+INSERT INTO sys_task (title, description, creator_id, assignee_id, priority, status, due_date)
+SELECT 'Dashboard 数据联调', '工作台今日会议、待办、审批统计与后端接口对齐', 1, 2, 'high', 'done', DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM sys_task WHERE title = 'Dashboard 数据联调');
+
+INSERT INTO sys_task_comment (task_id, user_id, user_name, content)
+SELECT t.id, 2, '张三', 'API 文档初稿已写到权限章节，明天补切片状态机说明'
+FROM sys_task t
+WHERE t.title = '知识库 API 对接文档'
+  AND NOT EXISTS (
+      SELECT 1 FROM sys_task_comment c
+      WHERE c.task_id = t.id AND c.content LIKE 'API 文档初稿%'
+  );
+
+INSERT INTO sys_task_comment (task_id, user_id, user_name, content)
+SELECT t.id, 5, '赵六', '首页布局已更新，会议页弹窗样式待确认'
+FROM sys_task t
+WHERE t.title = 'UI 原型 v2'
+  AND NOT EXISTS (
+      SELECT 1 FROM sys_task_comment c
+      WHERE c.task_id = t.id AND c.content LIKE '首页布局已更新%'
+  );
+
+INSERT INTO sys_task_comment (task_id, user_id, user_name, content)
+SELECT t.id, 1, '系统管理员', '请在周五前完成，周会要用'
+FROM sys_task t
+WHERE t.title = '竞品分析报告整理'
+  AND NOT EXISTS (
+      SELECT 1 FROM sys_task_comment c
+      WHERE c.task_id = t.id AND c.content LIKE '请在周五前完成%'
+  );
+
+INSERT INTO sys_todo (title, user_id, priority, due_date, done)
+SELECT '提交产品周会纪要', 1, 'high', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 0
+WHERE NOT EXISTS (SELECT 1 FROM sys_todo WHERE title = '提交产品周会纪要' AND user_id = 1);
+
+INSERT INTO sys_todo (title, user_id, priority, due_date, done)
+SELECT '确认下周迭代排期', 1, 'normal', DATE_ADD(CURDATE(), INTERVAL 3 DAY), 0
+WHERE NOT EXISTS (SELECT 1 FROM sys_todo WHERE title = '确认下周迭代排期' AND user_id = 1);
+
+INSERT INTO sys_todo (title, user_id, priority, due_date, done)
+SELECT '回复 IT 工单 #1024', 1, 'high', CURDATE(), 0
+WHERE NOT EXISTS (SELECT 1 FROM sys_todo WHERE title = '回复 IT 工单 #1024' AND user_id = 1);
+
+INSERT INTO sys_todo (title, user_id, priority, due_date, done)
+SELECT '更新运维手册目录', 1, 'normal', DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1
+WHERE NOT EXISTS (SELECT 1 FROM sys_todo WHERE title = '更新运维手册目录' AND user_id = 1);
+
+INSERT INTO sys_todo (title, user_id, priority, due_date, done)
+SELECT '审核关键词映射配置', 1, 'normal', DATE_ADD(CURDATE(), INTERVAL 2 DAY), 0
+WHERE NOT EXISTS (SELECT 1 FROM sys_todo WHERE title = '审核关键词映射配置' AND user_id = 1);
+
+INSERT INTO sys_approval_request (type, user_id, user_name, title, form_data, status)
+SELECT 'leave', 2, '张三', '年假申请 3 天', '{"days":3,"startDate":"2026-05-28","reason":"家庭事务"}', 'pending'
+WHERE NOT EXISTS (SELECT 1 FROM sys_approval_request WHERE title = '年假申请 3 天' AND user_id = 2);
+
+INSERT INTO sys_approval_request (type, user_id, user_name, title, form_data, status)
+SELECT 'expense', 3, '李四', '5月差旅报销', '{"amount":1280.50,"items":"高铁+住宿"}', 'manager_approved'
+WHERE NOT EXISTS (SELECT 1 FROM sys_approval_request WHERE title = '5月差旅报销' AND user_id = 3);
+
+INSERT INTO sys_approval_request (type, user_id, user_name, title, form_data, status)
+SELECT 'purchase', 4, '王五', '采购会议麦克风 x2', '{"amount":3600,"vendor":"某某科技"}', 'pending'
+WHERE NOT EXISTS (SELECT 1 FROM sys_approval_request WHERE title = '采购会议麦克风 x2' AND user_id = 4);
+
+INSERT INTO sys_approval_request (type, user_id, user_name, title, form_data, status)
+SELECT 'leave', 5, '赵六', '事假 0.5 天', '{"days":0.5,"startDate":"2026-05-26","reason":"体检"}', 'approved'
+WHERE NOT EXISTS (SELECT 1 FROM sys_approval_request WHERE title = '事假 0.5 天' AND user_id = 5);
+
+-- ============================================================
+-- 数据库 enterprise_platform（平台管理服务）
+-- ============================================================
+CREATE DATABASE IF NOT EXISTS enterprise_platform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE enterprise_platform;
+
+DROP TABLE IF EXISTS sys_op_log;
+DROP TABLE IF EXISTS sys_user_role;
+DROP TABLE IF EXISTS sys_role_permission;
+DROP TABLE IF EXISTS sys_user;
+DROP TABLE IF EXISTS sys_role;
+DROP TABLE IF EXISTS sys_permission;
+DROP TABLE IF EXISTS sys_dept;
+
+CREATE TABLE sys_dept (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    parent_id BIGINT,
+    deleted INT DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_dept_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sys_permission (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(128) NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    deleted INT DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_permission_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sys_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(64) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    deleted INT DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_role_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sys_role_permission (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    KEY idx_rp_role_id (role_id),
+    KEY idx_rp_permission_id (permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sys_user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) NOT NULL,
+    password_hash VARCHAR(200) NOT NULL,
+    real_name VARCHAR(64),
+    dept_id BIGINT,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    deleted INT DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_username (username),
+    KEY idx_user_dept (dept_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sys_user_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    KEY idx_ur_user_id (user_id),
+    KEY idx_ur_role_id (role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sys_op_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
+    username VARCHAR(64) NOT NULL DEFAULT '',
+    action VARCHAR(32) NOT NULL,
+    method VARCHAR(32) NOT NULL DEFAULT '',
+    path VARCHAR(512) NOT NULL DEFAULT '',
+    detail VARCHAR(2000),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_log_user_id (user_id),
+    KEY idx_log_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
