@@ -433,7 +433,10 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
                         .eq(KbDocumentChunk::getDocumentId, docId)
                         .orderByAsc(KbDocumentChunk::getChunkIndex)
         );
-        return list.stream().map(this::toVo).collect(Collectors.toList());
+        return list.stream()
+                .filter(c -> user.isAdmin() || !isAdminOnlyChunk(c))
+                .map(this::toVo)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -447,6 +450,9 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
 
     @Override
     public List<ChunkSensitivityVO> listSensitiveChunks(Long docId, UserContext user) {
+        if (!user.isAdmin()) {
+            return List.of();
+        }
         KbDocument document = loadDocOrThrow(docId);
         assertReadable(document, user);
 
@@ -591,5 +597,10 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
         vo.setCreatedAt(e.getCreatedAt());
         vo.setUpdatedAt(e.getUpdatedAt());
         return vo;
+    }
+
+    private static boolean isAdminOnlyChunk(KbDocumentChunk chunk) {
+        ChunkMetadata meta = ChunkMetadata.fromJson(chunk.getMetadataJson());
+        return meta != null && "ADMIN_ONLY".equals(meta.getSensitivityLevel());
     }
 }

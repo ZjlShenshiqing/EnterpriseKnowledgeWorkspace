@@ -12,6 +12,7 @@ import com.zjl.knowledge.mapper.KbDocumentMapper;
 import com.zjl.knowledge.mapper.KbDocumentPermissionMapper;
 import com.zjl.knowledge.milvus.SearchResult;
 import com.zjl.knowledge.service.DocumentVisibilityService;
+import com.zjl.knowledge.metadata.ChunkMetadata;
 import com.zjl.knowledge.service.VectorSyncService;
 import com.zjl.knowledge.service.rerank.RagRerankService;
 import com.zjl.knowledge.service.rerank.RerankRequest;
@@ -104,7 +105,7 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
             return new RetrievalResult(List.of());
         }
 
-        List<RerankedCandidate> candidates = buildCandidates(validResults, docMap);
+        List<RerankedCandidate> candidates = buildCandidates(validResults, docMap, user);
         if (candidates.isEmpty()) {
             return new RetrievalResult(List.of());
         }
@@ -148,7 +149,8 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
      * 构建 rerank 候选列表：在 DB 权限终检后执行，仅包含通过权限和可见性过滤的 chunk
      */
     private List<RerankedCandidate> buildCandidates(List<SearchResult> validResults,
-                                                     Map<Long, KbDocument> docMap) {
+                                                     Map<Long, KbDocument> docMap,
+                                                     UserContext user) {
         List<Long> allChunkIds = validResults.stream()
                 .map(r -> parseLong(r.chunkId()).orElse(null))
                 .filter(Objects::nonNull)
@@ -157,6 +159,7 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
 
         Map<Long, KbDocumentChunk> chunkMap = kbDocumentChunkMapper.selectBatchIds(allChunkIds).stream()
                 .filter(c -> c.getEnabled() == null || c.getEnabled() == 1)
+                .filter(c -> user.isAdmin() || !isAdminOnlyChunk(c))
                 .collect(Collectors.toMap(KbDocumentChunk::getId, c -> c, (l, r) -> l));
 
         List<RerankedCandidate> candidates = new ArrayList<>();
@@ -253,5 +256,10 @@ public class RagRetrievalServiceImpl implements RagRetrievalService {
         } catch (Exception e) {
             return Map.of();
         }
+    }
+
+    private static boolean isAdminOnlyChunk(KbDocumentChunk chunk) {
+        ChunkMetadata meta = ChunkMetadata.fromJson(chunk.getMetadataJson());
+        return meta != null && "ADMIN_ONLY".equals(meta.getSensitivityLevel());
     }
 }
