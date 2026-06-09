@@ -11,6 +11,7 @@ import com.zjl.collaboration.service.MeetingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,8 +48,35 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     @Override
+    @Transactional
     public Long create(String title, String room, String date, String startTime, String endTime,
                        String attendees, String description, Long userId) {
+        // 参数校验
+        if (date == null || date.isBlank()
+                || startTime == null || startTime.isBlank()
+                || endTime == null || endTime.isBlank()
+                || room == null || room.isBlank()) {
+            throw new BizException(ErrorCode.PARAM_INVALID, "会议日期、时间、会议室不能为空");
+        }
+        
+        // 线上会议不检测冲突
+        if (!ZOOM_ROOM.equals(room)) {
+            // 使用悲观锁查询，防止并发竞态
+            LocalDate meetingDate = LocalDate.parse(date);
+            List<SysMeeting> sameDayRoom = meetingMapper.selectForUpdateByDateAndRoom(meetingDate, room, null);
+            
+            // 检查冲突
+            List<SysMeeting> conflicts = sameDayRoom.stream()
+                    .filter(m -> m.getStartTime() != null && m.getEndTime() != null)
+                    .filter(m -> overlaps(startTime, endTime, m.getStartTime(), m.getEndTime()))
+                    .toList();
+            
+            if (!conflicts.isEmpty()) {
+                throw new BizException(ErrorCode.BIZ_ERROR, 
+                        "该时段 " + room + " 已被占用，共 " + conflicts.size() + " 个冲突会议");
+            }
+        }
+        
         SysMeeting meeting = new SysMeeting();
         meeting.setTitle(title);
         meeting.setRoom(room);
@@ -66,12 +94,40 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     @Override
+    @Transactional
     public void update(Long id, String title, String room, String date, String startTime, String endTime,
                        String attendees, String description) {
         SysMeeting meeting = meetingMapper.selectById(id);
         if (meeting == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "会议不存在");
         }
+        
+        // 参数校验
+        if (date == null || date.isBlank()
+                || startTime == null || startTime.isBlank()
+                || endTime == null || endTime.isBlank()
+                || room == null || room.isBlank()) {
+            throw new BizException(ErrorCode.PARAM_INVALID, "会议日期、时间、会议室不能为空");
+        }
+        
+        // 线上会议不检测冲突
+        if (!ZOOM_ROOM.equals(room)) {
+            // 使用悲观锁查询，防止并发竞态
+            LocalDate meetingDate = LocalDate.parse(date);
+            List<SysMeeting> sameDayRoom = meetingMapper.selectForUpdateByDateAndRoom(meetingDate, room, id);
+            
+            // 检查冲突
+            List<SysMeeting> conflicts = sameDayRoom.stream()
+                    .filter(m -> m.getStartTime() != null && m.getEndTime() != null)
+                    .filter(m -> overlaps(startTime, endTime, m.getStartTime(), m.getEndTime()))
+                    .toList();
+            
+            if (!conflicts.isEmpty()) {
+                throw new BizException(ErrorCode.BIZ_ERROR, 
+                        "该时段 " + room + " 已被占用，共 " + conflicts.size() + " 个冲突会议");
+            }
+        }
+        
         meeting.setTitle(title);
         meeting.setRoom(room);
         meeting.setDate(LocalDate.parse(date));
@@ -98,7 +154,7 @@ public class MeetingServiceImpl implements MeetingService {
                 || startTime == null || startTime.isBlank()
                 || endTime == null || endTime.isBlank()
                 || room == null || room.isBlank()) {
-            return new ConflictCheckResult(false, List.of(), "参数完整，未检测到冲突");
+            return new ConflictCheckResult(true, List.of(), "参数不完整，无法检测冲突");
         }
         if (ZOOM_ROOM.equals(room)) {
             return new ConflictCheckResult(false, List.of(), "线上会议不检测会议室占用");
