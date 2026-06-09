@@ -199,6 +199,33 @@ CREATE TABLE kb_intent_kb_rel (
     UNIQUE KEY uk_intent_kb (node_id, kb_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='意图知识库关联表';
 
+-- -------------------- kb_term_stats 词项统计表 --------------------
+DROP TABLE IF EXISTS kb_term_stats;
+CREATE TABLE kb_term_stats (
+    term      VARCHAR(128) NOT NULL PRIMARY KEY COMMENT '归一化后的词项',
+    doc_count INT          NOT NULL DEFAULT 0 COMMENT '包含该词项的文档（chunk）数量',
+    KEY idx_doc_count (doc_count)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='BM25 词项-文档频率统计表';
+
+-- -------------------- kb_pipeline 流水线定义表 --------------------
+DROP TABLE IF EXISTS kb_pipeline;
+CREATE TABLE kb_pipeline (
+    id               BIGINT        NOT NULL COMMENT '流水线 ID',
+    knowledge_base_id BIGINT       NOT NULL COMMENT '知识库 ID',
+    name             VARCHAR(128)  NOT NULL COMMENT '流水线名称',
+    description      VARCHAR(512)  DEFAULT '' COMMENT '描述',
+    stages           JSON          COMMENT '处理阶段列表',
+    chunk_strategy   VARCHAR(64)   DEFAULT '' COMMENT '分块策略',
+    vector_enabled   TINYINT(1)    DEFAULT 0 COMMENT '是否启用向量写入',
+    embedding_model  VARCHAR(128)  DEFAULT '' COMMENT '嵌入模型名称',
+    status           VARCHAR(32)   DEFAULT 'ACTIVE' COMMENT '状态',
+    created_at       DATETIME      NOT NULL COMMENT '创建时间',
+    updated_at       DATETIME      NOT NULL COMMENT '更新时间',
+    deleted          TINYINT(1)    DEFAULT 0 COMMENT '逻辑删除',
+    PRIMARY KEY (id),
+    INDEX idx_kb_id (knowledge_base_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='流水线定义表';
+
 -- -------------------- 种子数据 --------------------
 INSERT INTO kb_category (id, parent_id, category_name, category_type, sort_order, status, created_at, updated_at, deleted)
 SELECT 1001, NULL, '默认分类', 'COMMON', 0, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
@@ -382,6 +409,7 @@ DROP TABLE IF EXISTS im_conversation;
 DROP TABLE IF EXISTS sys_announcement;
 DROP TABLE IF EXISTS sys_user;
 DROP TABLE IF EXISTS sys_dept;
+DROP TABLE IF EXISTS kb_keyword_mapping;
 DROP TABLE IF EXISTS kb_intent_kb_rel;
 DROP TABLE IF EXISTS kb_intent_rule;
 DROP TABLE IF EXISTS kb_intent_node;
@@ -755,6 +783,17 @@ CREATE TABLE undo_log (
     PRIMARY KEY (id),
     UNIQUE KEY ux_undo_log (xid, branch_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE kb_keyword_mapping (
+    id          BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    keyword     VARCHAR(100) NOT NULL,
+    kb_name     VARCHAR(100) NOT NULL,
+    priority    INT          NOT NULL DEFAULT 0,
+    strategy    VARCHAR(255) DEFAULT NULL,
+    enabled     TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='关键词映射表';
 
 INSERT INTO sys_dept (id, name) VALUES (1, '技术部'), (2, '产品部'), (3, '设计部');
 
