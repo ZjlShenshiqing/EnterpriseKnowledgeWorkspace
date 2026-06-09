@@ -79,7 +79,7 @@ public class SaTokenConfig {
     /**
      * 登录校验 + 权限校验入口
      *
-     * 这个方法只会处理“非白名单”的请求
+     * 这个方法只会处理"非白名单"的请求
      *
      * 执行流程：
      * 1. 获取当前请求路径；
@@ -193,6 +193,12 @@ public class SaTokenConfig {
                 "kb:document:write"
         );
 
+        // 知识库文档统计接口（聚合数据，读权限即可）
+        SaRouter.match(
+                "/api/kb/document-stats",
+                () -> StpUtil.checkPermission("kb:document:read")
+        );
+
         // 知识库库表接口
         //
         // GET 请求：查看知识库，需要 kb:bases:read 权限
@@ -206,9 +212,23 @@ public class SaTokenConfig {
         // 知识库智能问答接口
         //
         // 该接口不是简单的 read / write 类型，
-        // 而是一个独立的“使用 AI 问答能力”的权限。
+        // 而是一个独立的"使用 AI 问答能力"的权限。
         SaRouter.match(
                 "/api/kb/agent/chat",
+                () -> StpUtil.checkPermission("kb:agent:chat")
+        );
+
+        // Agent 会话管理（列表、历史、归档）
+        //
+        // 会话是 AI 问答的附属能力，使用同一权限码。
+        SaRouter.match(
+                "/api/kb/agent/sessions/**",
+                () -> StpUtil.checkPermission("kb:agent:chat")
+        );
+
+        // Agent 文件上传（问答上下文附件）
+        SaRouter.match(
+                "/api/kb/agent/upload",
                 () -> StpUtil.checkPermission("kb:agent:chat")
         );
 
@@ -222,13 +242,28 @@ public class SaTokenConfig {
                 "kb:pipeline:write"
         );
 
-        // 知识库分类接口
+        // 知识库分类接口（含 /api/kb/categories/{id} 的 PUT/DELETE）
         //
-        // 分类通常用于文档筛选、下拉选择、目录展示，
-        // 这里暂时只配置为文档读取权限。
+        // GET  列表/详情 → kb:document:read
+        // POST 创建 / PUT 更新 / DELETE 删除 → kb:document:write
+        matchReadWrite(
+                "/api/kb/categories/**",
+                "kb:document:read",
+                "kb:document:write"
+        );
+
+        // 知识库管理接口（统计、索引重建等）
+        //
+        // 这些接口需要 admin 角色，控制器内部也有编程式 admin 校验作为双重保障。
         SaRouter.match(
-                "/api/kb/categories",
-                () -> StpUtil.checkPermission("kb:document:read")
+                "/api/kb/admin/**",
+                () -> StpUtil.checkRole(ROLE_ADMIN)
+        );
+
+        // AI 问答接口（路由已配置，预保护）
+        SaRouter.match(
+                "/api/ai-qa/**",
+                () -> StpUtil.checkPermission("kb:agent:chat")
         );
     }
 
@@ -357,7 +392,7 @@ public class SaTokenConfig {
             //
             // 注意：
             // 能执行到这里，说明前面已经执行过 StpUtil.checkLogin()，
-            // 所以这里直接 return，表示“登录即可访问，不再校验 admin”。
+            // 所以这里直接 return，表示"登录即可访问，不再校验 admin"。
             if (isLoginOnlySystemEndpoint(path)) {
                 return;
             }
@@ -369,7 +404,7 @@ public class SaTokenConfig {
     }
 
     /**
-     * 统一处理“GET 读权限，非 GET 写权限”的接口。
+     * 统一处理"GET 读权限，非 GET 写权限"的接口。
      */
     private void matchReadWrite(String pattern, String readPermission, String writePermission) {
         SaRouter.match(pattern, () -> {
