@@ -21,7 +21,9 @@ class SparseVectorGeneratorTest {
         props.setSparseDimension(65535);
         generator = new SparseVectorGenerator(
                 props,
-                new IkChineseTokenizer(new DefaultIkTokenizationEngine(), new RagTokenizationProperties()));
+                new IkChineseTokenizer(new DefaultIkTokenizationEngine(), new RagTokenizationProperties()),
+                null,
+                null);
     }
 
     @Test
@@ -51,9 +53,12 @@ class SparseVectorGeneratorTest {
     }
 
     @Test
-    void weightsAreNormalized() {
-        Map<Long, Float> result = generator.generateDocument("测试");
-        float sum = result.values().stream().reduce(0f, Float::sum);
-        assertTrue(Math.abs(sum - 1.0f) < 0.15f, "weights should be roughly normalized");
+    void documentVectorUsesBm25TfNotNormalization() {
+        Map<Long, Float> result = generator.generateDocument("测试 分词 测试 分词 知识库");
+        assertFalse(result.isEmpty());
+        for (float weight : result.values()) {
+            assertTrue(weight > 0f, "weight should be positive");
+            assertTrue(weight <= 2.2f, "BM25 TF should be <= (k1+1)=" + SparseVectorGenerator.bm25Tf(Integer.MAX_VALUE));
+        }
     }
 }

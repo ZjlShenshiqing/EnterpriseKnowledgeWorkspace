@@ -23,7 +23,7 @@ class SparseVectorGeneratorModeTest {
         MilvusProperties properties = new MilvusProperties();
         properties.setSparseDimension(65535);
         chineseTokenizer = new RecordingChineseTokenizer();
-        generator = new SparseVectorGenerator(properties, chineseTokenizer);
+        generator = new SparseVectorGenerator(properties, chineseTokenizer, null, null);
     }
 
     @Test

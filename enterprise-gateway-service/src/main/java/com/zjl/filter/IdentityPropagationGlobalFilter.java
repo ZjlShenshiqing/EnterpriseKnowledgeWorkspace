@@ -102,11 +102,8 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
         boolean admin = user != null && user.getRoles().stream()
                 .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode()));
         if (user != null) {
-            UserContext.set(new UserContext.UserInfo(
-                    user.getId(),
-                    user.getUsername(),
-                    authoritiesOf(user)
-            ));
+            UserContext.set(user.getId(), user.getUsername(), admin,
+                    authoritiesOf(user));
         }
         String targetUri = exchange.getRequest().getURI().toString();
         log.debug("身份头注入: userId={}, downstream={}", userId, targetUri);

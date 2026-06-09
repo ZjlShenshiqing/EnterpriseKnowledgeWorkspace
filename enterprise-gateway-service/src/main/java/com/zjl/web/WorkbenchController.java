@@ -2,6 +2,7 @@ package com.zjl.web;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
+import com.zjl.security.UserContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -25,9 +26,9 @@ public class WorkbenchController {
     }
 
     @GetMapping("/overview")
-    public Mono<Result<Map<String, Object>>> overview(
-            @RequestHeader(UA) Long userId,
-            @RequestHeader(value = AD, defaultValue = "false") String isAdmin) {
+    public Mono<Result<Map<String, Object>>> overview() {
+        Long userId = UserContext.userId();
+        String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
 
         Map<String, Object> data = new LinkedHashMap<>();
 
@@ -100,9 +101,9 @@ public class WorkbenchController {
     }
 
     @GetMapping("/stats")
-    public Mono<Result<Map<String, Object>>> stats(
-            @RequestHeader(UA) Long userId,
-            @RequestHeader(value = AD, defaultValue = "false") String isAdmin) {
+    public Mono<Result<Map<String, Object>>> stats() {
+        Long userId = UserContext.userId();
+        String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
 
         Map<String, Object> data = new LinkedHashMap<>();
 

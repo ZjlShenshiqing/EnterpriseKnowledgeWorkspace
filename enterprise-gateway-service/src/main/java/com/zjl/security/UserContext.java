@@ -44,6 +44,21 @@ public final class UserContext {
     }
 
     /**
+     * 设置完整用户信息（含权限列表和管理员标识）
+     *
+     * @param uid   用户 ID
+     * @param uname 用户名
+     * @param admin 是否管理员
+     * @param auths 权限列表
+     */
+    public static void set(Long uid, String uname, Boolean admin, List<String> auths) {
+        userId.set(uid);
+        username.set(uname);
+        isAdmin.set(admin);
+        authorities.set(auths);
+    }
+
+    /**
      * 设置完整用户信息（含权限列表）
      *
      * @param info 用户信息 record
