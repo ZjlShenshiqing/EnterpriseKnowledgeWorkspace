@@ -71,9 +71,15 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
         return Mono.fromCallable(() -> userRepository.findById(Long.parseLong(userId)).orElse(null))
                 .subscribeOn(Schedulers.boundedElastic())
 
-                // 如果查到了用户，就把 userId 和用户信息写入请求头，
-                // 然后继续执行后续网关过滤器链。
-                .flatMap(user -> chain.filter(mutateRequest(exchange, userId, user)))
+                // 如果查到了用户，检查用户是否启用
+                .flatMap(user -> {
+                    // 用户已被禁用，记录日志并拒绝注入身份信息
+                    if (user != null && !user.isEnabled()) {
+                        log.warn("用户已被禁用，拒绝身份注入: userId={}, username={}", user.getId(), user.getUsername());
+                        return chain.filter(exchange);
+                    }
+                    return chain.filter(mutateRequest(exchange, userId, user));
+                })
 
                 // 如果数据库中查不到用户，Mono.fromCallable 会变成空结果。
                 // 此时仍然把 userId 写入请求头，但用户详细信息传 null。

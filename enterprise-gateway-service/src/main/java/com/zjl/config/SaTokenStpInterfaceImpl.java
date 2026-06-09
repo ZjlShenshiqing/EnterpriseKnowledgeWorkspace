@@ -5,6 +5,7 @@ import com.zjl.domain.SysRole;
 import com.zjl.domain.SysUser;
 import com.zjl.repository.SysUserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -22,6 +23,7 @@ import java.util.List;
  * 这里从网关本地用户库中查询用户的角色和权限，
  * 并返回给 Sa-Token 做 RBAC 鉴权判断。
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class SaTokenStpInterfaceImpl implements StpInterface {
@@ -39,7 +41,21 @@ public class SaTokenStpInterfaceImpl implements StpInterface {
      */
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
-        return Collections.emptyList();
+        SysUser user = findUser(loginId);
+
+        // 用户不存在或已被禁用，返回空权限列表
+        if (user == null || !user.isEnabled()) {
+            if (user != null && !user.isEnabled()) {
+                log.warn("用户已被禁用: userId={}, username={}", user.getId(), user.getUsername());
+            }
+            return Collections.emptyList();
+        }
+
+        // 提取用户角色下的所有权限编码
+        return user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(p -> p.getCode())
+                .toList();
     }
 
     /**
@@ -55,8 +71,14 @@ public class SaTokenStpInterfaceImpl implements StpInterface {
     public List<String> getRoleList(Object loginId, String loginType) {
         SysUser user = findUser(loginId);
 
-        // 用户不存在时，返回空角色列表，表示没有任何角色
+        // 用户不存在或已被禁用，返回空角色列表，表示没有任何角色
         if (user == null) {
+            return Collections.emptyList();
+        }
+        
+        // 用户已被禁用，返回空角色列表，禁止访问
+        if (!user.isEnabled()) {
+            log.warn("用户已被禁用，拒绝访问: userId={}, username={}", user.getId(), user.getUsername());
             return Collections.emptyList();
         }
 
