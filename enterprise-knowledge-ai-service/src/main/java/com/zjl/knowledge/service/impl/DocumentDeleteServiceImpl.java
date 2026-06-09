@@ -3,6 +3,7 @@ package com.zjl.knowledge.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.common.toolkit.Assert;
 import com.zjl.knowledge.domain.DocumentStatus;
 import com.zjl.knowledge.entity.KbDocument;
 import com.zjl.knowledge.entity.KbDocumentChunk;
@@ -53,9 +54,7 @@ public class DocumentDeleteServiceImpl implements DocumentDeleteService {
     public void deleteVisible(Long id, UserContext user) {
         // 先查询文档信息（用于后续删除外部资源）
         KbDocument doc = kbDocumentMapper.selectById(id);
-        if (doc == null) {
-            throw new BizException(ErrorCode.NOT_FOUND);
-        }
+        Assert.notNull(doc, ErrorCode.NOT_FOUND);
         if (!user.isAdmin() && !Objects.equals(doc.getOwnerId(), user.getUserId())) {
             throw new BizException(ErrorCode.FORBIDDEN);
         }

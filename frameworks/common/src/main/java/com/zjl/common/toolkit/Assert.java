@@ -4,6 +4,8 @@
  */
 package com.zjl.common.toolkit;
 
+import com.zjl.common.exception.BizException;
+import com.zjl.common.enums.ErrorCode;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -87,6 +89,18 @@ public class Assert {
      */
     public static void notNull(Object object) {
         notNull(object, "[Assertion failed] - the object argument must not be null");
+    }
+
+    /**
+     * 断言对象不为null，否则抛出 BizException
+     *
+     * @param object    传进来的对象
+     * @param errorCode 错误码
+     */
+    public static void notNull(Object object, ErrorCode errorCode) {
+        if (object == null) {
+            throw new BizException(errorCode);
+        }
     }
 
     /**

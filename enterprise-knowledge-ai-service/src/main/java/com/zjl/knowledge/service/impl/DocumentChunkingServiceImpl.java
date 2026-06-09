@@ -1,12 +1,12 @@
 package com.zjl.knowledge.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.framework.starter.distributedid.toolkit.SnowflakeIdUtil;
 import com.zjl.knowledge.chunk.ChunkingOptions;
 import com.zjl.knowledge.chunk.ChunkingStrategy;
 import com.zjl.knowledge.chunk.ChunkingStrategyFactory;
@@ -216,7 +216,7 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
 
             List<VectorDocChunk> chunkResults = new ArrayList<>(parts.size());
             for (int i = 0; i < parts.size(); i++) {
-                long chunkPk = IdWorker.getId();
+                long chunkPk = SnowflakeIdUtil.nextId();
                 TextChunk part = parts.get(i);
 
                 ChunkMetadata meta = new ChunkMetadata();

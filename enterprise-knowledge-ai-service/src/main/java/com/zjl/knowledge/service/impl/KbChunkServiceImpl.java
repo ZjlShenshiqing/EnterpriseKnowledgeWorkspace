@@ -2,12 +2,12 @@ package com.zjl.knowledge.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.framework.starter.distributedid.toolkit.SnowflakeIdUtil;
 import com.zjl.knowledge.domain.DocumentStatus;
 import com.zjl.knowledge.dto.chunk.ChunkSensitivityUpdateRequest;
 import com.zjl.knowledge.dto.chunk.ChunkSensitivityVO;
@@ -98,7 +98,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
                 ? requestParam.getIndex()
                 : (latest != null && latest.getChunkIndex() != null ? latest.getChunkIndex() + 1 : 0);
 
-        long chunkPk = requestParam.getChunkId() != null ? requestParam.getChunkId() : IdWorker.getId();
+        long chunkPk = requestParam.getChunkId() != null ? requestParam.getChunkId() : SnowflakeIdUtil.nextId();
         String vectorId = String.valueOf(chunkPk);
         int charCount = content.length();
         Integer tokenCount = resolveTokenCount(content);
@@ -175,7 +175,7 @@ public class KbChunkServiceImpl extends ServiceImpl<KbDocumentChunkMapper, KbDoc
             if (chunkIndex == null) {
                 chunkIndex = nextIndex++;
             }
-            long chunkPk = request.getChunkId() != null ? request.getChunkId() : IdWorker.getId();
+            long chunkPk = request.getChunkId() != null ? request.getChunkId() : SnowflakeIdUtil.nextId();
             String vectorId = String.valueOf(chunkPk);
 
             KbDocumentChunk chunk = new KbDocumentChunk();
