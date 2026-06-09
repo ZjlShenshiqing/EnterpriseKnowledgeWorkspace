@@ -266,54 +266,75 @@ public class DocumentChunkingServiceImpl implements DocumentChunkingService {
             boolean shouldEmbed
     ) {
         final Long docId = document.getId();
-        final int[] count = {0};
-        transactionTemplate.executeWithoutResult(status -> {
-            kbDocumentChunkMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, docId));
-            LocalDateTime now = LocalDateTime.now();
-            for (VectorDocChunk vc : vectorChunks) {
-                KbDocumentChunk row = new KbDocumentChunk();
-                long id = Long.parseLong(vc.getChunkId());
-                row.setId(id);
-                row.setDocumentId(docId);
-                row.setChunkIndex(vc.getIndex());
-                row.setChunkText(vc.getContent());
-                row.setContentHash(ContentHashUtil.sha256Hex(vc.getContent()));
-                row.setCharCount(vc.getContent().length());
-                row.setTokenCount(tokenCounterService.countTokens(vc.getContent()));
-                row.setEnabled(1);
-                row.setVectorId(shouldEmbed ? vc.getChunkId() : null);
-                Map<String, Object> chunkMeta = vc.getMetadata();
-                if (chunkMeta != null && !chunkMeta.isEmpty()) {
-                    try {
-                        row.setMetadataJson(objectMapper.writeValueAsString(chunkMeta));
-                    } catch (Exception e) {
-                        row.setMetadataJson("{}");
-                    }
-                } else {
+        
+        // 第一步：在事务中保存 chunk 数据到数据库
+        int saved = saveChunksToDatabase(docId, actingUserId, vectorChunks, fullText);
+        
+        // 第二步：事务成功后，写入 Milvus 向量（外部操作放在事务外）
+        if (shouldEmbed) {
+            try {
+                // 删除旧向量（如果存在）
+                vectorSyncService.deleteDocumentVectors(document);
+                // 写入新向量
+                vectorSyncService.indexDocumentChunks(document, vectorChunks);
+                log.info("Milvus 向量写入成功: docId={}, chunkCount={}", docId, vectorChunks.size());
+            } catch (Exception ex) {
+                // Milvus 写入失败，标记文档状态为部分成功，并记录错误
+                log.error("Milvus 向量写入失败: docId={}, error={}", docId, ex.getMessage());
+                markChunkFailed(docId, "向量写入失败: " + ex.getMessage());
+                throw new BizException(ErrorCode.VECTOR_WRITE_FAILED, "向量写入失败: " + ex.getMessage());
+            }
+        }
+        
+        return saved;
+    }
+
+    /**
+     * 在事务中保存 chunk 数据到数据库
+     */
+    @Transactional(rollbackFor = Exception.class)
+    private int saveChunksToDatabase(Long docId, Long actingUserId, 
+            List<VectorDocChunk> vectorChunks, String fullText) {
+        kbDocumentChunkMapper.delete(new LambdaQueryWrapper<KbDocumentChunk>().eq(KbDocumentChunk::getDocumentId, docId));
+        LocalDateTime now = LocalDateTime.now();
+        for (VectorDocChunk vc : vectorChunks) {
+            KbDocumentChunk row = new KbDocumentChunk();
+            long id = Long.parseLong(vc.getChunkId());
+            row.setId(id);
+            row.setDocumentId(docId);
+            row.setChunkIndex(vc.getIndex());
+            row.setChunkText(vc.getContent());
+            row.setContentHash(ContentHashUtil.sha256Hex(vc.getContent()));
+            row.setCharCount(vc.getContent().length());
+            row.setTokenCount(tokenCounterService.countTokens(vc.getContent()));
+            row.setEnabled(1);
+            row.setVectorId(vc.getEmbedding() != null ? vc.getChunkId() : null);
+            Map<String, Object> chunkMeta = vc.getMetadata();
+            if (chunkMeta != null && !chunkMeta.isEmpty()) {
+                try {
+                    row.setMetadataJson(objectMapper.writeValueAsString(chunkMeta));
+                } catch (Exception e) {
                     row.setMetadataJson("{}");
                 }
-                row.setCreatedBy(actingUserId);
-                row.setUpdatedBy(actingUserId);
-                row.setCreatedAt(now);
-                row.setUpdatedAt(now);
-                kbDocumentChunkMapper.insert(row);
+            } else {
+                row.setMetadataJson("{}");
             }
-            if (shouldEmbed) {
-                vectorSyncService.deleteDocumentVectors(document);
-                vectorSyncService.indexDocumentChunks(document, vectorChunks);
-            }
+            row.setCreatedBy(actingUserId);
+            row.setUpdatedBy(actingUserId);
+            row.setCreatedAt(now);
+            row.setUpdatedAt(now);
+            kbDocumentChunkMapper.insert(row);
+        }
 
-            kbDocumentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
-                    .eq(KbDocument::getId, docId)
-                    .set(KbDocument::getContentText, fullText)
-                    .set(KbDocument::getSummary, tikaDocumentParser.summarize(fullText, 200))
-                    .set(KbDocument::getChunkCount, vectorChunks.size())
-                    .set(KbDocument::getMetadata, document.getMetadata())
-                    .set(KbDocument::getStatus, DocumentStatus.SUCCESS.name())
-                    .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
-            count[0] = vectorChunks.size();
-        });
-        return count[0];
+        kbDocumentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
+                .eq(KbDocument::getId, docId)
+                .set(KbDocument::getContentText, fullText)
+                .set(KbDocument::getSummary, tikaDocumentParser.summarize(fullText, 200))
+                .set(KbDocument::getChunkCount, vectorChunks.size())
+                .set(KbDocument::getStatus, DocumentStatus.SUCCESS.name())
+                .set(KbDocument::getUpdatedAt, LocalDateTime.now()));
+        
+        return vectorChunks.size();
     }
 
     private void updateChunkLog(

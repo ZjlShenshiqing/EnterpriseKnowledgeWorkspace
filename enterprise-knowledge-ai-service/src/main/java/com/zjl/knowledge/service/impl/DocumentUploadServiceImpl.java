@@ -73,9 +73,14 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
     private final ObjectMapper objectMapper;
 
     /**
-     * 上传文档：校验参数 → 检测文件类型 → 创建 PENDING 文档 → 文件落盘 → 写入权限。
+     * 上传文档：校验参数 → 检测文件类型 → 文件预存储 → 创建文档记录 → 更新存储路径 → 写入权限。
+     * 
+     * <p>设计说明：为保证 MySQL 和 S3 的数据一致性，采用"先写外部存储，后写数据库"策略：
+     * 1. 先将文件存储到 S3（使用临时文件名）
+     * 2. 在事务中插入数据库记录
+     * 3. 更新文件路径关联
+     * 4. 数据库失败时删除已存储的文件
      */
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public Long upload(UserContext user, KbDocumentUploadRequest meta, MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -141,7 +146,46 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
                     "不支持的文件类型: " + detectedType + "（支持 PDF、Word、Excel、PPT、文本、图片）");
         }
 
-        // 先创建 PENDING 文档记录，拿到 docId 后再用于文件存储。
+        // ========== 关键修复：先存储文件，再插入数据库 ==========
+        String originalFilename = file.getOriginalFilename();
+        String tempFileName = java.util.UUID.randomUUID().toString() + "_" + 
+                (originalFilename != null ? originalFilename : "upload.bin");
+        
+        String storedPath = null;
+        try (InputStream in = new ByteArrayInputStream(fileBytes)) {
+            storedPath = fileStorageService.store(null, tempFileName, in);
+            log.info("文件预存储成功: path={}", storedPath);
+        } catch (Exception ex) {
+            throw new BizException(ErrorCode.SYSTEM_ERROR, "文件存储失败: " + ex.getMessage());
+        }
+
+        // 文件存储成功后，在事务中插入数据库记录
+        Long docId;
+        try {
+            docId = createDocumentWithTransaction(user, meta, file, detectedType, 
+                    chunkConfigJson, processMode, chunkingMode, storedPath);
+            log.info("文档记录已创建: docId={}", docId);
+            return docId;
+        } catch (Exception ex) {
+            // 数据库操作失败，清理已存储的文件
+            log.warn("数据库操作失败，清理预存储文件: path={}, error={}", storedPath, ex.getMessage());
+            try {
+                fileStorageService.delete(storedPath);
+            } catch (Exception cleanupEx) {
+                log.error("清理预存储文件失败: path={}, error={}", storedPath, cleanupEx.getMessage());
+            }
+            throw ex;
+        }
+    }
+
+    /**
+     * 在事务中创建文档记录
+     */
+    @Transactional(rollbackFor = Exception.class)
+    private Long createDocumentWithTransaction(UserContext user, KbDocumentUploadRequest meta, 
+            MultipartFile file, String detectedType, String chunkConfigJson,
+            ProcessMode processMode, ChunkingMode chunkingMode, String storedPath) {
+        
         KbDocument doc = new KbDocument();
         doc.setTitle(meta.getTitle().trim());
         doc.setCategoryId(meta.getCategoryId());
@@ -150,9 +194,9 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         doc.setDepartmentId(user.getDepartmentId());
         doc.setFileName(file.getOriginalFilename());
         doc.setFileType(detectedType);
-        doc.setFileSize((long) fileBytes.length);
+        doc.setFileSize((long) file.getSize());
         doc.setTags(meta.getTags());
-        doc.setPermissionType(permType.name());
+        doc.setPermissionType(meta.getPermissionType());
         doc.setStatus(DocumentStatus.PENDING.name());
         doc.setCurrentVersion(1);
         doc.setChunkCount(0);
@@ -161,38 +205,20 @@ public class DocumentUploadServiceImpl implements DocumentUploadService {
         doc.setChunkStrategy(chunkingMode.name());
         doc.setChunkConfig(chunkConfigJson);
         doc.setPipelineId(meta.getPipelineId());
-        doc.setSourceType(sourceType.name());
+        doc.setSourceType(SourceType.FILE.name());
         doc.setSourceLocation(StringUtils.hasText(meta.getSourceLocation()) ? meta.getSourceLocation().trim() : null);
         doc.setScheduleEnabled(Boolean.TRUE.equals(meta.getScheduleEnabled()) ? 1 : 0);
         doc.setScheduleCron(StringUtils.hasText(meta.getScheduleCron()) ? meta.getScheduleCron().trim() : null);
         doc.setFilterTags(StringUtils.hasText(meta.getFilterTags()) ? meta.getFilterTags().trim() : null);
+        doc.setFileUrl(storedPath);
         doc.setCreatedAt(LocalDateTime.now());
         doc.setUpdatedAt(LocalDateTime.now());
+        
         kbDocumentMapper.insert(doc);
 
-        log.info("文档记录已插入: docId={}, ownerId={}, status={}, fileType={}",
-                doc.getId(), doc.getOwnerId(), doc.getStatus(), doc.getFileType());
-
-        // 文件落盘成功后，回写存储路径并初始化权限行。
-        try (InputStream in = new ByteArrayInputStream(fileBytes)) {
-            String storedPath = fileStorageService.store(doc.getId(),
-                    Objects.requireNonNullElse(file.getOriginalFilename(), "upload.bin"), in);
-            log.info("文件已存储: docId={}, path={}", doc.getId(), storedPath);
-
-            doc.setFileUrl(storedPath);
-            doc.setUpdatedAt(LocalDateTime.now());
-            kbDocumentMapper.updateById(doc);
-
-            savePermissionRows(doc.getId(), permType, meta, user.getUserId());
-            return doc.getId();
-        } catch (BizException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            // 落盘失败时标记上传失败，便于后续排查和状态展示。
-            log.error("文件存储失败: docId={}, error={}", doc.getId(), ex.getMessage(), ex);
-            markUploadFailed(doc.getId(), ex.getMessage());
-            throw new BizException(ErrorCode.SYSTEM_ERROR, "文件保存失败: " + ex.getMessage());
-        }
+        savePermissionRows(doc.getId(), DocumentPermissionType.valueOf(meta.getPermissionType()), meta, user.getUserId());
+        
+        return doc.getId();
     }
 
     /**
