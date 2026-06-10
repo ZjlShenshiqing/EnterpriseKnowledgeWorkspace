@@ -6,7 +6,7 @@ package com.zjl.framework.starter.distributedid.core.snowflake;
 
 import cn.hutool.core.collection.CollUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.openzjl.index12306.framework.starter.bases.ApplicationContextHolder;
+import com.zjl.common.toolkit.ApplicationContextHolder;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;

@@ -4,7 +4,7 @@
  */
 package com.zjl.framework.starter.distributedid.config;
 
-import org.openzjl.index12306.framework.starter.bases.ApplicationContextHolder;
+import com.zjl.common.toolkit.ApplicationContextHolder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

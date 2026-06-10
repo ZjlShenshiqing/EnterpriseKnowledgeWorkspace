@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.zjl.index12306.framework.starter.distributedid.config.DistributedIdAutoConfiguration
+com.zjl.framework.starter.distributedid.config.DistributedIdAutoConfiguration

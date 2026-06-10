@@ -162,7 +162,7 @@ public class KbChunkTaskService {
                             .set(KbChunkTask::getStatus, "PENDING")
                             .set(KbChunkTask::getRetryCount, newRetryCount)
                             .set(KbChunkTask::getErrorMessage, "任务超时，重置为 PENDING")
-                            .set(KbChunkTask::setUpdatedAt, LocalDateTime.now()));
+                            .set(KbChunkTask::getUpdatedAt, LocalDateTime.now()));
                     
                     // 重置文档状态为 FAILED，允许重新提交
                     documentMapper.update(null, Wrappers.lambdaUpdate(KbDocument.class)
