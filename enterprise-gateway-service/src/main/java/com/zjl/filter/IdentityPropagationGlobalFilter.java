@@ -15,6 +15,9 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +30,16 @@ import java.util.List;
 public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
 
     private final SysUserRepository userRepository;
+
+    /**
+     * 内部请求头签名密钥（生产环境应从配置中心读取）
+     */
+    private static final String INTERNAL_SECRET = "internal-secret-change-me-32bytes";
+
+    /**
+     * 内部签名请求头名称
+     */
+    private static final String INTERNAL_SIGNATURE = "X-Internal-Signature";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -75,15 +88,20 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
                 .flatMap(user -> {
                     // 用户已被禁用，记录日志并拒绝注入身份信息
                     if (user != null && !user.isEnabled()) {
-                        log.warn("用户已被禁用，拒绝身份注入: userId={}, username={}", user.getId(), user.getUsername());
+                        log.warn("用户已被禁用，拒绝身份注入：userId={}, username={}", user.getId(), user.getUsername());
                         return chain.filter(exchange);
                     }
-                    return chain.filter(mutateRequest(exchange, userId, user));
+                    // 使用 Reactor Context 传递用户 ID（方案 B）
+                    return chain.filter(mutateRequest(exchange, userId, user))
+                            .contextWrite(ctx -> ctx.put("userId", user.getId()));
                 })
 
                 // 如果数据库中查不到用户，Mono.fromCallable 会变成空结果。
                 // 此时仍然把 userId 写入请求头，但用户详细信息传 null。
-                .switchIfEmpty(chain.filter(mutateRequest(exchange, userId, null)));
+                .switchIfEmpty(Mono.defer(() -> 
+                    chain.filter(mutateRequest(exchange, userId, null))
+                            .contextWrite(ctx -> ctx.put("userId", Long.parseLong(userId)))
+                ));
     }
 
     /**
@@ -112,10 +130,15 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
                     authoritiesOf(user));
         }
         String targetUri = exchange.getRequest().getURI().toString();
-        log.debug("身份头注入: userId={}, downstream={}", userId, targetUri);
+        log.debug("身份头注入：userId={}, downstream={}", userId, targetUri);
+        
+        // 生成内部签名，防止请求头被篡改
+        String signature = generateInternalSignature(userId);
+        
         var builder = exchange.getRequest().mutate()
                 .header("X-User-Id", userId)
                 .header("X-Is-Admin", admin ? "true" : "false")
+                .header(INTERNAL_SIGNATURE, signature)  // 添加内部签名
                 .headers(headers -> headers.remove(HttpHeaders.AUTHORIZATION));
         if (user != null && user.getDept() != null) {
             builder.header("X-Department-Id", String.valueOf(user.getDept().getId()));
@@ -133,6 +156,27 @@ public class IdentityPropagationGlobalFilter implements GlobalFilter, Ordered {
         user.getRoles().forEach(role ->
             result.add("ROLE_" + role.getCode().toUpperCase()));
         return result;
+    }
+
+    /**
+     * 生成内部请求签名
+     *
+     * @param userId 用户 ID
+     * @return HMAC-SHA256 签名（Hex 编码）
+     */
+    private String generateInternalSignature(String userId) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest((userId + INTERNAL_SECRET).getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : digest) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            log.error("生成内部签名失败", e);
+            return "invalid";
+        }
     }
 
     @Override

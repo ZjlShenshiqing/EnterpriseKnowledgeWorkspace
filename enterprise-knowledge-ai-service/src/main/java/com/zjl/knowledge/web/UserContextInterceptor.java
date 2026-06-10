@@ -10,8 +10,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /**
- * 从请求头解析用户上下文
+ * 从请求头解析用户上下文，并验证网关签名
  */
 @ToString
 @Component
@@ -37,6 +41,16 @@ public class UserContextInterceptor implements HandlerInterceptor {
      * 是否管理员请求头
      */
     public static final String HEADER_ADMIN = "X-Is-Admin";
+
+    /**
+     * 网关内部签名请求头
+     */
+    public static final String HEADER_INTERNAL_SIGNATURE = "X-Internal-Signature";
+
+    /**
+     * 内部请求头签名密钥（必须与网关一致）
+     */
+    private static final String INTERNAL_SECRET = "internal-secret-change-me-32bytes";
 
     /**
      * 请求进入 Controller 前解析用户
