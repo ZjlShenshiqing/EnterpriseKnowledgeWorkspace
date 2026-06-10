@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.zjl.framework.starter.designpattern.staregy.AbstractStrategyChoose;
 import com.zjl.knowledge.config.KnowledgeAiProperties;
 import com.zjl.knowledge.config.RagRerankProperties;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +21,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 class BailianQwen3RagRerankerTest {
 
@@ -83,9 +87,11 @@ class BailianQwen3RagRerankerTest {
         rerankProperties.setStrategy(RerankStrategy.BAILIAN_QWEN3);
         BailianQwen3RagReranker modelReranker = new BailianQwen3RagReranker(
                 rerankProperties, knowledgeProperties, objectMapper);
-        RagRerankService service = new RagRerankServiceImpl(rerankProperties, List.of(modelReranker));
+        AbstractStrategyChoose choose = mock(AbstractStrategyChoose.class);
+        lenient().when(choose.choose(eq("BAILIAN_QWEN3"), eq(false))).thenReturn(modelReranker);
+        RagRerankService service = new RagRerankServiceImpl(rerankProperties, choose);
 
-        List<RerankedCandidate> result = service.executeResp(new RerankRequest(
+        List<RerankedCandidate> result = service.rerank(new RerankRequest(
                 "差旅报销需要哪些材料",
                 List.of(
                         candidate(10L, "差旅报销需要发票", 1),
