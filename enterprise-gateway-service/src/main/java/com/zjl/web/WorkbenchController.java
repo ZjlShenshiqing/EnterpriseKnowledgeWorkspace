@@ -2,7 +2,6 @@ package com.zjl.web;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import com.zjl.security.UserContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -26,12 +25,12 @@ public class WorkbenchController {
     }
 
     @GetMapping("/overview")
-    public Mono<Result<Map<String, Object>>> overview() {
-        Long userId = UserContext.userId();
+    public Mono<Result<Map<String, Object>>> overview(@RequestHeader(value = UA, required = false) String userIdHeader) {
+        Long userId = parseUserId(userIdHeader);
         if (userId == null) {
             userId = 1L; // 默认用户 ID，用于演示环境
         }
-        String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
+        String isAdmin = String.valueOf(isAdmin(userIdHeader));
 
         Map<String, Object> data = new LinkedHashMap<>();
 
@@ -104,12 +103,12 @@ public class WorkbenchController {
     }
 
     @GetMapping("/stats")
-    public Mono<Result<Map<String, Object>>> stats() {
-        Long userId = UserContext.userId();
+    public Mono<Result<Map<String, Object>>> stats(@RequestHeader(value = UA, required = false) String userIdHeader) {
+        Long userId = parseUserId(userIdHeader);
         if (userId == null) {
             userId = 1L; // 默认用户 ID，用于演示环境
         }
-        String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
+        String isAdmin = String.valueOf(isAdmin(userIdHeader));
 
         Map<String, Object> data = new LinkedHashMap<>();
 
@@ -285,5 +284,34 @@ public class WorkbenchController {
             return n.longValue();
         }
         return 0L;
+    }
+
+    /**
+     * 解析用户 ID 请求头
+     *
+     * @param userIdHeader 请求头中的用户 ID 字符串
+     * @return 用户 ID 或 null
+     */
+    private Long parseUserId(String userIdHeader) {
+        if (userIdHeader == null || userIdHeader.isBlank() || "null".equals(userIdHeader)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(userIdHeader.trim());
+        } catch (NumberFormatException e) {
+            log.warn("无效的用户 ID 请求头：{}", userIdHeader);
+            return null;
+        }
+    }
+
+    /**
+     * 判断是否管理员
+     *
+     * @param userIdHeader 请求头中的用户 ID 字符串
+     * @return 是否管理员
+     */
+    private boolean isAdmin(String userIdHeader) {
+        Long userId = parseUserId(userIdHeader);
+        return userId != null && userId == 1L; // 默认用户 1 是管理员
     }
 }
