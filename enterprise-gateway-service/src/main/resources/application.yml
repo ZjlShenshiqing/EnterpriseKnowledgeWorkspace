@@ -79,6 +79,9 @@ sa-token:
 
 app:
   security:
+    jwt:
+      secret: "dev-secret-change-me-dev-secret-change-me-32bytes"
+      ttl-seconds: 7200
     whitelist:
       paths:
         - /api/system/health

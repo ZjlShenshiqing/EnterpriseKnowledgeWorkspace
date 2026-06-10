@@ -188,7 +188,9 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
         }
         KbKnowledgeBaseVO vo = toVo(kb);
         Long c = kbDocumentMapper.selectCount(
-                Wrappers.lambdaQuery(KbDocument.class).eq(KbDocument::getKbId, id)
+                Wrappers.lambdaQuery(KbDocument.class)
+                        .eq(KbDocument::getKbId, id)
+                        .eq(KbDocument::getDeleted, 0)
         );
         vo.setDocumentCount(c != null ? c : 0L);
         return vo;
@@ -215,19 +217,17 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
                 List<Map<String, Object>> rows = kbDocumentMapper.selectMaps(
                         Wrappers.query(KbDocument.class)
                                 .select("kb_id AS kbId", "COUNT(1) AS docCount")
+                                .eq("deleted", 0)
                                 .in("kb_id", kbIds)
                                 .groupBy("kb_id")
                 );
                 for (Map<String, Object> row : rows) {
-                    Object kbIdVal = row.get("kbId");
-                    Object cntVal = row.get("docCount");
-                    if (kbIdVal == null) {
+                    Long kbId = extractLong(row, "kbId", "kb_id", "KB_ID");
+                    Long cnt = extractLong(row, "docCount", "doc_count", "DOCCOUNT");
+                    if (kbId == null) {
                         continue;
                     }
-                    long kbId = kbIdVal instanceof Number ? ((Number) kbIdVal).longValue() : Long.parseLong(kbIdVal.toString());
-                    long cnt = cntVal instanceof Number ? ((Number) cntVal).longValue()
-                            : cntVal != null ? Long.parseLong(cntVal.toString()) : 0L;
-                    docCountMap.put(kbId, cnt);
+                    docCountMap.put(kbId, cnt != null ? cnt : 0L);
                 }
             }
         }
@@ -250,6 +250,23 @@ public class KbKnowledgeBaseServiceImpl implements KbKnowledgeBaseService {
         vo.setCreatedAt(e.getCreatedAt());
         vo.setUpdatedAt(e.getUpdatedAt());
         return vo;
+    }
+
+    private static Long extractLong(Map<String, Object> row, String... keys) {
+        for (String key : keys) {
+            Object val = row.get(key);
+            if (val == null) {
+                continue;
+            }
+            if (val instanceof Number n) {
+                return n.longValue();
+            }
+            String text = val.toString().trim();
+            if (!text.isEmpty()) {
+                return Long.parseLong(text);
+            }
+        }
+        return null;
     }
 
     private void assertKbWritable(KbKnowledgeBase kb, UserContext user) {

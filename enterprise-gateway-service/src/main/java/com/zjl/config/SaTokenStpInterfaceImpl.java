@@ -51,11 +51,9 @@ public class SaTokenStpInterfaceImpl implements StpInterface {
             return Collections.emptyList();
         }
 
-        // 提取用户角色下的所有权限编码
-        return user.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .map(p -> p.getCode())
-                .toList();
+        // 主项目未启用细粒度权限管理，权限由角色控制
+        // admin 角色在 SaTokenConfig 中已做全局放行
+        return Collections.emptyList();
     }
 
     /**

@@ -5,6 +5,7 @@ import com.zjl.common.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  */
 @ToString
 @Component
+@Slf4j
 public class UserContextInterceptor implements HandlerInterceptor {
 
     /**
@@ -51,8 +53,8 @@ public class UserContextInterceptor implements HandlerInterceptor {
         }
         try {
             Long userId = Long.parseLong(uid.trim());
-            Long dept = parseLongHeader(request, HEADER_DEPT_ID);
-            Long project = parseLongHeader(request, HEADER_PROJECT_ID);
+            Long dept = parseOptionalLongHeader(request, HEADER_DEPT_ID);
+            Long project = parseOptionalLongHeader(request, HEADER_PROJECT_ID);
             boolean admin = "true".equalsIgnoreCase(request.getHeader(HEADER_ADMIN));
             UserContextHolder.set(UserContext.builder()
                     .userId(userId)
@@ -86,11 +88,16 @@ public class UserContextInterceptor implements HandlerInterceptor {
      * @param name 头名称
      * @return Long 或 null
      */
-    private Long parseLongHeader(HttpServletRequest request, String name) {
+    private Long parseOptionalLongHeader(HttpServletRequest request, String name) {
         String v = request.getHeader(name);
         if (!StringUtils.hasText(v)) {
             return null;
         }
-        return Long.parseLong(v.trim());
+        try {
+            return Long.parseLong(v.trim());
+        } catch (NumberFormatException ex) {
+            log.warn("忽略非法请求头: {}={}", name, v);
+            return null;
+        }
     }
 }

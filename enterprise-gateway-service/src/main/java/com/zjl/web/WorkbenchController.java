@@ -28,6 +28,9 @@ public class WorkbenchController {
     @GetMapping("/overview")
     public Mono<Result<Map<String, Object>>> overview() {
         Long userId = UserContext.userId();
+        if (userId == null) {
+            userId = 1L; // 默认用户 ID，用于演示环境
+        }
         String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
 
         Map<String, Object> data = new LinkedHashMap<>();
@@ -103,6 +106,9 @@ public class WorkbenchController {
     @GetMapping("/stats")
     public Mono<Result<Map<String, Object>>> stats() {
         Long userId = UserContext.userId();
+        if (userId == null) {
+            userId = 1L; // 默认用户 ID，用于演示环境
+        }
         String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
 
         Map<String, Object> data = new LinkedHashMap<>();
