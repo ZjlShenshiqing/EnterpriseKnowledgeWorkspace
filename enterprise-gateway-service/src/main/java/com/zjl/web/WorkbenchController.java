@@ -27,15 +27,20 @@ public class WorkbenchController {
 
     @GetMapping("/overview")
     public Mono<Result<Map<String, Object>>> overview(ServerWebExchange exchange) {
-        // 从 Reactor Context 读取用户 ID（方案 B）
+        // 优先从 Reactor Context 读取，备选从请求头读取
         return Mono.deferContextual(ctx -> {
-            Long userId = ctx.get("userId");
+            Long userId = ctx.getOrDefault("userId", null);
             if (userId == null) {
-                userId = 1L; // 默认用户 ID，用于演示环境
+                // 备选：从请求头读取
+                String userIdHeader = exchange.getRequest().getHeaders().getFirst(UA);
+                userId = parseUserId(userIdHeader);
+                if (userId == null) {
+                    userId = 1L; // 默认用户 ID，用于演示环境
+                }
             }
             String isAdmin = String.valueOf(userId == 1L);
 
-        Map<String, Object> data = new LinkedHashMap<>();
+            Map<String, Object> data = new LinkedHashMap<>();
 
         return fetchTodos(userId, isAdmin)
                 .doOnNext(todos -> data.put("todos", todos))
@@ -108,11 +113,16 @@ public class WorkbenchController {
 
     @GetMapping("/stats")
     public Mono<Result<Map<String, Object>>> stats(ServerWebExchange exchange) {
-        // 从 Reactor Context 读取用户 ID（方案 B）
+        // 优先从 Reactor Context 读取，备选从请求头读取
         return Mono.deferContextual(ctx -> {
-            Long userId = ctx.get("userId");
+            Long userId = ctx.getOrDefault("userId", null);
             if (userId == null) {
-                userId = 1L; // 默认用户 ID，用于演示环境
+                // 备选：从请求头读取
+                String userIdHeader = exchange.getRequest().getHeaders().getFirst(UA);
+                userId = parseUserId(userIdHeader);
+                if (userId == null) {
+                    userId = 1L; // 默认用户 ID，用于演示环境
+                }
             }
             String isAdmin = String.valueOf(userId == 1L);
 
@@ -291,5 +301,23 @@ public class WorkbenchController {
             return n.longValue();
         }
         return 0L;
+    }
+
+    /**
+     * 解析用户 ID 请求头
+     *
+     * @param userIdHeader 请求头中的用户 ID 字符串
+     * @return 用户 ID 或 null
+     */
+    private Long parseUserId(String userIdHeader) {
+        if (userIdHeader == null || userIdHeader.isBlank() || "null".equals(userIdHeader)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(userIdHeader.trim());
+        } catch (NumberFormatException e) {
+            log.warn("无效的用户 ID 请求头：{}", userIdHeader);
+            return null;
+        }
     }
 }
