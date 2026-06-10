@@ -19,6 +19,7 @@
         <module>web</module>
         <module>log</module>
         <module>distributedid</module>
+        <module>designpattern</module>
     </modules>
 
     <properties>

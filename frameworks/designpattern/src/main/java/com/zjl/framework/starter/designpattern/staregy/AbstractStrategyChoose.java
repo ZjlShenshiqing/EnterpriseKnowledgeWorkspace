@@ -4,10 +4,10 @@
  */
 package com.zjl.framework.starter.designpattern.staregy;
 
-import org.openzjl.index12306.framework.starter.bases.ApplicationContextHolder;
-import org.openzjl.index12306.framework.starter.bases.init.ApplicationInitializingEvent;
-import org.openzjl.index12306.framework.starter.convention.exception.ServiceException;
+import com.zjl.common.exception.BizException;
+import com.zjl.common.toolkit.ApplicationContextHolder;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
@@ -23,8 +23,7 @@ import java.util.regex.Pattern;
  * @author zhangjlk
  * @date 2025/9/17 19:48
  */
-// 监听应用正在初始化，还没开始创建 Bean 之前的事件
-public class AbstractStrategyChoose implements ApplicationListener<ApplicationInitializingEvent> {
+public class AbstractStrategyChoose implements ApplicationListener<ContextRefreshedEvent> {
 
     /**
      * 执行策略集合，相当于策略工厂
@@ -51,11 +50,11 @@ public class AbstractStrategyChoose implements ApplicationListener<ApplicationIn
                     .filter(each -> Pattern.compile(each.patternMatchMark()).matcher(mark).matches())
                     // 从一堆数据中，找到第一个符合条件的元素，并把它包装成 Optional 返回
                     .findFirst()
-                    .orElseThrow(() -> new ServiceException("策略未定义"));
+                    .orElseThrow(() -> new BizException("策略未定义"));
         }
 
         return Optional.ofNullable(abstractExecuteStrategyMap.get(mark))
-                .orElseThrow(() -> new ServiceException(String.format("[%s] 策略未定义", mark)));
+                .orElseThrow(() -> new BizException(String.format("[%s] 策略未定义", mark)));
     }
 
     /**
@@ -97,18 +96,22 @@ public class AbstractStrategyChoose implements ApplicationListener<ApplicationIn
     }
 
     @Override
-    public void onApplicationEvent(ApplicationInitializingEvent event) {
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         // 1. 从 Spring 容器中找出所有策略实现类
         Map<String, AbstractExecuteStrategy> actual = ApplicationContextHolder.getBeansOfType(AbstractExecuteStrategy.class);
         actual.forEach((beanName, bean) -> {
             // 2. 获取这个策略的 mark
-            AbstractExecuteStrategy beanExist = abstractExecuteStrategyMap.get(bean.mark());
+            String mark = bean.mark();
+            if (mark == null) {
+                return; // 没有 mark 的策略不注册
+            }
+            AbstractExecuteStrategy beanExist = abstractExecuteStrategyMap.get(mark);
             if (beanExist != null) {
                 // 3. 如果已经存在相同 mark 的策略 → 抛异常（不允许重复）
-                throw new ServiceException(String.format("[%s] Duplicate execution policy", bean.mark()));
+                throw new BizException(String.format("[%s] Duplicate execution policy", mark));
             }
             // 4. 注册策略到策略工厂
-            abstractExecuteStrategyMap.put(bean.mark(), bean);
+            abstractExecuteStrategyMap.put(mark, bean);
         });
     }
 }

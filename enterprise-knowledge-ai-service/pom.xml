@@ -141,6 +141,12 @@
             <artifactId>frameworks-distributedid-spring-boot-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- 设计模式模块 -->
+        <dependency>
+            <groupId>com.zjl</groupId>
+            <artifactId>frameworks-designpattern-spring-boot-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- 日志打印 AOP -->
         <dependency>
             <groupId>com.zjl</groupId>

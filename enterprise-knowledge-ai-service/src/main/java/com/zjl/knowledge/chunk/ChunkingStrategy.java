@@ -1,5 +1,6 @@
 package com.zjl.knowledge.chunk;
 
+import com.zjl.framework.starter.designpattern.staregy.AbstractExecuteStrategy;
 import com.zjl.knowledge.domain.ChunkingMode;
 
 import java.util.List;
@@ -9,8 +10,10 @@ import java.util.List;
  *
  * <p>所有分块实现均通过 {@link ChunkingMode} 标识自身，
  * 由 {@link ChunkingStrategyFactory} 在启动时自动注册并路由。</p>
+ * 
+ * <p>适配设计模式模块的策略模式接口。</p>
  */
-public interface ChunkingStrategy {
+public interface ChunkingStrategy extends AbstractExecuteStrategy<ChunkingInput, List<TextChunk>> {
 
     /**
      * 返回该策略对应的分块模式枚举
@@ -18,6 +21,14 @@ public interface ChunkingStrategy {
      * @return 分块模式
      */
     ChunkingMode mode();
+
+    /**
+     * 返回策略标识（适配设计模式接口）
+     */
+    @Override
+    default String mark() {
+        return mode().name();
+    }
 
     /**
      * 将输入文本按策略切分为若干片段
@@ -30,4 +41,12 @@ public interface ChunkingStrategy {
      * @return 分块结果列表，索引从 0 递增
      */
     List<TextChunk> chunk(String text, ChunkingOptions options);
+
+    /**
+     * 适配设计模式接口的执行方法
+     */
+    @Override
+    default List<TextChunk> executeResp(ChunkingInput input) {
+        return chunk(input.getText(), input.getOptions());
+    }
 }
