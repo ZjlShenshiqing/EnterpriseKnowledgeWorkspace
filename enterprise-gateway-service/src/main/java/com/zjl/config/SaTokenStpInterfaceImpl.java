@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Sa-Token 权限 / 角色数据源实现
@@ -27,6 +28,43 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class SaTokenStpInterfaceImpl implements StpInterface {
+
+    private static final List<String> ALL_PERMISSIONS = List.of(
+            "kb:document:read", "kb:document:write",
+            "kb:bases:read", "kb:bases:write",
+            "kb:agent:chat",
+            "kb:pipeline:read", "kb:pipeline:write",
+            "collab:meeting:read", "collab:meeting:write",
+            "collab:task:read", "collab:task:write",
+            "collab:todo:read", "collab:todo:write",
+            "collab:doc:read", "collab:doc:write",
+            "collab:chat:use",
+            "collab:announcement:read", "collab:announcement:write",
+            "collab:contact:read",
+            "collab:notification:read",
+            "collab:intent:read",
+            "approval:read", "approval:write",
+            "workflow:task:read", "workflow:task:write",
+            "workflow:template:read",
+            "workbench:access"
+    );
+
+    private static final Map<String, List<String>> ROLE_PERMISSIONS = Map.of(
+            "user", List.of("collab:meeting:read", "collab:task:read", "collab:todo:read",
+                    "collab:doc:read", "collab:chat:use", "collab:announcement:read",
+                    "collab:contact:read", "collab:notification:read", "workbench:access"),
+            "manager", List.of("collab:meeting:read", "collab:meeting:write",
+                    "collab:task:read", "collab:task:write",
+                    "collab:todo:read", "collab:todo:write",
+                    "collab:doc:read", "collab:doc:write",
+                    "collab:chat:use",
+                    "collab:announcement:read", "collab:announcement:write",
+                    "collab:contact:read", "collab:notification:read",
+                    "approval:read",
+                    "workflow:task:read", "workflow:task:write",
+                    "workflow:template:read",
+                    "workbench:access")
+    );
 
     private final SysUserRepository userRepository;
 
@@ -51,9 +89,17 @@ public class SaTokenStpInterfaceImpl implements StpInterface {
             return Collections.emptyList();
         }
 
-        // 主项目未启用细粒度权限管理，权限由角色控制
-        // admin 角色在 SaTokenConfig 中已做全局放行
-        return Collections.emptyList();
+        // 从用户角色推导权限码，admin 拥有全部权限
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> "admin".equalsIgnoreCase(r.getCode()));
+        if (isAdmin) {
+            return ALL_PERMISSIONS;
+        }
+        // 非管理员根据角色返回对应的读权限
+        return user.getRoles().stream()
+                .flatMap(r -> permissionsForRole(r.getCode()).stream())
+                .distinct()
+                .toList();
     }
 
     /**
@@ -108,8 +154,11 @@ public class SaTokenStpInterfaceImpl implements StpInterface {
             // 从本地用户表查询用户，不存在则返回 null
             return userRepository.findById(userId).orElse(null);
         } catch (NumberFormatException ex) {
-            // loginId 不是合法数字时，说明无法转换为用户 ID，直接认为用户不存在
             return null;
         }
+    }
+
+    private static List<String> permissionsForRole(String roleCode) {
+        return ROLE_PERMISSIONS.getOrDefault(roleCode, Collections.emptyList());
     }
 }
