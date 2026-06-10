@@ -2,10 +2,10 @@ package com.zjl.web;
 
 import com.zjl.common.response.Result;
 import com.zjl.common.response.Results;
-import com.zjl.security.UserContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -26,9 +26,12 @@ public class WorkbenchController {
     }
 
     @GetMapping("/overview")
-    public Mono<Result<Map<String, Object>>> overview() {
-        Long userId = UserContext.userId();
-        String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
+    public Mono<Result<Map<String, Object>>> overview(ServerWebExchange exchange) {
+        Long userId = resolveUserId(exchange);
+        if (userId == null) {
+            return Mono.just(Results.success(Map.of()));
+        }
+        String isAdmin = exchange.getRequest().getHeaders().getFirst(AD);
 
         Map<String, Object> data = new LinkedHashMap<>();
 
@@ -101,9 +104,12 @@ public class WorkbenchController {
     }
 
     @GetMapping("/stats")
-    public Mono<Result<Map<String, Object>>> stats() {
-        Long userId = UserContext.userId();
-        String isAdmin = String.valueOf(Boolean.TRUE.equals(UserContext.isAdmin()));
+    public Mono<Result<Map<String, Object>>> stats(ServerWebExchange exchange) {
+        Long userId = resolveUserId(exchange);
+        if (userId == null) {
+            return Mono.just(Results.success(Map.of()));
+        }
+        String isAdmin = exchange.getRequest().getHeaders().getFirst(AD);
 
         Map<String, Object> data = new LinkedHashMap<>();
 
@@ -279,5 +285,17 @@ public class WorkbenchController {
             return n.longValue();
         }
         return 0L;
+    }
+
+    private static Long resolveUserId(ServerWebExchange exchange) {
+        String id = exchange.getRequest().getHeaders().getFirst(UA);
+        if (id == null || id.isBlank() || "null".equals(id)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(id.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }
