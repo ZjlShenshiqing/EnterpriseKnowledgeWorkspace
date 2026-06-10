@@ -30,12 +30,12 @@ public class LocalFeatureRagReranker implements RagReranker {
     private final ChineseTokenizer chineseTokenizer;
 
     @Override
-    public boolean supports(RerankStrategy strategy) {
-        return strategy == RerankStrategy.LOCAL_FEATURE;
+    public RerankStrategy strategy() {
+        return RerankStrategy.LOCAL_FEATURE;
     }
 
     @Override
-    public List<RerankedCandidate> rerank(RerankRequest request) {
+    public List<RerankedCandidate> executeResp(RerankRequest request) {
         String query = request.query();
         if (query == null || query.isBlank()) {
             return request.candidates().stream()

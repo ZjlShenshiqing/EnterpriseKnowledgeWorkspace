@@ -1,5 +1,6 @@
 package com.zjl.knowledge.service.rerank;
 
+import com.zjl.framework.starter.designpattern.staregy.AbstractStrategyChoose;
 import com.zjl.knowledge.config.RagRerankProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,16 +15,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
- * RAG rerank 服务实现：策略分发、关闭模式、超时和失败回退
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RagRerankServiceImpl implements RagRerankService {
 
     private final RagRerankProperties properties;
-    private final List<RagReranker> rerankers;
+    private final AbstractStrategyChoose strategyChoose;
 
     @Override
     public List<RerankedCandidate> rerank(RerankRequest request) {
@@ -31,29 +29,19 @@ public class RagRerankServiceImpl implements RagRerankService {
             return passthrough(request.candidates());
         }
 
-        RagReranker reranker = rerankers.stream()
-                .filter(r -> r.supports(properties.getStrategy()))
-                .findFirst()
-                .orElse(null);
-
-        if (reranker == null) {
-            log.warn("No reranker found for strategy {}, falling back to original order",
-                    properties.getStrategy());
-            return passthrough(request.candidates());
-        }
-
-        int candidateLimit = properties.getCandidateLimit();
-        List<RerankedCandidate> limited = request.candidates();
-        if (limited.size() > candidateLimit) {
-            log.debug("Truncating candidates from {} to {} for rerank", limited.size(), candidateLimit);
-            limited = limited.subList(0, candidateLimit);
-        }
-
-        RerankRequest limitedRequest = new RerankRequest(request.query(), limited);
-        long timeoutMs = properties.getTimeoutMs();
-
+        List<RerankedCandidate> result;
         try {
-            return executeWithTimeout(() -> reranker.rerank(limitedRequest), timeoutMs);
+            RagReranker reranker = (RagReranker) strategyChoose.choose(
+                    properties.getStrategy().name(), false);
+            int candidateLimit = properties.getCandidateLimit();
+            List<RerankedCandidate> limited = request.candidates();
+            if (limited.size() > candidateLimit) {
+                log.debug("Truncating candidates from {} to {} for rerank", limited.size(), candidateLimit);
+                limited = limited.subList(0, candidateLimit);
+            }
+            RerankRequest limitedRequest = new RerankRequest(request.query(), limited);
+            long timeoutMs = properties.getTimeoutMs();
+            result = executeWithTimeout(() -> reranker.executeResp(limitedRequest), timeoutMs);
         } catch (Exception e) {
             log.warn("Rerank failed with strategy {}: {}", properties.getStrategy(), e.getMessage());
             if (properties.isFallbackToOriginalOrder()) {
@@ -61,6 +49,7 @@ public class RagRerankServiceImpl implements RagRerankService {
             }
             throw new RuntimeException("Rerank failed and fallback is disabled", e);
         }
+        return result;
     }
 
     private List<RerankedCandidate> passthrough(List<RerankedCandidate> candidates) {

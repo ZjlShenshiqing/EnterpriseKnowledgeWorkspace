@@ -29,7 +29,7 @@ class LocalFeatureRagRerankerTest {
         candidates.add(candidate(1L, 11L, 1, "无关内容文本段落", 0.7f, 2));
 
         RerankRequest request = new RerankRequest("会议 时间 地点", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         assertThat(result).hasSize(2);
         // chunk 10 的关键词覆盖率更高
@@ -48,7 +48,7 @@ class LocalFeatureRagRerankerTest {
                 Map.of()));
 
         RerankRequest request = new RerankRequest("差旅报销", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         assertThat(result).hasSize(2);
         // 两者 keyword coverage 相近时，标题命中"差旅报销"的候选应排更前
@@ -65,7 +65,7 @@ class LocalFeatureRagRerankerTest {
                 Map.of()));
 
         RerankRequest request = new RerankRequest("架构设计", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         assertThat(result).hasSize(2);
         // 两者 keyword coverage 相近时，sectionPath 命中的候选应排更前
@@ -80,7 +80,7 @@ class LocalFeatureRagRerankerTest {
         candidates.add(candidate(1L, 41L, 1, "content b", 0.9f, 2));
 
         RerankRequest request = new RerankRequest("", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         // 空 query 时按原始分数降序
         assertThat(result).hasSize(2);
@@ -94,7 +94,7 @@ class LocalFeatureRagRerankerTest {
         candidates.add(candidate(1L, 51L, 1, "content b", 0.9f, 2));
 
         RerankRequest request = new RerankRequest("   ", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).chunkId()).isEqualTo(51L);
@@ -133,7 +133,7 @@ class LocalFeatureRagRerankerTest {
                 Map.of("title", "Test")));
 
         RerankRequest request = new RerankRequest("test query", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         RerankedCandidate c = result.get(0);
         assertThat(c.documentId()).isEqualTo(1L);
@@ -151,7 +151,7 @@ class LocalFeatureRagRerankerTest {
         candidates.add(candidate(1L, 70L, 0, "chunk about meeting time and location", 0.8f, 1));
 
         RerankRequest request = new RerankRequest("会议时间地点", candidates);
-        List<RerankedCandidate> result = reranker.rerank(request);
+        List<RerankedCandidate> result = reranker.executeResp(request);
 
         RerankedCandidate c = result.get(0);
         assertThat(c.rerankScore()).isGreaterThan(0f);
@@ -165,7 +165,7 @@ class LocalFeatureRagRerankerTest {
         candidates.add(candidate(1L, 80L, 0, "差旅审批流程和负责人说明", 0.7f, 1));
         candidates.add(candidate(1L, 81L, 1, "差旅报销需要提交发票和行程材料", 0.7f, 2));
 
-        List<RerankedCandidate> result = reranker.rerank(
+        List<RerankedCandidate> result = reranker.executeResp(
                 new RerankRequest("差旅报销需要哪些材料", candidates));
 
         assertThat(result.get(0).chunkId()).isEqualTo(81L);

@@ -72,7 +72,7 @@ public class MeetingServiceImpl implements MeetingService {
                     .toList();
             
             if (!conflicts.isEmpty()) {
-                throw new BizException(ErrorCode.BIZ_ERROR, 
+                throw new BizException(ErrorCode.PARAM_INVALID, 
                         "该时段 " + room + " 已被占用，共 " + conflicts.size() + " 个冲突会议");
             }
         }
@@ -123,7 +123,7 @@ public class MeetingServiceImpl implements MeetingService {
                     .toList();
             
             if (!conflicts.isEmpty()) {
-                throw new BizException(ErrorCode.BIZ_ERROR, 
+                throw new BizException(ErrorCode.PARAM_INVALID, 
                         "该时段 " + room + " 已被占用，共 " + conflicts.size() + " 个冲突会议");
             }
         }

@@ -47,6 +47,6 @@ public interface ChunkingStrategy extends AbstractExecuteStrategy<ChunkingInput,
      */
     @Override
     default List<TextChunk> executeResp(ChunkingInput input) {
-        return chunk(input.getText(), input.getOptions());
+        return chunk(input.text(), input.options());
     }
 }

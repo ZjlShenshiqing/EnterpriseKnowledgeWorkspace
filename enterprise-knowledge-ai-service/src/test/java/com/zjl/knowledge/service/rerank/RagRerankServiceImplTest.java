@@ -29,7 +29,7 @@ class RagRerankServiceImplTest {
     @BeforeEach
     void setUp() {
         properties = new RagRerankProperties();
-        lenient().when(reranker.supports(RerankStrategy.LOCAL_FEATURE)).thenReturn(true);
+        lenient().lenient().when(reranker.strategy()).thenReturn(RerankStrategy.LOCAL_FEATURE)).thenReturn(true);
         service = new RagRerankServiceImpl(properties, List.of(reranker));
     }
 
@@ -42,7 +42,7 @@ class RagRerankServiceImplTest {
         candidates.add(candidate(1L, 10L, 0, "b", 0.9f, 2));
         candidates.add(candidate(1L, 11L, 1, "a", 0.5f, 1));
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest("query", candidates));
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest("query", candidates));
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).originalRank()).isEqualTo(1);
@@ -59,7 +59,7 @@ class RagRerankServiceImplTest {
         candidates.add(candidate(1L, 10L, 0, "b", 0.9f, 2));
         candidates.add(candidate(1L, 11L, 1, "a", 0.5f, 1));
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest("query", candidates));
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest("query", candidates));
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).originalRank()).isEqualTo(1);
@@ -75,7 +75,7 @@ class RagRerankServiceImplTest {
                 1L, 10L, 3, "text", 0.8f, 1, "VECTOR_ONLY",
                 Map.of("key", "value"), 0f, "", ""));
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest("query", candidates));
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest("query", candidates));
 
         RerankedCandidate c = result.get(0);
         assertThat(c.documentId()).isEqualTo(1L);
@@ -92,13 +92,13 @@ class RagRerankServiceImplTest {
         properties.setStrategy(RerankStrategy.LOCAL_FEATURE);
         properties.setFallbackToOriginalOrder(true);
 
-        when(reranker.rerank(any())).thenThrow(new RuntimeException("simulated failure"));
+        when(reranker.executeResp(any())).thenThrow(new RuntimeException("simulated failure"));
 
         List<RerankedCandidate> candidates = new ArrayList<>();
         candidates.add(candidate(1L, 10L, 0, "b", 0.9f, 2));
         candidates.add(candidate(1L, 11L, 1, "a", 0.5f, 1));
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest("query", candidates));
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest("query", candidates));
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).originalRank()).isEqualTo(1);
@@ -111,12 +111,12 @@ class RagRerankServiceImplTest {
         properties.setStrategy(RerankStrategy.LOCAL_FEATURE);
         properties.setFallbackToOriginalOrder(false);
 
-        when(reranker.rerank(any())).thenThrow(new RuntimeException("simulated failure"));
+        when(reranker.executeResp(any())).thenThrow(new RuntimeException("simulated failure"));
 
         List<RerankedCandidate> candidates = new ArrayList<>();
         candidates.add(candidate(1L, 10L, 0, "text", 0.8f, 1));
 
-        assertThatThrownBy(() -> service.rerank(new RerankRequest("query", candidates)))
+        assertThatThrownBy(() -> service.executeResp(new RerankRequest("query", candidates)))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("fallback is disabled");
     }
@@ -136,9 +136,9 @@ class RagRerankServiceImplTest {
                 new RerankedCandidate(1L, 10L, 0, "a", 0.5f, 1, "VECTOR_ONLY",
                         Map.of(), 0.30f, "LOCAL_FEATURE", "kw=0.00 title=0.00 src=0.50 len=0.50")
         );
-        when(reranker.rerank(any())).thenReturn(rerankedOutput);
+        when(reranker.executeResp(any())).thenReturn(rerankedOutput);
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest("query", input));
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest("query", input));
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).chunkId()).isEqualTo(11L);
@@ -158,9 +158,9 @@ class RagRerankServiceImplTest {
         }
 
         List<RerankedCandidate> truncatedOutput = input.subList(0, 2);
-        when(reranker.rerank(any())).thenReturn(truncatedOutput);
+        when(reranker.executeResp(any())).thenReturn(truncatedOutput);
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest("query", input));
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest("query", input));
 
         assertThat(result).hasSize(2);
     }
@@ -175,7 +175,7 @@ class RagRerankServiceImplTest {
         candidates.add(candidate(1L, 10L, 0, "b", 0.9f, 2));
         candidates.add(candidate(1L, 11L, 1, "a", 0.5f, 1));
 
-        List<RerankedCandidate> result = noMatch.rerank(new RerankRequest("query", candidates));
+        List<RerankedCandidate> result = noMatch.executeResp(new RerankRequest("query", candidates));
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).originalRank()).isEqualTo(1);

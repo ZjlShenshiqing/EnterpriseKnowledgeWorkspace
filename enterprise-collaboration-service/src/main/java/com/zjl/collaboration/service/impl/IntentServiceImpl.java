@@ -4,14 +4,15 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.zjl.collaboration.entity.*;
 import com.zjl.collaboration.mapper.*;
 import com.zjl.collaboration.service.IntentService;
+import com.zjl.collaboration.service.intent.RuleMatchRequest;
 import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
+import com.zjl.framework.starter.designpattern.staregy.AbstractStrategyChoose;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -22,6 +23,7 @@ public class IntentServiceImpl implements IntentService {
     private final KbIntentNodeMapper nodeMapper;
     private final KbIntentRuleMapper ruleMapper;
     private final KbIntentKbRelMapper kbRelMapper;
+    private final AbstractStrategyChoose strategyChoose;
 
     @Override
     public List<KbIntentNode> getTree() {
@@ -194,14 +196,8 @@ public class IntentServiceImpl implements IntentService {
         List<Map<String, Object>> hits = new ArrayList<>();
 
         for (KbIntentRule rule : allRules) {
-            boolean matched = false;
-            if ("keyword".equals(rule.getRuleType())) {
-                matched = query.contains(rule.getExpression());
-            } else if ("regex".equals(rule.getRuleType())) {
-                try {
-                    matched = Pattern.compile(rule.getExpression()).matcher(query).find();
-                } catch (Exception ignored) {}
-            }
+            boolean matched = strategyChoose.chooseAndExecuteResp(
+                    rule.getRuleType(), new RuleMatchRequest(query, rule.getExpression()));
             if (matched) {
                 KbIntentNode node = nodeMap.get(rule.getNodeId());
                 if (node != null) {

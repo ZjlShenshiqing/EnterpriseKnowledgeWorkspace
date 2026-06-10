@@ -39,12 +39,12 @@ public class BailianQwen3RagReranker implements RagReranker {
     }
 
     @Override
-    public boolean supports(RerankStrategy strategy) {
-        return strategy == RerankStrategy.BAILIAN_QWEN3;
+    public RerankStrategy strategy() {
+        return RerankStrategy.BAILIAN_QWEN3;
     }
 
     @Override
-    public List<RerankedCandidate> rerank(RerankRequest request) {
+    public List<RerankedCandidate> executeResp(RerankRequest request) {
         if (request == null || request.candidates() == null || request.candidates().isEmpty()) {
             return List.of();
         }

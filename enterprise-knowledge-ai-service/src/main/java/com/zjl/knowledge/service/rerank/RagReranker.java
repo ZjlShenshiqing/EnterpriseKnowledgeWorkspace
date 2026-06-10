@@ -1,22 +1,27 @@
 package com.zjl.knowledge.service.rerank;
 
+import com.zjl.framework.starter.designpattern.staregy.AbstractExecuteStrategy;
+
 import java.util.List;
 
 /**
- * Rerank 策略接口，支持本地策略和未来模型策略
+ * Rerank 策略接口，基于设计模式模块的策略模式自动注册
  */
-public interface RagReranker {
+public interface RagReranker extends AbstractExecuteStrategy<RerankRequest, List<RerankedCandidate>> {
+
+    @Override
+    default String mark() {
+        return strategy().name();
+    }
 
     /**
-     * 是否支持指定策略
+     * 返回对应的 rerank 策略枚举
      */
-    boolean supports(RerankStrategy strategy);
+    RerankStrategy strategy();
 
     /**
      * 执行 rerank 排序
-     *
-     * @param request rerank 请求
-     * @return 按 rerankScore 降序排列的候选列表
      */
-    List<RerankedCandidate> rerank(RerankRequest request);
+    @Override
+    List<RerankedCandidate> executeResp(RerankRequest request);
 }

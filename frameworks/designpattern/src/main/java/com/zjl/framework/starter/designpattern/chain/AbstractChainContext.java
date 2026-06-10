@@ -4,7 +4,7 @@
  */
 package com.zjl.framework.starter.designpattern.chain;
 
-import org.openzjl.index12306.framework.starter.bases.ApplicationContextHolder;
+import com.zjl.common.toolkit.ApplicationContextHolder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.Ordered;
 import org.springframework.util.CollectionUtils;

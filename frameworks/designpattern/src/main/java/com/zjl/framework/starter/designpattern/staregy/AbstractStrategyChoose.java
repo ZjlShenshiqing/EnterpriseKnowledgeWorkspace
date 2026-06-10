@@ -4,6 +4,7 @@
  */
 package com.zjl.framework.starter.designpattern.staregy;
 
+import com.zjl.common.enums.ErrorCode;
 import com.zjl.common.exception.BizException;
 import com.zjl.common.toolkit.ApplicationContextHolder;
 import org.springframework.context.ApplicationListener;
@@ -50,11 +51,11 @@ public class AbstractStrategyChoose implements ApplicationListener<ContextRefres
                     .filter(each -> Pattern.compile(each.patternMatchMark()).matcher(mark).matches())
                     // 从一堆数据中，找到第一个符合条件的元素，并把它包装成 Optional 返回
                     .findFirst()
-                    .orElseThrow(() -> new BizException("策略未定义"));
+                    .orElseThrow(() -> new BizException(ErrorCode.SYSTEM_ERROR, "策略未定义"));
         }
 
         return Optional.ofNullable(abstractExecuteStrategyMap.get(mark))
-                .orElseThrow(() -> new BizException(String.format("[%s] 策略未定义", mark)));
+                .orElseThrow(() -> new BizException(ErrorCode.SYSTEM_ERROR, String.format("[%s] 策略未定义", mark)));
     }
 
     /**
@@ -108,7 +109,7 @@ public class AbstractStrategyChoose implements ApplicationListener<ContextRefres
             AbstractExecuteStrategy beanExist = abstractExecuteStrategyMap.get(mark);
             if (beanExist != null) {
                 // 3. 如果已经存在相同 mark 的策略 → 抛异常（不允许重复）
-                throw new BizException(String.format("[%s] Duplicate execution policy", mark));
+                throw new BizException(ErrorCode.SYSTEM_ERROR, String.format("[%s] Duplicate execution policy", mark));
             }
             // 4. 注册策略到策略工厂
             abstractExecuteStrategyMap.put(mark, bean);

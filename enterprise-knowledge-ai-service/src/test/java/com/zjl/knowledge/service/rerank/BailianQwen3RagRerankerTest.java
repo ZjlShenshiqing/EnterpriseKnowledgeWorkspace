@@ -60,7 +60,7 @@ class BailianQwen3RagRerankerTest {
                 candidate(12L, "住宿费按照职级报销", 3)
         );
 
-        List<RerankedCandidate> result = reranker.rerank(
+        List<RerankedCandidate> result = reranker.executeResp(
                 new RerankRequest("差旅报销需要哪些材料", candidates));
 
         assertThat(authorization.get()).isEqualTo("Bearer test-bailian-key");
@@ -85,7 +85,7 @@ class BailianQwen3RagRerankerTest {
                 rerankProperties, knowledgeProperties, objectMapper);
         RagRerankService service = new RagRerankServiceImpl(rerankProperties, List.of(modelReranker));
 
-        List<RerankedCandidate> result = service.rerank(new RerankRequest(
+        List<RerankedCandidate> result = service.executeResp(new RerankRequest(
                 "差旅报销需要哪些材料",
                 List.of(
                         candidate(10L, "差旅报销需要发票", 1),
@@ -104,7 +104,7 @@ class BailianQwen3RagRerankerTest {
         BailianQwen3RagReranker reranker = new BailianQwen3RagReranker(
                 rerankProperties, knowledgeProperties, objectMapper);
 
-        assertThatThrownBy(() -> reranker.rerank(new RerankRequest(
+        assertThatThrownBy(() -> reranker.executeResp(new RerankRequest(
                 "差旅报销", List.of(candidate(10L, "需要发票", 1)))))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("百炼 API Key 未配置");
@@ -128,7 +128,7 @@ class BailianQwen3RagRerankerTest {
                 candidate(12L, "第三段", 3)
         );
 
-        List<RerankedCandidate> result = reranker.rerank(new RerankRequest("问题", candidates));
+        List<RerankedCandidate> result = reranker.executeResp(new RerankRequest("问题", candidates));
 
         assertThat(result).extracting(RerankedCandidate::chunkId)
                 .containsExactly(11L);
@@ -141,7 +141,7 @@ class BailianQwen3RagRerankerTest {
         BailianQwen3RagReranker reranker = new BailianQwen3RagReranker(
                 rerankProperties, knowledgeProperties, objectMapper);
 
-        assertThatThrownBy(() -> reranker.rerank(new RerankRequest(
+        assertThatThrownBy(() -> reranker.executeResp(new RerankRequest(
                 "差旅报销", List.of(candidate(10L, "需要发票", 1)))))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("百炼 rerank API 返回状态码 500")
@@ -154,7 +154,7 @@ class BailianQwen3RagRerankerTest {
         BailianQwen3RagReranker reranker = new BailianQwen3RagReranker(
                 rerankProperties, knowledgeProperties, objectMapper);
 
-        assertThatThrownBy(() -> reranker.rerank(new RerankRequest(
+        assertThatThrownBy(() -> reranker.executeResp(new RerankRequest(
                 "差旅报销", List.of(candidate(10L, "需要发票", 1)))))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("百炼 rerank 响应缺少 results");
